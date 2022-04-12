@@ -32,28 +32,31 @@ contract World is Context, Ownable, Item {
     event ChangeAssetName(address _worldOwner, string _symbol, string _name);
     // event _worldOwner修改Asset  _image
     event ChangeAssetImage(address _worldOwner, string _symbol, string _image);
-    // event 创建Holder
-    event CreateHolder(address _holder);
-    // event 修改Holder _holder
-    event ChangeHolder(
+    // event 创建Account
+    event CreateAccount(uint256 _id, address _address);
+    // event 修改Account _address
+    event ChangeAccount(
+        uint256 _id, 
         address _executor,
         bool _isWorldOwner,
-        address _newHolder
+        address _newAddress
     );
-    // event 修改Holder _isTrustAdmin
-    event ChangeHolderTrustAdmin(
+    // event 修改Account _isTrustAdmin
+    event ChangeAccountTrustAdmin(
+        uint256 _id, 
         address _executor,
         bool _isWorldOwner,
         bool _isTrustAdmin
     );
-    // event 修改Holder _level
-    event ChangeHolderLevel(address _worldOwner, uint256 _level);
+    // event 修改Account _level
+    event ChangeAccountLevel(address _worldOwner, uint256 _id, uint256 _level);
 
-    // struct Holder
-    struct Holder {
+    // struct Account
+    struct Account {
+        uint256 _id;
         uint8 _level;
         bool _isTrustAdmin;
-        address _holder;
+        address _address;
     }
 
     // struct Asset
@@ -105,22 +108,22 @@ contract World is Context, Ownable, Item {
         string calldata _image
     ) public onlyOwner {}
 
-    // func 创建Holder
-    function createHolder(address _holder) public {}
+    // func 创建Account
+    function createAccount(address _address) public {}
 
-    // func 修改Holder _holder
-    function changeHolder(
-        address _newHolder
-    ) public {}
+    // func 修改Account _address
+    function changeAccount(
+        address _newAddress
+    ) public onlyOwner {}
 
-    // func 修改Holder _isTrustAdmin
-    function changeHolderTrustAdmin() public {}
+    // func 修改Account _isTrustAdmin
+    function changeAccountTrustAdmin(uint256 _id, bool _trust) public {}
 
-    // func 修改Holder _level
-    function changeHolderLevel(uint256 _level) public onlyOwner {}
+    // func 修改Account _level
+    function changeAccountLevel(uint256 _level) public onlyOwner {}
 
-    // func 获取Holder
-    function getHolder(address _holder) public view returns (Holder memory) {}
+    // func 获取Account
+    function getAccount(address _address) public view returns (Account memory) {}
 
     // func 获取Asset
     function getAsset(string calldata _symbol) public view returns (Asset memory) {}
