@@ -107,6 +107,9 @@ contract World is Context, Ownable, Item {
     // func 创建Account
     function createAccount(address _address) public {}
 
+    // func 获取Account ID，如果没有对应Account则创建Account
+    function getOrCreateAccountID(address _address) public returns (uint256 id) {}
+
     // func 修改Account _address
     function changeAccount(
         uint256 _id,
@@ -125,7 +128,7 @@ contract World is Context, Ownable, Item {
     // func 通过_address 获取Account
     function getAccountByAddress(address _address) public view returns (Account memory) {}
 
-    // func 判断Account是否为Avatar
+    // func 判断Holder是否为Avatar
     function isAvatar(uint256 _id) public view returns (bool isAvatar) {}
 
     // func 判断Holder（Avatar或者Account）是否存在
