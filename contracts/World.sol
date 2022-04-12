@@ -68,7 +68,7 @@ contract World is Context, Ownable, Item {
     }
 
     // avatar最大数量
-    uint256 public constant MAX_AVATAR_COUNT = 100000;
+    uint256 public constant MAX_AVATAR_INDEX = 100000;
 
     // func 注册cash
     function registerCash(
@@ -124,6 +124,12 @@ contract World is Context, Ownable, Item {
 
     // func 通过_address 获取Account
     function getAccountByAddress(address _address) public view returns (Account memory) {}
+
+    // func 判断Account是否为Avatar
+    function isAvatar(uint256 _id) public view returns (bool isAvatar) {}
+
+    // func 判断Holder（Avatar或者Account）是否存在
+    function holderExist(uint256 _id) public view returns (bool exist) {}
 
     // func 获取Asset
     function getAsset(string calldata _symbol) public view returns (Asset memory) {}
