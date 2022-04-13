@@ -72,24 +72,24 @@ contract World is Context, Ownable, Item {
 
     // func 注册cash
     function registerCash(
-        string calldata _symbol
+        string calldata _symbol,
         address _contract,
         string calldata _name,
-        string calldata _image,
+        string calldata _image
     ) public onlyOwner {}
 
     // func 注册item
     function registerItem(
-        string calldata _symbol
+        string calldata _symbol,
         address _contract,
         string calldata _name,
-        string calldata _image,
+        string calldata _image
     ) public onlyOwner {}
 
     // func 修改Asset _contract
     function changeAsset(
-        string calldata _symbol
-        address _contract,
+        string calldata _symbol,
+        address _contract
     ) public onlyOwner {}
 
     // func 修改Asset _name
