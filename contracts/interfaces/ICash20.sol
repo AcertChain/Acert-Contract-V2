@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-interface ICash is IERC20Metadata {
+interface ICash20 is IERC20Metadata {
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
@@ -55,7 +55,9 @@ interface ICash is IERC20Metadata {
      *
      * Emits an {ApprovalById} event.
      */
-    function approveById(uint256 spender, uint256 amount) external returns (bool);
+    function approveById(uint256 spender, uint256 amount)
+        external
+        returns (bool);
 
     /**
      * @dev Moves `amount` tokens from `from id` to `to id` using the
@@ -75,5 +77,11 @@ interface ICash is IERC20Metadata {
     /**
      * @dev Returns the name of the token.
      */
-    function wordAddress() external view returns (address);
+    function worldAddress() external view returns (address);
+
+    function changeAccountAddress(
+        uint256 id,
+        address oldAddr,
+        address newAddr
+    ) external returns (bool);
 }

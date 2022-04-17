@@ -2,17 +2,20 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "../interfaces/ICash.sol";
+import "../interfaces/ICash20.sol";
 import "../interfaces/IWorld.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
-contract Cash is Context, ICash {
+contract Cash20 is Context, ICash20 {
     mapping(uint256 => uint256) private _balancesById;
     mapping(uint256 => mapping(uint256 => uint256)) private _allowancesById;
 
-    // todo 如何保持一致性
+    //保持一致性
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
+
+    mapping(address => uint256) private _AddressesToIds;
+    mapping(uint256 => address) private _IdsToAddresses;
 
     uint256 private _totalSupply;
 
@@ -76,7 +79,7 @@ contract Cash is Context, ICash {
     /**
      * @dev See {ICash-balanceOf}.
      */
-    function wordAddress() external view returns (address) {
+    function worldAddress() external view returns (address) {
         return _world;
     }
 
@@ -147,7 +150,7 @@ contract Cash is Context, ICash {
         returns (bool)
     {
         require(to != 0, "Cash: transfer to the zero Id");
-        uint256 ownerId = _iWorld.getOrCreateAccountID(_msgSender());
+        uint256 ownerId = _iWorld.getOrCreateAccountId(_msgSender());
         _transferById(ownerId, to, amount);
         return true;
     }
@@ -217,7 +220,7 @@ contract Cash is Context, ICash {
         override
         returns (bool)
     {
-        uint256 ownerId = _iWorld.getOrCreateAccountID(_msgSender());
+        uint256 ownerId = _iWorld.getOrCreateAccountId(_msgSender());
         _approveById(ownerId, spenderId, amount);
         return true;
     }
@@ -269,9 +272,27 @@ contract Cash is Context, ICash {
         uint256 to,
         uint256 amount
     ) public virtual override returns (bool) {
-        uint256 spenderId = _iWorld.getOrCreateAccountID(_msgSender());
+        uint256 spenderId = _iWorld.getOrCreateAccountId(_msgSender());
         _spendAllowanceById(from, spenderId, amount);
         _transferById(from, to, amount);
+        return true;
+    }
+
+    function changeAccountAddress(
+        uint256 id,
+        address oldAddr,
+        address newAddr
+    ) public virtual returns (bool) {
+        require(_world != _msgSender(), "Cash: must be the world");
+
+        uint256 oldBalance = _balances[oldAddr];
+        _balances[oldAddr] = 0;
+        _balances[newAddr] = oldBalance;
+
+        _IdsToAddresses[id] = newAddr;
+        _AddressesToIds[newAddr] = id;
+        _AddressesToIds[oldAddr] = 0;
+
         return true;
     }
 
@@ -351,15 +372,11 @@ contract Cash is Context, ICash {
         require(from != address(0), "Cash: transfer from the zero address");
         require(to != address(0), "Cash: transfer to the zero address");
 
-        uint256 fromId = _iWorld.getOrCreateAccountID(from);
-        uint256 toId = _iWorld.getOrCreateAccountID(to);
-
+        uint256 fromId = _getIdByAddress(from);
+        uint256 toId = _getIdByAddress(to);
 
         uint256 fromBalance = _balancesById[fromId];
-        require(
-            fromBalance >= amount,
-            "ICash transfer amount exceeds balance"
-        );
+        require(fromBalance >= amount, "ICash transfer amount exceeds balance");
         unchecked {
             _balancesById[fromId] = fromBalance - amount;
             _balances[from] = fromBalance - amount;
@@ -368,9 +385,7 @@ contract Cash is Context, ICash {
         _balances[to] += amount;
 
         emit Transfer(from, to, amount);
-
     }
-
 
     /**
      * @dev Moves `amount` of tokens from `sender` to `recipient`.
@@ -393,19 +408,19 @@ contract Cash is Context, ICash {
     ) internal virtual {
         require(from != 0, "Cash: transfer from the zero address");
         require(to != 0, "Cash: transfer to the zero address");
+        address fromAddr = _getAddressById(from);
+        address toAddr = _getAddressById(to);
 
         uint256 fromBalance = _balancesById[from];
-        require(
-            fromBalance >= amount,
-            "ICash transfer amount exceeds balance"
-        );
+        require(fromBalance >= amount, "ICash transfer amount exceeds balance");
         unchecked {
             _balancesById[from] = fromBalance - amount;
+            _balances[fromAddr] = fromBalance - amount;
         }
         _balancesById[to] += amount;
+        _balances[toAddr] += amount;
 
         emit TransferById(from, to, amount);
-
     }
 
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
@@ -419,12 +434,12 @@ contract Cash is Context, ICash {
      */
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "Cash: mint to the zero address");
-        uint256 accountId = _iWorld.getOrCreateAccountID(account);
+        uint256 accountId = _getIdByAddress(account);
 
         _totalSupply += amount;
         _balancesById[accountId] += amount;
+        _balances[account] += amount;
         emit Transfer(address(0), account, amount);
-
     }
 
     /**
@@ -440,17 +455,17 @@ contract Cash is Context, ICash {
      */
     function _burn(address account, uint256 amount) internal virtual {
         require(account != address(0), "Cash: burn from the zero address");
-        uint256 accountId = _iWorld.getOrCreateAccountID(account);
+        uint256 accountId = _getIdByAddress(account);
 
         uint256 accountBalance = _balancesById[accountId];
         require(accountBalance >= amount, "Cash: burn amount exceeds balance");
         unchecked {
             _balancesById[accountId] = accountBalance - amount;
+            _balances[account] = accountBalance - amount;
         }
         _totalSupply -= amount;
 
         emit Transfer(account, address(0), amount);
-
     }
 
     /**
@@ -474,9 +489,10 @@ contract Cash is Context, ICash {
         require(owner != address(0), "Cash: approve from the zero address");
         require(spender != address(0), "ICash approve to the zero address");
 
-        uint256 ownerId = _iWorld.getOrCreateAccountID(owner);
-        uint256 spenderId = _iWorld.getOrCreateAccountID(spender);
+        uint256 ownerId = _getIdByAddress(owner);
+        uint256 spenderId = _getIdByAddress(spender);
         _allowancesById[ownerId][spenderId] = amount;
+        _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
@@ -501,7 +517,11 @@ contract Cash is Context, ICash {
         require(ownerId != 0, "Cash: approve from the zero ");
         require(spenderId != 0, "Cash: approve to the zero ");
 
+        address ownerAddr = _getAddressById(ownerId);
+        address spenderAddr = _getAddressById(spenderId);
+
         _allowancesById[ownerId][spenderId] = amount;
+        _allowances[ownerAddr][spenderAddr] = amount;
         emit ApprovalById(ownerId, spenderId, amount);
     }
 
@@ -527,7 +547,6 @@ contract Cash is Context, ICash {
         }
     }
 
-
     /**
      * @dev Updates `owner` s allowance for `spender` based on spent `amount`.
      *
@@ -550,4 +569,23 @@ contract Cash is Context, ICash {
         }
     }
 
+    function _getIdByAddress(address addr) internal returns (uint256) {
+        uint256 id;
+        if (_AddressesToIds[addr] == 0) {
+            id = _iWorld.getOrCreateAccountId(addr);
+            _AddressesToIds[addr] = id;
+            _IdsToAddresses[id] = addr;
+        }
+        return _AddressesToIds[addr];
+    }
+
+    function _getAddressById(uint256 id) internal returns (address) {
+        address addr;
+        if (_IdsToAddresses[id] == address(0)) {
+            addr = _iWorld.getAddressById(id);
+            _AddressesToIds[addr] = id;
+            _IdsToAddresses[id] = addr;
+        }
+        return _IdsToAddresses[id];
+    }
 }

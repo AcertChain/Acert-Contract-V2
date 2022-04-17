@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "./common/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "./token/Item.sol";
+import "./interfaces/IItem721.sol";
 
-contract World is Context, Ownable, Item {
+contract World is Context, Ownable, IItem721 {
     // constructor
     constructor() {
         _owner = _msgSender();
