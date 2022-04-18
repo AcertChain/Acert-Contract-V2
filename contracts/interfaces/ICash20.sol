@@ -12,6 +12,13 @@ interface ICash20 is IERC20Metadata {
      */
     event TransferById(uint256 indexed from, uint256 indexed to, uint256 value);
 
+    event TransferByBWO(
+        uint256 indexed from,
+        uint256 indexed to,
+        uint256 value,
+        uint256 nonce
+    );
+
     /**
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approveById}. `value` is the new allowance.
@@ -20,6 +27,13 @@ interface ICash20 is IERC20Metadata {
         uint256 indexed owner,
         uint256 indexed spender,
         uint256 value
+    );
+
+    event ApprovalByBWO(
+        uint256 indexed owner,
+        uint256 indexed spender,
+        uint256 value,
+        uint256 nonce
     );
 
     /**
@@ -35,6 +49,15 @@ interface ICash20 is IERC20Metadata {
      * Emits a {TransferById} event.
      */
     function transferById(uint256 to, uint256 amount) external returns (bool);
+
+    function transferByBWO(
+        uint256 to,
+        uint256 amount,
+        uint256 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -59,6 +82,15 @@ interface ICash20 is IERC20Metadata {
         external
         returns (bool);
 
+    function approveById(
+        uint256 spender,
+        uint256 amount,
+        uint256 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (bool);
+
     /**
      * @dev Moves `amount` tokens from `from id` to `to id` using the
      * allowance mechanism. `amount` is then deducted from the caller's
@@ -72,6 +104,16 @@ interface ICash20 is IERC20Metadata {
         uint256 from,
         uint256 to,
         uint256 amount
+    ) external returns (bool);
+
+    function transferFromByBWO(
+        uint256 from,
+        uint256 to,
+        uint256 amount,
+        uint256 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
     ) external returns (bool);
 
     /**

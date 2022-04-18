@@ -10,6 +10,9 @@ contract Cash20 is Context, ICash20 {
     mapping(uint256 => uint256) private _balancesById;
     mapping(uint256 => mapping(uint256 => uint256)) private _allowancesById;
 
+    // nonce
+    mapping(uint256 => uint256) private _noncesById;
+
     //保持一致性
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -153,6 +156,18 @@ contract Cash20 is Context, ICash20 {
         uint256 ownerId = _iWorld.getOrCreateAccountId(_msgSender());
         _transferById(ownerId, to, amount);
         return true;
+    }
+
+    function transferByBWO(
+        uint256 to,
+        uint256 amount,
+        uint256 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public virtual override returns (bool) {
+        
+
     }
 
     /**
@@ -587,5 +602,60 @@ contract Cash20 is Context, ICash20 {
             _IdsToAddresses[id] = addr;
         }
         return _IdsToAddresses[id];
+    }
+
+    function hashToSign(uint256[] memory args) internal pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    "\x19Ethereum Signed Message:\n32",
+                    hashArgs(args)
+                )
+            );
+    }
+
+    function sizeOf(uint256[] memory args) internal pure returns (uint256) {
+        return (0x20 * args.length);
+    }
+
+    function hashArgs(uint256[] memory args)
+        internal
+        pure
+        returns (bytes32 hash)
+    {
+        /* Unfortunately abi.encodePacked doesn't work here, stack size constraints. */
+        uint256 size = sizeOf(args);
+        bytes memory array = new bytes(size);
+        uint256 index;
+        assembly {
+            index := add(array, 0x20)
+        }
+
+        for (uint256 i = 0; i < args.length; i++) {
+            index = unsafeWriteUint(index, args[i]);
+        }
+        assembly {
+            hash := keccak256(add(array, 0x20), size)
+        }
+        return hash;
+    }
+
+    /**
+     * Unsafe write uint into a memory location
+     *
+     * @param index Memory location
+     * @param source uint to write
+     * @return End memory index
+     */
+    function unsafeWriteUint(uint256 index, uint256 source)
+        internal
+        pure
+        returns (uint256)
+    {
+        assembly {
+            mstore(index, source)
+            index := add(index, 0x20)
+        }
+        return index;
     }
 }
