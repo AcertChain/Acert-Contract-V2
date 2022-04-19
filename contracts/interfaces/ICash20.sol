@@ -54,9 +54,8 @@ interface ICash20 is IERC20Metadata {
         uint256 to,
         uint256 amount,
         uint256 nonce,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 deadline,
+        bytes memory signature
     ) external returns (bool);
 
     /**
@@ -82,13 +81,12 @@ interface ICash20 is IERC20Metadata {
         external
         returns (bool);
 
-    function approveById(
+    function approveByBWO(
         uint256 spender,
         uint256 amount,
         uint256 nonce,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 deadline,
+        bytes memory signature
     ) external returns (bool);
 
     /**
@@ -111,9 +109,8 @@ interface ICash20 is IERC20Metadata {
         uint256 to,
         uint256 amount,
         uint256 nonce,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 deadline,
+        bytes memory signature
     ) external returns (bool);
 
     /**

@@ -5,8 +5,10 @@ import "hardhat/console.sol";
 import "../interfaces/ICash20.sol";
 import "../interfaces/IWorld.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract Cash20 is Context, ICash20 {
+contract Cash20 is Context, EIP712, ICash20 {
     mapping(uint256 => uint256) private _balancesById;
     mapping(uint256 => mapping(uint256 => uint256)) private _allowancesById;
 
@@ -39,8 +41,9 @@ contract Cash20 is Context, ICash20 {
     constructor(
         string memory name_,
         string memory symbol_,
+        string memory version_,
         address world_
-    ) {
+    ) EIP712(name_, version_) {
         _name = name_;
         _symbol = symbol_;
         _world = world_;
@@ -162,12 +165,10 @@ contract Cash20 is Context, ICash20 {
         uint256 to,
         uint256 amount,
         uint256 nonce,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 deadline,
+        bytes memory signature
     ) public virtual override returns (bool) {
-        
-
+        return true;
     }
 
     /**
@@ -240,6 +241,16 @@ contract Cash20 is Context, ICash20 {
         return true;
     }
 
+    function approveByBWO(
+        uint256 spender,
+        uint256 amount,
+        uint256 nonce,
+        uint256 deadline,
+        bytes memory signature
+    ) public virtual override returns (bool) {
+        return true;
+    }
+
     /**
      * @dev See {IERC20-transferFrom}.
      *
@@ -293,11 +304,22 @@ contract Cash20 is Context, ICash20 {
         return true;
     }
 
+    function transferFromByBWO(
+        uint256 from,
+        uint256 to,
+        uint256 amount,
+        uint256 nonce,
+        uint256 deadline,
+        bytes memory signature
+    ) public virtual override returns (bool) {
+        return true;
+    }
+
     function changeAccountAddress(
         uint256 id,
         address oldAddr,
         address newAddr
-    ) public virtual returns (bool) {
+    ) public virtual override returns (bool) {
         require(_world != _msgSender(), "Cash: must be the world");
 
         uint256 oldBalance = _balances[oldAddr];
@@ -604,40 +626,23 @@ contract Cash20 is Context, ICash20 {
         return _IdsToAddresses[id];
     }
 
-    function hashToSign(uint256[] memory args) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    "\x19Ethereum Signed Message:\n32",
-                    hashArgs(args)
-                )
-            );
-    }
-
-    function sizeOf(uint256[] memory args) internal pure returns (uint256) {
-        return (0x20 * args.length);
-    }
-
-    function hashArgs(uint256[] memory args)
+    function _recoverSig(bytes32 digest, bytes memory signature)
         internal
         pure
+        returns (address)
+    {
+        return ECDSA.recover(digest, signature);
+    }
+
+    function _hashArgs(uint256[] memory args)
+        internal
+        view
         returns (bytes32 hash)
     {
-        /* Unfortunately abi.encodePacked doesn't work here, stack size constraints. */
-        uint256 size = sizeOf(args);
-        bytes memory array = new bytes(size);
-        uint256 index;
-        assembly {
-            index := add(array, 0x20)
-        }
-
-        for (uint256 i = 0; i < args.length; i++) {
-            index = unsafeWriteUint(index, args[i]);
-        }
-        assembly {
-            hash := keccak256(add(array, 0x20), size)
-        }
-        return hash;
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(abi.encode(keccak256("MyFunction(uint256[] args)"), args))
+        );
+        return digest;
     }
 
     /**
