@@ -15,10 +15,6 @@ contract Cash20 is Context, EIP712, ICash20 {
     // nonce
     mapping(uint256 => uint256) private _noncesById;
 
-    //保持一致性
-    mapping(address => uint256) private _balances;
-    mapping(address => mapping(address => uint256)) private _allowances;
-
     mapping(address => uint256) private _AddressesToIds;
     mapping(uint256 => address) private _IdsToAddresses;
 
@@ -106,7 +102,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        return _balances[account];
+       uint256 accountId =_AddressesToIds[account];
+        return _balancesById[accountId];
     }
 
     /**
@@ -181,7 +178,9 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        return _allowances[owner][spender];
+        uint256 ownerId = _AddressesToIds[owner];
+        uint256 spenderId = _AddressesToIds[spender];
+        return _allowancesById[ownerId][spenderId];
     }
 
     /**
@@ -194,8 +193,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        require(owner != 0, "Cash: allowance owner the zero Id");
-        require(spender != 0, "Cash: allowance spender the zero Id");
         return _allowancesById[owner][spender];
     }
 
@@ -322,14 +319,10 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) public virtual override returns (bool) {
         require(_world != _msgSender(), "Cash: must be the world");
 
-        uint256 oldBalance = _balances[oldAddr];
-        _balances[oldAddr] = 0;
-        _balances[newAddr] = oldBalance;
-
         _IdsToAddresses[id] = newAddr;
         _AddressesToIds[newAddr] = id;
         _AddressesToIds[oldAddr] = 0;
-
+        
         return true;
     }
 
@@ -416,10 +409,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(fromBalance >= amount, "ICash transfer amount exceeds balance");
         unchecked {
             _balancesById[fromId] = fromBalance - amount;
-            _balances[from] = fromBalance - amount;
         }
         _balancesById[toId] += amount;
-        _balances[to] += amount;
 
         emit Transfer(from, to, amount);
     }
@@ -445,17 +436,14 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) internal virtual {
         require(from != 0, "Cash: transfer from the zero address");
         require(to != 0, "Cash: transfer to the zero address");
-        address fromAddr = _getAddressById(from);
-        address toAddr = _getAddressById(to);
-
+         _getAddressById(from);
+         _getAddressById(to);
         uint256 fromBalance = _balancesById[from];
         require(fromBalance >= amount, "ICash transfer amount exceeds balance");
         unchecked {
             _balancesById[from] = fromBalance - amount;
-            _balances[fromAddr] = fromBalance - amount;
         }
         _balancesById[to] += amount;
-        _balances[toAddr] += amount;
 
         emit TransferById(from, to, amount);
     }
@@ -475,7 +463,6 @@ contract Cash20 is Context, EIP712, ICash20 {
 
         _totalSupply += amount;
         _balancesById[accountId] += amount;
-        _balances[account] += amount;
         emit Transfer(address(0), account, amount);
     }
 
@@ -493,12 +480,10 @@ contract Cash20 is Context, EIP712, ICash20 {
     function _burn(address account, uint256 amount) internal virtual {
         require(account != address(0), "Cash: burn from the zero address");
         uint256 accountId = _getIdByAddress(account);
-
         uint256 accountBalance = _balancesById[accountId];
         require(accountBalance >= amount, "Cash: burn amount exceeds balance");
         unchecked {
             _balancesById[accountId] = accountBalance - amount;
-            _balances[account] = accountBalance - amount;
         }
         _totalSupply -= amount;
 
@@ -529,7 +514,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 ownerId = _getIdByAddress(owner);
         uint256 spenderId = _getIdByAddress(spender);
         _allowancesById[ownerId][spenderId] = amount;
-        _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
@@ -554,11 +538,10 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(ownerId != 0, "Cash: approve from the zero ");
         require(spenderId != 0, "Cash: approve to the zero ");
 
-        address ownerAddr = _getAddressById(ownerId);
-        address spenderAddr = _getAddressById(spenderId);
+         _getAddressById(ownerId);
+         _getAddressById(spenderId);
 
         _allowancesById[ownerId][spenderId] = amount;
-        _allowances[ownerAddr][spenderAddr] = amount;
         emit ApprovalById(ownerId, spenderId, amount);
     }
 
@@ -645,22 +628,5 @@ contract Cash20 is Context, EIP712, ICash20 {
         return digest;
     }
 
-    /**
-     * Unsafe write uint into a memory location
-     *
-     * @param index Memory location
-     * @param source uint to write
-     * @return End memory index
-     */
-    function unsafeWriteUint(uint256 index, uint256 source)
-        internal
-        pure
-        returns (uint256)
-    {
-        assembly {
-            mstore(index, source)
-            index := add(index, 0x20)
-        }
-        return index;
-    }
+
 }

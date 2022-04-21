@@ -19,24 +19,36 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
 
     // Token name
     string private _name;
-
     // Token symbol
     string private _symbol;
-
+    // world addr
     address private _world;
+
     IWorld _iWorld;
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
 
+    mapping(uint256 => uint256) private _ownersById;
+
     // Mapping owner address to token count
     mapping(address => uint256) private _balances;
+
+    mapping(uint256 => uint256) private _balancesById;
 
     // Mapping from token ID to approved address
     mapping(uint256 => address) private _tokenApprovals;
 
+    mapping(uint256 => uint256) private _tokenApprovalsById;
+
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) private _operatorApprovals;
+
+    mapping(uint256 => mapping(uint256 => bool)) private _operatorApprovalsById;
+
+    mapping(address => uint256) private _AddressesToIds;
+
+    mapping(uint256 => address) private _IdsToAddresses;
 
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
@@ -81,9 +93,23 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
     {
         require(
             owner != address(0),
-            "ERC721: address zero is not a valid owner"
+            "Item721: address zero is not a valid owner"
         );
         return _balances[owner];
+    }
+
+    /**
+     * @dev See {IItem721-balanceOfById}.
+     */
+    function balanceOfById(uint256 ownerId)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        require(ownerId != 0, "Item721: id zero is not a valid owner");
+        return _balancesById[ownerId];
     }
 
     /**
@@ -99,8 +125,23 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         address owner = _owners[tokenId];
         require(
             owner != address(0),
-            "ERC721: owner query for nonexistent token"
+            "Item721: owner query for nonexistent token"
         );
+        return owner;
+    }
+
+    /**
+     * @dev See {IItem721-ownerOfById}.
+     */
+    function ownerOfById(uint256 tokenId)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        uint256 owner = _ownersById[tokenId];
+        require(owner != 0, "Item721: owner query for nonexistent token");
         return owner;
     }
 
@@ -118,6 +159,9 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         return _symbol;
     }
 
+    /**
+     * @dev See {IItem721-worldAddress}.
+     */
     function worldAddress() external view returns (address) {
         return _world;
     }
@@ -158,7 +202,20 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
      */
     function approve(address to, uint256 tokenId) public virtual override {
         address owner = Item721.ownerOf(tokenId);
-        require(to != owner, "ERC721: approval to current owner");
+
+        uint256 ownerId = Item721.ownerOfById(tokenId);
+
+        address newOwner = _getAddressById(ownerId);
+
+        if (owner != newOwner) {
+            _owners[tokenId] = newOwner;
+            // todo
+            //_operatorApprovals[newOwner] = _operatorApprovals[owner];
+            //delete _operatorApprovals[owner] ;
+            owner = newOwner;
+        }
+
+        require(to != owner, "Item721: approval to current owner");
 
         require(
             _msgSender() == owner || isApprovedForAll(owner, _msgSender()),
@@ -166,6 +223,23 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         );
 
         _approve(to, tokenId);
+    }
+
+    /**
+     * @dev See {IItem721-approveById}.
+     */
+    function approveById(uint256 to, uint256 tokenId) public virtual override {
+        uint256 owner = Item721.ownerOfById(tokenId);
+        require(to != owner, "ERC721: approval to current owner");
+
+        uint256 senderId = _getIdByAddress(_msgSender());
+
+        require(
+            senderId == owner || isApprovedForAllById(owner, senderId),
+            "ERC721: approve caller is not owner nor approved for all"
+        );
+
+        _approveById(to, tokenId);
     }
 
     /**
@@ -186,6 +260,21 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         return _tokenApprovals[tokenId];
     }
 
+    function getApprovedById(uint256 tokenId)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        require(
+            _exists(tokenId),
+            "ERC721: approved query for nonexistent token"
+        );
+
+        return _tokenApprovalsById[tokenId];
+    }
+
     /**
      * @dev See {IERC721-setApprovalForAll}.
      */
@@ -195,6 +284,15 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         override
     {
         _setApprovalForAll(_msgSender(), operator, approved);
+    }
+
+    function setApprovalForAllById(uint256 operator, bool approved)
+        public
+        virtual
+        override
+    {
+        uint256 senderId = _getIdByAddress(_msgSender());
+        _setApprovalForAllById(senderId, operator, approved);
     }
 
     /**
@@ -208,6 +306,16 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         returns (bool)
     {
         return _operatorApprovals[owner][operator];
+    }
+
+    function isApprovedForAllById(uint256 owner, uint256 operator)
+        public
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return _operatorApprovalsById[owner][operator];
     }
 
     /**
@@ -225,6 +333,20 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         );
 
         _transfer(from, to, tokenId);
+    }
+
+    function transferFromById(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId
+    ) public virtual override {
+        //solhint-disable-next-line max-line-length
+        require(
+            _isApprovedOrOwner(_msgSender(), tokenId),
+            "ERC721: transfer caller is not owner nor approved"
+        );
+
+        _transferById(from, to, tokenId);
     }
 
     /**
@@ -254,12 +376,42 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         _safeTransfer(from, to, tokenId, _data);
     }
 
-    function changeAccountAddress(address oldAddr, address newAddr)
-        public
-        virtual
-        override
-        returns (bool)
-    {
+    function safeTransferFromById(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId
+    ) public virtual override {
+        safeTransferFromById(from, to, tokenId, "");
+    }
+
+    function safeTransferFromById(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        bytes memory _data
+    ) public virtual override {
+        require(
+            _isApprovedOrOwner(_msgSender(), tokenId),
+            "ERC721: transfer caller is not owner nor approved"
+        );
+        _safeTransferById(from, to, tokenId, _data);
+    }
+
+    function changeAccountAddress(
+        uint256 id,
+        address oldAddr,
+        address newAddr
+    ) public virtual override returns (bool) {
+        require(_world != _msgSender(), "Cash: must be the world");
+
+        uint256 oldBalance = _balances[oldAddr];
+        _balances[oldAddr] = 0;
+        _balances[newAddr] = oldBalance;
+
+        _IdsToAddresses[id] = newAddr;
+        _AddressesToIds[newAddr] = id;
+        _AddressesToIds[oldAddr] = 0;
+
         return true;
     }
 
@@ -290,6 +442,23 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         _transfer(from, to, tokenId);
         require(
             _checkOnERC721Received(from, to, tokenId, _data),
+            "ERC721: transfer to non ERC721Receiver implementer"
+        );
+    }
+
+    function _safeTransferById(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        bytes memory _data
+    ) internal virtual {
+        _transferById(from, to, tokenId);
+
+        address fromAddr = _getAddressById(from);
+        address toAddr = _getAddressById(to);
+
+        require(
+            _checkOnERC721Received(fromAddr, toAddr, tokenId, _data),
             "ERC721: transfer to non ERC721Receiver implementer"
         );
     }
@@ -327,6 +496,22 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         return (spender == owner ||
             isApprovedForAll(owner, spender) ||
             getApproved(tokenId) == spender);
+    }
+
+    function _isApprovedOrOwnerById(uint256 spender, uint256 tokenId)
+        internal
+        view
+        virtual
+        returns (bool)
+    {
+        require(
+            _exists(tokenId),
+            "ERC721: operator query for nonexistent token"
+        );
+        uint256 owner = Item721.ownerOfById(tokenId);
+        return (spender == owner ||
+            isApprovedForAllById(owner, spender) ||
+            getApprovedById(tokenId) == spender);
     }
 
     /**
@@ -375,14 +560,10 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         require(to != address(0), "ERC721: mint to the zero address");
         require(!_exists(tokenId), "ERC721: token already minted");
 
-        _beforeTokenTransfer(address(0), to, tokenId);
-
         _balances[to] += 1;
         _owners[tokenId] = to;
 
         emit Transfer(address(0), to, tokenId);
-
-        _afterTokenTransfer(address(0), to, tokenId);
     }
 
     /**
@@ -397,9 +578,6 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
      */
     function _burn(uint256 tokenId) internal virtual {
         address owner = Item721.ownerOf(tokenId);
-
-        _beforeTokenTransfer(owner, address(0), tokenId);
-
         // Clear approvals
         _approve(address(0), tokenId);
 
@@ -407,8 +585,6 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         delete _owners[tokenId];
 
         emit Transfer(owner, address(0), tokenId);
-
-        _afterTokenTransfer(owner, address(0), tokenId);
     }
 
     /**
@@ -433,8 +609,6 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         );
         require(to != address(0), "ERC721: transfer to the zero address");
 
-        _beforeTokenTransfer(from, to, tokenId);
-
         // Clear approvals from the previous owner
         _approve(address(0), tokenId);
 
@@ -443,8 +617,27 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         _owners[tokenId] = to;
 
         emit Transfer(from, to, tokenId);
+    }
 
-        _afterTokenTransfer(from, to, tokenId);
+    function _transferById(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId
+    ) internal virtual {
+        require(
+            Item721.ownerOfById(tokenId) == from,
+            "ERC721: transfer from incorrect owner"
+        );
+        require(to != 0, "ERC721: transfer to the zero");
+
+        // Clear approvals from the previous owner
+        _approve(address(0), tokenId);
+
+        _balancesById[from] -= 1;
+        _balancesById[to] += 1;
+        _ownersById[tokenId] = to;
+
+        emit TransferById(from, to, tokenId);
     }
 
     /**
@@ -455,6 +648,11 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
     function _approve(address to, uint256 tokenId) internal virtual {
         _tokenApprovals[tokenId] = to;
         emit Approval(Item721.ownerOf(tokenId), to, tokenId);
+    }
+
+    function _approveById(uint256 to, uint256 tokenId) internal virtual {
+        _tokenApprovalsById[tokenId] = to;
+        emit ApprovalById(Item721.ownerOfById(tokenId), to, tokenId);
     }
 
     /**
@@ -470,6 +668,16 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         require(owner != operator, "ERC721: approve to caller");
         _operatorApprovals[owner][operator] = approved;
         emit ApprovalForAll(owner, operator, approved);
+    }
+
+    function _setApprovalForAllById(
+        uint256 owner,
+        uint256 operator,
+        bool approved
+    ) internal virtual {
+        require(owner != operator, "ERC721: approve to caller");
+        _operatorApprovalsById[owner][operator] = approved;
+        emit ApprovalForAllById(owner, operator, approved);
     }
 
     /**
@@ -514,40 +722,42 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         }
     }
 
-    /**
-     * @dev Hook that is called before any token transfer. This includes minting
-     * and burning.
-     *
-     * Calling conditions:
-     *
-     * - When `from` and `to` are both non-zero, ``from``'s `tokenId` will be
-     * transferred to `to`.
-     * - When `from` is zero, `tokenId` will be minted for `to`.
-     * - When `to` is zero, ``from``'s `tokenId` will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual {}
+    function _getIdByAddress(address addr) internal returns (uint256) {
+        uint256 id;
+        if (_AddressesToIds[addr] == 0) {
+            id = _iWorld.getOrCreateAccountId(addr);
+            _AddressesToIds[addr] = id;
+            _IdsToAddresses[id] = addr;
+        }
+        return _AddressesToIds[addr];
+    }
 
-    /**
-     * @dev Hook that is called after any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual {}
+    function _getAddressById(uint256 id) internal returns (address) {
+        address addr;
+        if (_IdsToAddresses[id] == address(0)) {
+            addr = _iWorld.getAddressById(id);
+            _AddressesToIds[addr] = id;
+            _IdsToAddresses[id] = addr;
+        }
+        return _IdsToAddresses[id];
+    }
+
+    function _recoverSig(bytes32 digest, bytes memory signature)
+        internal
+        pure
+        returns (address)
+    {
+        return ECDSA.recover(digest, signature);
+    }
+
+    function _hashArgs(uint256[] memory args)
+        internal
+        view
+        returns (bytes32 hash)
+    {
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(abi.encode(keccak256("MyFunction(uint256[] args)"), args))
+        );
+        return digest;
+    }
 }

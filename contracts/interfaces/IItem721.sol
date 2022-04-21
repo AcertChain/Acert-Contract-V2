@@ -32,7 +32,7 @@ interface IItem721 is IERC721Metadata{
      *
      * - `tokenId` must exist.
      */
-    function ownerOfId(uint256 tokenId) external view returns (uint256 owner);
+    function ownerOfById(uint256 tokenId) external view returns (uint256 owner);
 
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`.
@@ -128,7 +128,7 @@ interface IItem721 is IERC721Metadata{
      *
      * - `tokenId` must exist.
      */
-    function getApprovedId(uint256 tokenId) external view returns (uint256 operator);
+    function getApprovedById(uint256 tokenId) external view returns (uint256 operator);
 
     /**
      * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
@@ -138,9 +138,9 @@ interface IItem721 is IERC721Metadata{
     function isApprovedForAllById(uint256 owner, uint256 operator) external view returns (bool);
 
     /**
-     * @dev Returns the name of the token.
+     * @dev Returns the address of the world.
      */
     function worldAddress() external view returns (address);
 
-    function changeAccountAddress(address oldAddr, address newAddr) external returns (bool);
+    function changeAccountAddress(uint256 id,address oldAddr, address newAddr) external returns (bool);
 }
