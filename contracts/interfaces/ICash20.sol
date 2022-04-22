@@ -51,9 +51,9 @@ interface ICash20 is IERC20Metadata {
     function transferById(uint256 to, uint256 amount) external returns (bool);
 
     function transferByBWO(
+        uint256 from,
         uint256 to,
         uint256 amount,
-        uint256 nonce,
         uint256 deadline,
         bytes memory signature
     ) external returns (bool);
@@ -82,9 +82,9 @@ interface ICash20 is IERC20Metadata {
         returns (bool);
 
     function approveByBWO(
+        uint256 owner,
         uint256 spender,
         uint256 amount,
-        uint256 nonce,
         uint256 deadline,
         bytes memory signature
     ) external returns (bool);
@@ -105,10 +105,10 @@ interface ICash20 is IERC20Metadata {
     ) external returns (bool);
 
     function transferFromByBWO(
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 amount,
-        uint256 nonce,
         uint256 deadline,
         bytes memory signature
     ) external returns (bool);
@@ -123,4 +123,6 @@ interface ICash20 is IERC20Metadata {
         address oldAddr,
         address newAddr
     ) external returns (bool);
+
+    function getNonce(uint256 id) external view returns (uint256);
 }

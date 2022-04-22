@@ -3,27 +3,41 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
-interface IItem721 is IERC721Metadata{
-
+interface IItem721 is IERC721Metadata {
     /**
      * @dev Emitted when `tokenId` token is transferred from `from` to `to`.
      */
-    event TransferById(uint256 indexed from, uint256 indexed to, uint256 indexed tokenId);
+    event TransferById(
+        uint256 indexed from,
+        uint256 indexed to,
+        uint256 indexed tokenId
+    );
 
     /**
      * @dev Emitted when `owner` enables `approved` to manage the `tokenId` token.
      */
-    event ApprovalById(uint256 indexed owner, uint256 indexed approved, uint256 indexed tokenId);
+    event ApprovalById(
+        uint256 indexed owner,
+        uint256 indexed approved,
+        uint256 indexed tokenId
+    );
 
     /**
      * @dev Emitted when `owner` enables or disables (`approved`) `operator` to manage all of its assets.
      */
-    event ApprovalForAllById(uint256 indexed owner, uint256 indexed operator, bool approved);
+    event ApprovalForAllById(
+        uint256 indexed owner,
+        uint256 indexed operator,
+        bool approved
+    );
 
     /**
      * @dev Returns the number of tokens in ``owner``'s account.
      */
-    function balanceOfById(uint256 owner) external view returns (uint256 balance);
+    function balanceOfById(uint256 owner)
+        external
+        view
+        returns (uint256 balance);
 
     /**
      * @dev Returns the owner of the `tokenId` token.
@@ -128,19 +142,31 @@ interface IItem721 is IERC721Metadata{
      *
      * - `tokenId` must exist.
      */
-    function getApprovedById(uint256 tokenId) external view returns (uint256 operator);
+    function getApprovedById(uint256 tokenId)
+        external
+        view
+        returns (uint256 operator);
 
     /**
      * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
      *
      * See {setApprovalForAll}
      */
-    function isApprovedForAllById(uint256 owner, uint256 operator) external view returns (bool);
+    function isApprovedForAllById(uint256 owner, uint256 operator)
+        external
+        view
+        returns (bool);
 
     /**
      * @dev Returns the address of the world.
      */
     function worldAddress() external view returns (address);
 
-    function changeAccountAddress(uint256 id,address oldAddr, address newAddr) external returns (bool);
+    function changeAccountAddress(
+        uint256 id,
+        address oldAddr,
+        address newAddr
+    ) external returns (bool);
+
+    function getNonce(uint256 id) external view returns (uint256);
 }

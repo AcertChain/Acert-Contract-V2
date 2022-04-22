@@ -13,7 +13,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     mapping(uint256 => mapping(uint256 => uint256)) private _allowancesById;
 
     // nonce
-    mapping(uint256 => uint256) private _noncesById;
+    mapping(uint256 => uint256) private _nonces;
 
     mapping(address => uint256) private _AddressesToIds;
     mapping(uint256 => address) private _IdsToAddresses;
@@ -102,7 +102,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-       uint256 accountId =_AddressesToIds[account];
+        uint256 accountId = _AddressesToIds[account];
         return _balancesById[accountId];
     }
 
@@ -117,6 +117,16 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (uint256)
     {
         return _balancesById[account];
+    }
+
+    function getNonce(uint256 id)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        return _nonces[id];
     }
 
     /**
@@ -154,17 +164,41 @@ contract Cash20 is Context, EIP712, ICash20 {
     {
         require(to != 0, "Cash: transfer to the zero Id");
         uint256 ownerId = _iWorld.getOrCreateAccountId(_msgSender());
-        _transferById(ownerId, to, amount);
+        _transferById(ownerId, to, amount, false);
         return true;
     }
 
     function transferByBWO(
+        uint256 from,
         uint256 to,
         uint256 amount,
-        uint256 nonce,
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
+        // TODO check BWO
+        require(_world != _msgSender(), "Cash: must be the world");
+
+        uint256[] memory digest = new uint256[](5);
+        digest[0] = from;
+        digest[1] = to;
+        digest[2] = amount;
+        digest[3] = _nonces[from];
+        digest[4] = deadline;
+
+        address fromAddr = _getAddressById(from);
+        require(
+            fromAddr != _recoverSig(_hashArgs(digest), signature),
+            "transferByBWO : recoverSig failed"
+        );
+
+        require(
+            block.timestamp < deadline,
+            "transferByBWO: signed transaction expired"
+        );
+        _nonces[from]++;
+
+        _transferById(from, to, amount, true);
+
         return true;
     }
 
@@ -234,17 +268,40 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (bool)
     {
         uint256 ownerId = _iWorld.getOrCreateAccountId(_msgSender());
-        _approveById(ownerId, spenderId, amount);
+        _approveById(ownerId, spenderId, amount, false);
         return true;
     }
 
     function approveByBWO(
+        uint256 owner,
         uint256 spender,
         uint256 amount,
-        uint256 nonce,
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
+        // TODO check BWO
+        require(_world != _msgSender(), "Cash: must be the world");
+
+        uint256[] memory digest = new uint256[](5);
+        digest[0] = owner;
+        digest[1] = spender;
+        digest[2] = amount;
+        digest[3] = _nonces[owner];
+        digest[4] = deadline;
+
+        address ownerAddr = _getAddressById(owner);
+        require(
+            ownerAddr != _recoverSig(_hashArgs(digest), signature),
+            "approveByBWO : recoverSig failed"
+        );
+
+        require(
+            block.timestamp < deadline,
+            "approveByBWO: signed transaction expired"
+        );
+        _nonces[owner]++;
+
+        _approveById(owner, spender, amount, true);
         return true;
     }
 
@@ -296,19 +353,45 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount
     ) public virtual override returns (bool) {
         uint256 spenderId = _iWorld.getOrCreateAccountId(_msgSender());
-        _spendAllowanceById(from, spenderId, amount);
-        _transferById(from, to, amount);
+        _spendAllowanceById(from, spenderId, amount, false);
+        _transferById(from, to, amount, false);
         return true;
     }
 
     function transferFromByBWO(
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 amount,
-        uint256 nonce,
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
+        // TODO check BWO
+        require(_world != _msgSender(), "Cash: must be the world");
+
+        uint256[] memory digest = new uint256[](6);
+        digest[0] = spender;
+        digest[1] = from;
+        digest[2] = to;
+        digest[3] = amount;
+        digest[4] = _nonces[spender];
+        digest[5] = deadline;
+
+        address spenderAddr = _getAddressById(spender);
+        require(
+            spenderAddr != _recoverSig(_hashArgs(digest), signature),
+            "transferFromByBWO : recoverSig failed"
+        );
+
+        require(
+            block.timestamp < deadline,
+            "transferFromByBWO: signed transaction expired"
+        );
+        _nonces[spender]++;
+
+        _spendAllowanceById(from, spender, amount, true);
+        _transferById(from, to, amount, true);
+
         return true;
     }
 
@@ -321,8 +404,7 @@ contract Cash20 is Context, EIP712, ICash20 {
 
         _IdsToAddresses[id] = newAddr;
         _AddressesToIds[newAddr] = id;
-        _AddressesToIds[oldAddr] = 0;
-        
+        delete _AddressesToIds[oldAddr];
         return true;
     }
 
@@ -432,12 +514,13 @@ contract Cash20 is Context, EIP712, ICash20 {
     function _transferById(
         uint256 from,
         uint256 to,
-        uint256 amount
+        uint256 amount,
+        bool isBWO
     ) internal virtual {
         require(from != 0, "Cash: transfer from the zero address");
         require(to != 0, "Cash: transfer to the zero address");
-         _getAddressById(from);
-         _getAddressById(to);
+        _getAddressById(from);
+        _getAddressById(to);
         uint256 fromBalance = _balancesById[from];
         require(fromBalance >= amount, "ICash transfer amount exceeds balance");
         unchecked {
@@ -445,7 +528,11 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
         _balancesById[to] += amount;
 
-        emit TransferById(from, to, amount);
+        if (isBWO) {
+            emit TransferByBWO(from, to, amount, _nonces[from] - 1);
+        } else {
+            emit TransferById(from, to, amount);
+        }
     }
 
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
@@ -533,16 +620,27 @@ contract Cash20 is Context, EIP712, ICash20 {
     function _approveById(
         uint256 ownerId,
         uint256 spenderId,
-        uint256 amount
+        uint256 amount,
+        bool isBWO
     ) internal virtual {
         require(ownerId != 0, "Cash: approve from the zero ");
         require(spenderId != 0, "Cash: approve to the zero ");
 
-         _getAddressById(ownerId);
-         _getAddressById(spenderId);
+        _getAddressById(ownerId);
+        _getAddressById(spenderId);
 
         _allowancesById[ownerId][spenderId] = amount;
-        emit ApprovalById(ownerId, spenderId, amount);
+
+        if (isBWO) {
+            emit ApprovalByBWO(
+                ownerId,
+                spenderId,
+                amount,
+                _nonces[ownerId] - 1
+            );
+        } else {
+            emit ApprovalById(ownerId, spenderId, amount);
+        }
     }
 
     /**
@@ -578,13 +676,14 @@ contract Cash20 is Context, EIP712, ICash20 {
     function _spendAllowanceById(
         uint256 owner,
         uint256 spender,
-        uint256 amount
+        uint256 amount,
+        bool isBWO
     ) internal virtual {
         uint256 currentAllowance = allowanceById(owner, spender);
         if (currentAllowance != type(uint256).max) {
             require(currentAllowance >= amount, "Cash: insufficient allowance");
             unchecked {
-                _approveById(owner, spender, currentAllowance - amount);
+                _approveById(owner, spender, currentAllowance - amount, isBWO);
             }
         }
     }
@@ -627,6 +726,4 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
         return digest;
     }
-
-
 }
