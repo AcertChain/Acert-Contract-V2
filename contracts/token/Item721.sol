@@ -142,7 +142,6 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         return owner;
     }
 
-
     function getNonce(uint256 id)
         public
         view
@@ -234,7 +233,47 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
             "Item721: approve caller is not owner nor approved for all"
         );
 
-        _approveById(to, tokenId);
+        _approveById(to, tokenId, false);
+    }
+
+    function approveByBWO(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory signature
+    ) public virtual override {
+        // todo: check BWO
+        require(_world != _msgSender(), "Item: must be the world");
+
+        uint256[] memory digest = new uint256[](5);
+        digest[0] = from;
+        digest[1] = to;
+        digest[2] = tokenId;
+        digest[3] = _nonces[from];
+        digest[4] = deadline;
+
+        address fromAddr = _getAddressById(from);
+        require(
+            fromAddr != _recoverSig(_hashArgs(digest), signature),
+            "approveByBWO : recoverSig failed"
+        );
+
+        require(
+            block.timestamp < deadline,
+            "approveByBWO: signed transaction expired"
+        );
+        _nonces[from]++;
+
+        uint256 owner = Item721.ownerOfById(tokenId);
+        require(to != owner, "Item721: approval to current owner");
+
+        require(
+            from == owner || isApprovedForAllById(owner, from),
+            "Item721: approve caller is not owner nor approved for all"
+        );
+
+        _approveById(to, tokenId, true);
     }
 
     /**
@@ -285,7 +324,34 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         override
     {
         uint256 senderId = _getIdByAddress(_msgSender());
-        _setApprovalForAllById(senderId, operator, approved);
+        _setApprovalForAllById(senderId, operator, approved, false);
+    }
+
+    function setApprovalForAllByBWO(
+        uint256 sender,
+        uint256 operator,
+        bool approved,
+        uint256 deadline,
+        bytes memory signature
+    ) public virtual override {
+        // todo: check BWO
+        require(_world != _msgSender(), "Item: must be the world");
+        uint256[] memory digest = new uint256[](4);
+        digest[0] = sender;
+        digest[1] = operator;
+        digest[2] = _nonces[sender];
+        digest[3] = deadline;
+        address fromAddr = _getAddressById(sender);
+        require(
+            fromAddr != _recoverSig(_hashArgs(digest, approved), signature),
+            "approveByBWO : recoverSig failed"
+        );
+        require(
+            block.timestamp < deadline,
+            "approveByBWO: signed transaction expired"
+        );
+        _nonces[sender]++;
+        _setApprovalForAllById(sender, operator, approved, true);
     }
 
     /**
@@ -341,7 +407,46 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
             "Item721: transfer caller is not owner nor approved"
         );
 
-        _transferById(from, to, tokenId);
+        _transferById(from, to, tokenId, false);
+    }
+
+    function transferFromByBWO(
+        uint256 sender,
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory signature
+    ) public virtual override {
+        // todo: check BWO
+        require(_world != _msgSender(), "Item: must be the world");
+
+        uint256[] memory digest = new uint256[](6);
+        digest[0] = sender;
+        digest[1] = from;
+        digest[2] = to;
+        digest[3] = tokenId;
+        digest[4] = _nonces[from];
+        digest[5] = deadline;
+
+        address senderAddr = _getAddressById(sender);
+        require(
+            senderAddr != _recoverSig(_hashArgs(digest), signature),
+            "approveByBWO : recoverSig failed"
+        );
+
+        require(
+            block.timestamp < deadline,
+            "approveByBWO: signed transaction expired"
+        );
+        _nonces[from]++;
+
+        require(
+            _isApprovedOrOwner(senderAddr, tokenId),
+            "Item721: transfer caller is not owner nor approved"
+        );
+
+        _transferById(from, to, tokenId, true);
     }
 
     /**
@@ -353,6 +458,46 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         uint256 tokenId
     ) public virtual override {
         safeTransferFrom(from, to, tokenId, "");
+    }
+
+    function safeTransferFromById(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId
+    ) public virtual override {
+        safeTransferFromById(from, to, tokenId, "");
+    }
+
+    function safeTransferFromByBWO(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory signature
+    ) public virtual override {
+        // todo: check BWO
+        require(_world != _msgSender(), "Item: must be the world");
+
+        uint256[] memory digest = new uint256[](5);
+        digest[0] = from;
+        digest[1] = to;
+        digest[2] = tokenId;
+        digest[3] = _nonces[from];
+        digest[4] = deadline;
+
+        address fromAddr = _getAddressById(from);
+        require(
+            fromAddr != _recoverSig(_hashArgs(digest), signature),
+            "approveByBWO : recoverSig failed"
+        );
+
+        require(
+            block.timestamp < deadline,
+            "approveByBWO: signed transaction expired"
+        );
+        _nonces[from]++;
+
+        safeTransferFromById(from, to, tokenId, "");
     }
 
     /**
@@ -374,14 +519,6 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
     function safeTransferFromById(
         uint256 from,
         uint256 to,
-        uint256 tokenId
-    ) public virtual override {
-        safeTransferFromById(from, to, tokenId, "");
-    }
-
-    function safeTransferFromById(
-        uint256 from,
-        uint256 to,
         uint256 tokenId,
         bytes memory _data
     ) public virtual override {
@@ -390,6 +527,45 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
             "Item721: transfer caller is not owner nor approved"
         );
         _safeTransferById(from, to, tokenId, _data);
+    }
+
+    function safeTransferFromByBWO(
+        uint256 sender,
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes calldata data,
+        bytes memory signature
+    ) public virtual override {
+        // todo: check BWO
+        require(_world != _msgSender(), "Item: must be the world");
+
+        uint256[] memory digest = new uint256[](6);
+        digest[0] = sender;
+        digest[1] = from;
+        digest[2] = to;
+        digest[3] = tokenId;
+        digest[4] = _nonces[from];
+        digest[5] = deadline;
+
+        address senderAddr = _getAddressById(sender);
+        require(
+            senderAddr != _recoverSig(_hashArgs(digest, data), signature),
+            "approveByBWO : recoverSig failed"
+        );
+
+        require(
+            block.timestamp < deadline,
+            "approveByBWO: signed transaction expired"
+        );
+        _nonces[from]++;
+
+        require(
+            _isApprovedOrOwner(senderAddr, tokenId),
+            "Item721: transfer caller is not owner nor approved"
+        );
+        _safeTransferById(from, to, tokenId, data);
     }
 
     function changeAccountAddress(
@@ -442,7 +618,7 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         uint256 tokenId,
         bytes memory _data
     ) internal virtual {
-        _transferById(from, to, tokenId);
+        _transferById(from, to, tokenId, false);
 
         address fromAddr = _getAddressById(from);
         address toAddr = _getAddressById(to);
@@ -619,7 +795,8 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
     function _transferById(
         uint256 from,
         uint256 to,
-        uint256 tokenId
+        uint256 tokenId,
+        bool isBWO
     ) internal virtual {
         require(
             Item721.ownerOfById(tokenId) == from,
@@ -634,7 +811,11 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         _balancesById[to] += 1;
         _ownersById[tokenId] = to;
 
-        emit TransferById(from, to, tokenId);
+        if (isBWO) {
+            emit TransferByBWO(from, to, tokenId);
+        } else {
+            emit TransferById(from, to, tokenId);
+        }
     }
 
     /**
@@ -648,9 +829,17 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         emit Approval(Item721.ownerOf(tokenId), to, tokenId);
     }
 
-    function _approveById(uint256 to, uint256 tokenId) internal virtual {
+    function _approveById(
+        uint256 to,
+        uint256 tokenId,
+        bool isBWO
+    ) internal virtual {
         _tokenApprovalsById[tokenId] = to;
-        emit ApprovalById(Item721.ownerOfById(tokenId), to, tokenId);
+        if (isBWO) {
+            emit ApprovalByBWO(Item721.ownerOfById(tokenId), to, tokenId);
+        } else {
+            emit ApprovalById(Item721.ownerOfById(tokenId), to, tokenId);
+        }
     }
 
     /**
@@ -673,11 +862,17 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
     function _setApprovalForAllById(
         uint256 owner,
         uint256 operator,
-        bool approved
+        bool approved,
+        bool isBWO
     ) internal virtual {
         require(owner != operator, "Item721: approve to caller");
         _operatorApprovalsById[owner][operator] = approved;
-        emit ApprovalForAllById(owner, operator, approved);
+
+        if (isBWO) {
+            emit ApprovalForAllByBWO(owner, operator, approved);
+        } else {
+            emit ApprovalForAllById(owner, operator, approved);
+        }
     }
 
     /**
@@ -757,6 +952,40 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
     {
         bytes32 digest = _hashTypedDataV4(
             keccak256(abi.encode(keccak256("MyFunction(uint256[] args)"), args))
+        );
+        return digest;
+    }
+
+    function _hashArgs(uint256[] memory args, bytes memory data)
+        internal
+        view
+        returns (bytes32 hash)
+    {
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256("MyFunction(uint256[] args,bytes data)"),
+                    args,
+                    data
+                )
+            )
+        );
+        return digest;
+    }
+
+    function _hashArgs(uint256[] memory args, bool flag)
+        internal
+        view
+        returns (bytes32 hash)
+    {
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256("MyFunction(uint256[] args,bool flag)"),
+                    args,
+                    flag
+                )
+            )
         );
         return digest;
     }

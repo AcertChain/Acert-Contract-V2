@@ -13,6 +13,12 @@ interface IItem721 is IERC721Metadata {
         uint256 indexed tokenId
     );
 
+    event TransferByBWO(
+        uint256 indexed from,
+        uint256 indexed to,
+        uint256 indexed tokenId
+    );
+
     /**
      * @dev Emitted when `owner` enables `approved` to manage the `tokenId` token.
      */
@@ -22,10 +28,22 @@ interface IItem721 is IERC721Metadata {
         uint256 indexed tokenId
     );
 
+    event ApprovalByBWO(
+        uint256 indexed owner,
+        uint256 indexed approved,
+        uint256 indexed tokenId
+    );
+
     /**
      * @dev Emitted when `owner` enables or disables (`approved`) `operator` to manage all of its assets.
      */
     event ApprovalForAllById(
+        uint256 indexed owner,
+        uint256 indexed operator,
+        bool approved
+    );
+
+    event ApprovalForAllByBWO(
         uint256 indexed owner,
         uint256 indexed operator,
         bool approved
@@ -68,6 +86,16 @@ interface IItem721 is IERC721Metadata {
         bytes calldata data
     ) external;
 
+    function safeTransferFromByBWO(
+        uint256 sender,
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes calldata data,
+        bytes memory signature
+    ) external;
+
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
      * are aware of the ERC721 protocol to prevent tokens from being forever locked.
@@ -86,6 +114,14 @@ interface IItem721 is IERC721Metadata {
         uint256 from,
         uint256 to,
         uint256 tokenId
+    ) external;
+
+    function safeTransferFromByBWO(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory signature
     ) external;
 
     /**
@@ -108,6 +144,15 @@ interface IItem721 is IERC721Metadata {
         uint256 tokenId
     ) external;
 
+    function transferFromByBWO(
+        uint256 sender,
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
+
     /**
      * @dev Gives permission to `to` to transfer `tokenId` token to another account.
      * The approval is cleared when the token is transferred.
@@ -123,6 +168,14 @@ interface IItem721 is IERC721Metadata {
      */
     function approveById(uint256 to, uint256 tokenId) external;
 
+    function approveByBWO(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
+
     /**
      * @dev Approve or remove `operator` as an operator for the caller.
      * Operators can call {transferFrom} or {safeTransferFrom} for any token owned by the caller.
@@ -134,6 +187,14 @@ interface IItem721 is IERC721Metadata {
      * Emits an {ApprovalForAll} event.
      */
     function setApprovalForAllById(uint256 operator, bool _approved) external;
+
+    function setApprovalForAllByBWO(
+        uint256 sender,
+        uint256 operator,
+        bool _approved,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
 
     /**
      * @dev Returns the account approved for `tokenId` token.
