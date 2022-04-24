@@ -2,8 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "./ICash20Bwo.sol";
+import "./IAsset.sol";
 
-interface ICash20 is IERC20Metadata {
+interface ICash20 is IERC20Metadata, ICash20Bwo, IAsset {
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
@@ -11,13 +13,6 @@ interface ICash20 is IERC20Metadata {
      * Note that `value` may be zero.
      */
     event TransferById(uint256 indexed from, uint256 indexed to, uint256 value);
-
-    event TransferByBWO(
-        uint256 indexed from,
-        uint256 indexed to,
-        uint256 value,
-        uint256 nonce
-    );
 
     /**
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
@@ -27,13 +22,6 @@ interface ICash20 is IERC20Metadata {
         uint256 indexed owner,
         uint256 indexed spender,
         uint256 value
-    );
-
-    event ApprovalByBWO(
-        uint256 indexed owner,
-        uint256 indexed spender,
-        uint256 value,
-        uint256 nonce
     );
 
     /**
@@ -49,14 +37,6 @@ interface ICash20 is IERC20Metadata {
      * Emits a {TransferById} event.
      */
     function transferById(uint256 to, uint256 amount) external returns (bool);
-
-    function transferByBWO(
-        uint256 from,
-        uint256 to,
-        uint256 amount,
-        uint256 deadline,
-        bytes memory signature
-    ) external returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -81,14 +61,6 @@ interface ICash20 is IERC20Metadata {
         external
         returns (bool);
 
-    function approveByBWO(
-        uint256 owner,
-        uint256 spender,
-        uint256 amount,
-        uint256 deadline,
-        bytes memory signature
-    ) external returns (bool);
-
     /**
      * @dev Moves `amount` tokens from `from id` to `to id` using the
      * allowance mechanism. `amount` is then deducted from the caller's
@@ -103,26 +75,4 @@ interface ICash20 is IERC20Metadata {
         uint256 to,
         uint256 amount
     ) external returns (bool);
-
-    function transferFromByBWO(
-        uint256 spender,
-        uint256 from,
-        uint256 to,
-        uint256 amount,
-        uint256 deadline,
-        bytes memory signature
-    ) external returns (bool);
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function worldAddress() external view returns (address);
-
-    function changeAccountAddress(
-        uint256 id,
-        address oldAddr,
-        address newAddr
-    ) external returns (bool);
-
-    function getNonce(uint256 id) external view returns (uint256);
 }
