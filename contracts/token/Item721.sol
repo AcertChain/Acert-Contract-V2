@@ -4,11 +4,10 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IItem721.sol";
-import "../interfaces/IWorld.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -73,6 +72,7 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         return
             interfaceId == type(IERC721).interfaceId ||
             interfaceId == type(IERC721Metadata).interfaceId ||
+            interfaceId == type(IItem721).interfaceId||
             super.supportsInterface(interfaceId);
     }
 
