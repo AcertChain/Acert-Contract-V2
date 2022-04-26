@@ -20,10 +20,7 @@ contract World is Context, Ownable, ERC165, IWorld {
     string private _symbol;
 
     // constructor
-    constructor(
-        string memory name_,
-        string memory symbol_
-    ) {
+    constructor(string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
         _owner = _msgSender();
@@ -550,21 +547,21 @@ contract World is Context, Ownable, ERC165, IWorld {
     // event 创建Account
     event CreateAccount(uint256 _id, address _address);
 
-    // event _worldOwner修改Account _address
-    event ChangeAccount(
-        address _worldOwner,
-        uint256 _id,
-        address _executor,
-        address _newAddress
-    );
+    // event 修改Account _address
+    event ChangeAccount(uint256 _id, address _executor, address _newAddress);
 
     // struct Account
     struct Account {
-        uint256 _id;
         uint8 _level;
         bool _isTrustAdmin;
+        bool _isExist;
+        uint256 _id;
         address _address;
     }
+
+    mapping(uint256 => mapping(address => bool)) private _trustContracts;
+    mapping(uint256 => Account) private _accountsById;
+    mapping(address => Account) private _accountsByAddress;
 
     // struct Asset
     struct Asset {
@@ -578,8 +575,11 @@ contract World is Context, Ownable, ERC165, IWorld {
     // avatar最大数量
     uint256 public constant MAX_AVATAR_INDEX = 100000;
 
+    // account 账户Id
+    uint256 public accountId;
+
     // 全局资产
-    mapping(address => Asset) public _assets;
+    mapping(address => Asset) private _assets;
 
     // func 注册cash
     function registerCash(
@@ -644,20 +644,84 @@ contract World is Context, Ownable, ERC165, IWorld {
     }
 
     // func 创建Account
-    function createAccount(address _address) public {}
+    function createAccount(address _address) public {
+        require(
+            _address != address(0) &&
+                _accountsByAddress[_address]._isExist == false,
+            "address is invalid"
+        );
 
-    // func 修改Account _address
-    function changeAccount(uint256 _id, address _newAddress) public onlyOwner {}
+        uint256 id = accountId++;
+
+        Account memory account = Account(
+            0,
+            false,
+            true,
+            id,
+            _address
+        );
+
+        _accountsById[id] = account;
+        _accountsByAddress[_address] = account;
+        emit CreateAccount(id, _address);
+    }
+
+    // func world修改Account _address
+    function changeAccountByWorld(uint256 _id, address _newAddress) public onlyOwner {
+        require(
+            _id != 0 &&
+                _accountsById[_id]._isExist == true &&
+                _accountsByAddress[_newAddress]._isExist == false,
+            "account is invalid"
+        );
+
+        Account memory account = _accountsById[_id];
+        delete _accountsByAddress[account._address];
+        account._address = _newAddress;
+        _accountsById[_id] = account;
+        _accountsByAddress[_newAddress] = account;
+        
+        // todo 修改assets
+
+        emit ChangeAccount(_id, _msgSender(), _newAddress);
+    }
+
+    // func user修改Account _address
+    function changeAccountByUser(uint256 _id, address _newAddress) public {
+        require(
+            _id != 0 &&
+                _accountsById[_id]._isExist == true &&
+                _accountsByAddress[_newAddress]._isExist == false&&
+                _accountsById[_id]._address == _msgSender(),
+            "account is invalid"
+        );
+
+        Account memory account = _accountsById[_id];
+        delete _accountsByAddress[account._address];
+        account._address = _newAddress;
+        _accountsById[_id] = account;
+        _accountsByAddress[_newAddress] = account;
+
+        // todo 修改assets
+
+        emit ChangeAccount(_id, _msgSender(), _newAddress);
+    }
 
     // func 获取Account
-    function getAccount(uint256 _id) public view returns (Account memory) {}
+    function getAccount(uint256 _id) public view returns (Account memory) {
+        require(_id != 0 && _accountsById[_id]._isExist == true, "account is invalid");
+        return _accountsById[_id];
+    }
 
     // func 通过_address 获取Account
     function getAccountByAddress(address _address)
         public
         view
         returns (Account memory)
-    {}
+    {
+        require(_address != address(0) && _accountsByAddress[_address]._isExist == true, "account is invalid");
+        return _accountsByAddress[_address];
+    }
 
     // func 判断Holder是否为Avatar
     function isAvatar(uint256 _id) public view returns (bool isAvatar) {}
@@ -666,5 +730,8 @@ contract World is Context, Ownable, ERC165, IWorld {
     function holderExist(uint256 _id) public view returns (bool exist) {}
 
     // func 获取Asset
-    function getAsset(address _contract) public view returns (Asset memory) {}
+    function getAsset(address _contract) public view returns (Asset memory) {
+        require(_contract != address(0) && _assets[_contract]._isExist == true, "asset is invalid");
+        return _assets[_contract];
+    }
 }
