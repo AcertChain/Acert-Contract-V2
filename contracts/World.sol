@@ -39,6 +39,14 @@ contract World is Context, Ownable, ERC165, IWorld {
     event CreateAccount(uint256 _id, address _address);
     // event 修改Account _address
     event ChangeAccount(uint256 _id, address _executor, address _newAddress);
+    // event add operator
+    event AddOperator(address _operator);
+    // event remove operator
+    event RemoveOperator(address _operator);
+    // event add contract
+    event AddContract(address _contract);
+    // event remove contract
+    event RemoveContract(address _contract);
 
     //  name
     string private _name;
@@ -54,7 +62,7 @@ contract World is Context, Ownable, ERC165, IWorld {
         string memory name_,
         string memory symbol_,
         uint256 supply_
-    ) public {
+    ) {
         _name = name_;
         _symbol = symbol_;
         _supply = supply_;
@@ -78,6 +86,12 @@ contract World is Context, Ownable, ERC165, IWorld {
         address _address;
     }
 
+    // Mapping from address to operator
+    mapping(address => bool) private _isOperatorByAddress;
+    
+    // Mapping from address to trust contract
+    mapping(address => bool) private _trustContracts;
+
     // Mapping from address to Asset
     mapping(address => Asset) private _assets;
 
@@ -99,8 +113,7 @@ contract World is Context, Ownable, ERC165, IWorld {
     // Mapping from owner to operator approvals
     mapping(uint256 => mapping(uint256 => bool)) private _operatorApprovalsById;
 
-    // Mapping from owner ID to contract address
-    mapping(uint256 => mapping(address => bool)) private _trustContracts;
+    
 
     function supportsInterface(bytes4 interfaceId)
         public
@@ -428,6 +441,8 @@ contract World is Context, Ownable, ERC165, IWorld {
             getApprovedById(tokenId) == spender);
     }
 
+    function mint() public onlyOwner {}
+
     function _safeMint(address to, uint256 tokenId) internal virtual {
         _safeMint(to, tokenId, "");
     }
@@ -448,7 +463,7 @@ contract World is Context, Ownable, ERC165, IWorld {
         require(to != address(0), "World: mint to the zero address");
         require(!_exists(tokenId), "World: token already minted");
         uint256 toId = _addressesToIds[to];
-        
+
         _balancesById[toId] += 1;
         _ownersById[tokenId] = toId;
         emit Transfer(address(0), to, tokenId);
@@ -550,9 +565,7 @@ contract World is Context, Ownable, ERC165, IWorld {
                 return retval == IERC721Receiver.onERC721Received.selector;
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
-                    revert(
-                        "World: transfer to non ERC721Receiver implementer"
-                    );
+                    revert("World: transfer to non ERC721Receiver implementer");
                 } else {
                     assembly {
                         revert(add(32, reason), mload(reason))
@@ -569,7 +582,23 @@ contract World is Context, Ownable, ERC165, IWorld {
         virtual
         override
         returns (uint256 id)
-    {}
+    {
+        require(
+            _address != address(0),
+            "World: getOrCreateAccountId with zero address"
+        );
+        if (_addressesToIds[_address] == 0) {
+            // create account
+            accountId++;
+            id = accountId;
+            Account memory account = Account(0, false, true, id, _address);
+            _accountsById[id] = account;
+            _addressesToIds[_address] = id;
+            emit CreateAccount(id, _address);
+        } else {
+            id = _addressesToIds[_address];
+        }
+    }
 
     function getAddressById(uint256 _id)
         public
@@ -646,8 +675,8 @@ contract World is Context, Ownable, ERC165, IWorld {
             _address != address(0) && _addressesToIds[_address] != 0,
             "address is invalid"
         );
-
-        uint256 id = accountId++;
+        accountId++;
+        uint256 id = accountId;
         Account memory account = Account(0, false, true, id, _address);
         _accountsById[id] = account;
         _addressesToIds[_address] = id;
@@ -694,6 +723,43 @@ contract World is Context, Ownable, ERC165, IWorld {
 
         // todo 修改assets
         emit ChangeAccount(_id, _msgSender(), _newAddress);
+    }
+
+    // 添加operator
+    function addOperator(address _operator) public onlyOwner {
+        require(_operator != address(0), "operator is invalid");
+        _isOperatorByAddress[_operator] = true;
+        emit AddOperator(_operator);
+    }
+
+    // 删除operator
+    function removeOperator(address _operator) public onlyOwner {
+        require(_operator != address(0), "operator is invalid");
+        _isOperatorByAddress[_operator] = false;
+        emit RemoveOperator(_operator);
+    }
+
+    // is operator
+    function isOperator(address _operator) public view returns (bool) {
+        return _isOperatorByAddress[_operator];
+    }
+
+    // 添加conttract
+    function addContract(address _contract) public onlyOwner {
+        require(_contract != address(0), "contract is invalid");
+        _trustContracts[_contract] = true;
+        emit AddContract(_contract);
+    }
+    // 删除contract
+    function removeContract(address _contract) public onlyOwner {
+        require(_contract != address(0), "contract is invalid");
+        _trustContracts[_contract] = false;
+        emit RemoveContract(_contract);
+    }
+
+    // is contract
+    function isContract(address _contract) public view returns (bool) {
+        return _trustContracts[_contract];
     }
 
     // func 获取Account
