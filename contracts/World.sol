@@ -45,9 +45,9 @@ contract World is Context, Ownable, ERC165, IWorld {
     // event remove operator
     event RemoveOperator(address _operator);
     // event add contract
-    event AddContract(address _contract);
+    event AddSafeContract(address _contract);
     // event remove contract
-    event RemoveContract(address _contract);
+    event RemoveSafeContract(address _contract);
 
     //  name
     string private _name;
@@ -98,7 +98,11 @@ contract World is Context, Ownable, ERC165, IWorld {
     mapping(address => bool) private _isOperatorByAddress;
 
     // Mapping from address to trust contract
-    mapping(address => bool) private _trustContracts;
+    mapping(address => bool) private _safeContracts;
+
+    // Mapping from account Id to contract
+    mapping(uint256 => mapping(address => bool))
+        private _isTrustContractByAccountId;
 
     // Mapping from address to Asset
     mapping(address => Asset) private _assets;
@@ -829,20 +833,20 @@ contract World is Context, Ownable, ERC165, IWorld {
     // 添加conttract
     function addContract(address _contract) public onlyOwner {
         require(_contract != address(0), "contract is invalid");
-        _trustContracts[_contract] = true;
-        emit AddContract(_contract);
+        _safeContracts[_contract] = true;
+        emit AddSafeContract(_contract);
     }
 
     // 删除contract
     function removeContract(address _contract) public onlyOwner {
         require(_contract != address(0), "contract is invalid");
-        _trustContracts[_contract] = false;
-        emit RemoveContract(_contract);
+        _safeContracts[_contract] = false;
+        emit RemoveSafeContract(_contract);
     }
 
     // is contract
     function isContract(address _contract) public view returns (bool) {
-        return _trustContracts[_contract];
+        return _safeContracts[_contract];
     }
 
     // func 获取Account
@@ -874,5 +878,28 @@ contract World is Context, Ownable, ERC165, IWorld {
             "asset is invalid"
         );
         return _assets[_contract];
+    }
+
+    function isTrust(address _contract, uint256 _id)
+        public
+        view
+        virtual
+        override
+        returns (bool _isTrust)
+    {
+        require(
+            _safeContracts[_contract] == true,
+            "contract is not safe contract"
+        );
+
+        if (_accountsById[_id]._isTrustWorld == true) {
+            return true;
+        }
+        
+        require(
+            _isTrustContractByAccountId[_id][_contract] == true,
+            "contract is not account trust contract"
+        );
+        return true;
     }
 }

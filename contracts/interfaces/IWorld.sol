@@ -70,4 +70,9 @@ interface IWorld is IERC721Metadata {
         external
         view
         returns (address _address);
+
+    function isTrust(address _contract, uint256 _id)
+        external
+        view
+        returns (bool _isTrust);
 }

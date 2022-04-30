@@ -22,6 +22,8 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
     string private _symbol;
     // world addr
     address private _world;
+    // owner addr
+    address private _owner;
 
     IWorld _iWorld;
 
@@ -56,6 +58,7 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         _name = name_;
         _symbol = symbol_;
         _world = world_;
+        _owner = _msgSender();
         _iWorld = IWorld(_world);
     }
 
@@ -72,7 +75,7 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         return
             interfaceId == type(IERC721).interfaceId ||
             interfaceId == type(IERC721Metadata).interfaceId ||
-            interfaceId == type(IItem721).interfaceId||
+            interfaceId == type(IItem721).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -388,6 +391,11 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         uint256 tokenId
     ) public virtual override {
         //solhint-disable-next-line max-line-length
+        uint256 fromId = _getIdByAddress(from);
+        if (_isTrust(_msgSender(), fromId)) {
+            _transfer(from, to, tokenId);
+        }
+
         require(
             _isApprovedOrOwner(_msgSender(), tokenId),
             "Item721: transfer caller is not owner nor approved"
@@ -402,6 +410,9 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         uint256 tokenId
     ) public virtual override {
         //solhint-disable-next-line max-line-length
+        if (_isTrust(_msgSender(), from)) {
+            _transferById(from, to, tokenId, false);
+        }
         require(
             _isApprovedOrOwner(_msgSender(), tokenId),
             "Item721: transfer caller is not owner nor approved"
@@ -568,10 +579,12 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         _safeTransferById(from, to, tokenId, data);
     }
 
-    function changeAccountAddress(
-        uint256 id,
-        address newAddr
-    ) public virtual override returns (bool) {
+    function changeAccountAddress(uint256 id, address newAddr)
+        public
+        virtual
+        override
+        returns (bool)
+    {
         require(_world != _msgSender(), "Cash: must be the world");
         address oldAddr = _IdsToAddresses[id];
         _IdsToAddresses[id] = newAddr;
@@ -709,6 +722,11 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         );
     }
 
+    function mint(address to, uint256 tokenId) public {
+        require(_owner == _msgSender(), "Item721: must be owner to mint");
+        _mint(to, tokenId);
+    }
+
     /**
      * @dev Mints `tokenId` and transfers it to `to`.
      *
@@ -731,6 +749,11 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
         _ownersById[tokenId] = toId;
 
         emit Transfer(address(0), to, tokenId);
+    }
+
+    function burn(uint256 tokenId) public {
+        require(_owner == _msgSender(), "Item721: must be owner to burn");
+        _burn(tokenId);
     }
 
     /**
@@ -934,6 +957,14 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
             _IdsToAddresses[id] = addr;
         }
         return _IdsToAddresses[id];
+    }
+
+    function _isTrust(address _contract, uint256 _id)
+        internal
+        view
+        returns (bool)
+    {
+        return _iWorld.isTrust(_contract, _id);
     }
 
     function _recoverSig(bytes32 digest, bytes memory signature)

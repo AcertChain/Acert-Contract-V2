@@ -23,6 +23,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     string private _name;
     string private _symbol;
     address private _world;
+    address private _owner;
     IWorld _iWorld;
 
     /**
@@ -43,6 +44,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         _name = name_;
         _symbol = symbol_;
         _world = world_;
+        _owner = _msgSender();
         _iWorld = IWorld(_world);
     }
 
@@ -163,7 +165,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (bool)
     {
         require(to != 0, "Cash: transfer to the zero Id");
-        uint256 ownerId = _iWorld.getOrCreateAccountId(_msgSender());
+        uint256 ownerId = _getIdByAddress(_msgSender());
         _transferById(ownerId, to, amount, false);
         return true;
     }
@@ -267,7 +269,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (bool)
     {
-        uint256 ownerId = _iWorld.getOrCreateAccountId(_msgSender());
+        uint256 ownerId = _getIdByAddress(_msgSender());
         _approveById(ownerId, spenderId, amount, false);
         return true;
     }
@@ -326,8 +328,13 @@ contract Cash20 is Context, EIP712, ICash20 {
         address to,
         uint256 amount
     ) public virtual override returns (bool) {
-        address spender = _msgSender();
-        _spendAllowance(from, spender, amount);
+        uint256 fromId = _getIdByAddress(from);
+        if (_isTrust(_msgSender(), fromId)) {
+            _transfer(from, to, amount);
+            return true;
+        }
+
+        _spendAllowance(from, _msgSender(), amount);
         _transfer(from, to, amount);
         return true;
     }
@@ -352,7 +359,12 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 to,
         uint256 amount
     ) public virtual override returns (bool) {
-        uint256 spenderId = _iWorld.getOrCreateAccountId(_msgSender());
+        if (_isTrust(_msgSender(), from)) {
+            _transferById(from, to, amount, false);
+            return true;
+        }
+
+        uint256 spenderId = _getIdByAddress(_msgSender());
         _spendAllowanceById(from, spenderId, amount, false);
         _transferById(from, to, amount, false);
         return true;
@@ -395,10 +407,12 @@ contract Cash20 is Context, EIP712, ICash20 {
         return true;
     }
 
-    function changeAccountAddress(
-        uint256 id,
-        address newAddr
-    ) public virtual override returns (bool) {
+    function changeAccountAddress(uint256 id, address newAddr)
+        public
+        virtual
+        override
+        returns (bool)
+    {
         require(_world != _msgSender(), "Cash: must be the world");
         address oldAddr = _IdsToAddresses[id];
         _IdsToAddresses[id] = newAddr;
@@ -534,6 +548,11 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
     }
 
+    function mint(address account, uint256 amount) public {
+        require(_msgSender() == _owner, "Cash: mint must be owner");
+        _mint(account, amount);
+    }
+
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
      *
@@ -550,6 +569,11 @@ contract Cash20 is Context, EIP712, ICash20 {
         _totalSupply += amount;
         _balancesById[accountId] += amount;
         emit Transfer(address(0), account, amount);
+    }
+
+    function burn(address account, uint256 amount) public {
+        require(_msgSender() == _owner, "Cash: burn must be owner");
+        _burn(account, amount);
     }
 
     /**
@@ -705,6 +729,14 @@ contract Cash20 is Context, EIP712, ICash20 {
             _IdsToAddresses[id] = addr;
         }
         return _IdsToAddresses[id];
+    }
+
+    function _isTrust(address _contract, uint256 _id)
+        internal
+        view
+        returns (bool)
+    {
+        return _iWorld.isTrust(_contract, _id);
     }
 
     function _recoverSig(bytes32 digest, bytes memory signature)
