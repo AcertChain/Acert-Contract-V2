@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "./common/Ownable.sol";
 import "./interfaces/IWorld.sol";
+import "./interfaces/IAsset.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -56,6 +57,8 @@ contract World is Context, Ownable, ERC165, IWorld {
     uint256 private _supply;
     // account Id
     uint256 private accountId;
+    // avatar Id
+    uint256 private avatarId;
 
     // constructor
     constructor(
@@ -86,9 +89,14 @@ contract World is Context, Ownable, ERC165, IWorld {
         address _address;
     }
 
+    struct Change {
+        address _asset;
+        uint256 _accountId;
+    }
+
     // Mapping from address to operator
     mapping(address => bool) private _isOperatorByAddress;
-    
+
     // Mapping from address to trust contract
     mapping(address => bool) private _trustContracts;
 
@@ -112,8 +120,6 @@ contract World is Context, Ownable, ERC165, IWorld {
 
     // Mapping from owner to operator approvals
     mapping(uint256 => mapping(uint256 => bool)) private _operatorApprovalsById;
-
-    
 
     function supportsInterface(bytes4 interfaceId)
         public
@@ -441,7 +447,19 @@ contract World is Context, Ownable, ERC165, IWorld {
             getApprovedById(tokenId) == spender);
     }
 
-    function mint() public onlyOwner {}
+    function mint(uint256 toId) public onlyOwner {
+        require(avatarId <= _supply, "World: minting is already finished");
+        avatarId++;
+        _mint(toId, avatarId);
+    }
+
+    function burn(uint256 tokenId) public {
+        require(
+            World.ownerOf(tokenId) == _msgSender(),
+            "World: burn token that does not exist"
+        );
+        _burn(tokenId);
+    }
 
     function _safeMint(address to, uint256 tokenId) internal virtual {
         _safeMint(to, tokenId, "");
@@ -452,21 +470,21 @@ contract World is Context, Ownable, ERC165, IWorld {
         uint256 tokenId,
         bytes memory _data
     ) internal virtual {
-        _mint(to, tokenId);
+        uint256 toId = _addressesToIds[to];
+        _mint(toId, tokenId);
         require(
             _checkOnERC721Received(address(0), to, tokenId, _data),
             "World: transfer to non ERC721Receiver implementer"
         );
     }
 
-    function _mint(address to, uint256 tokenId) internal virtual {
-        require(to != address(0), "World: mint to the zero address");
+    function _mint(uint256 toId, uint256 tokenId) internal virtual {
+        require(toId != 0, "World: mint to the zero ");
         require(!_exists(tokenId), "World: token already minted");
-        uint256 toId = _addressesToIds[to];
 
         _balancesById[toId] += 1;
         _ownersById[tokenId] = toId;
-        emit Transfer(address(0), to, tokenId);
+        emit Transfer(address(0), _accountsById[toId]._address, tokenId);
     }
 
     function _burn(uint256 tokenId) internal virtual {
@@ -618,7 +636,12 @@ contract World is Context, Ownable, ERC165, IWorld {
     ) public onlyOwner {
         require(
             _contract != address(0) && _assets[_contract]._isExist == false,
-            "contract is invalid"
+            "contract is invalid or is exist"
+        );
+
+        require(
+            _msgSender() == IAsset(_contract).worldAddress(),
+            "only world can register cash"
         );
 
         Asset memory asset = Asset(
@@ -640,7 +663,11 @@ contract World is Context, Ownable, ERC165, IWorld {
     ) public onlyOwner {
         require(
             _contract != address(0) && _assets[_contract]._isExist == false,
-            "contract is invalid"
+            "contract is invalid or is exist"
+        );
+        require(
+            _msgSender() == IAsset(_contract).worldAddress(),
+            "only world can register cash"
         );
         Asset memory asset = Asset(
             uint8(TypeOperation.ITEM),
@@ -684,10 +711,13 @@ contract World is Context, Ownable, ERC165, IWorld {
     }
 
     // func world修改Account _address
-    function changeAccountByWorld(uint256 _id, address _newAddress)
-        public
-        onlyOwner
-    {
+    function changeAccountByOperator(uint256 _id, address _newAddress) public {
+        require(
+            _isOperatorByAddress[_msgSender()] == true ||
+                owner() == _msgSender(),
+            "only operator or world can change account"
+        );
+
         require(
             _id != 0 &&
                 _accountsById[_id]._isExist == true &&
@@ -701,8 +731,41 @@ contract World is Context, Ownable, ERC165, IWorld {
         _accountsById[_id] = account;
         _addressesToIds[_newAddress] = _id;
 
-        // todo 修改assets
         emit ChangeAccount(_id, _msgSender(), _newAddress);
+    }
+
+    function changeAssertAccountAddressByOperator(Change[] calldata _changes)
+        public
+    {
+        require(
+            _isOperatorByAddress[_msgSender()] == true ||
+                owner() == _msgSender(),
+            "only operator or world can change account"
+        );
+
+        require(
+            _changes.length > 0,
+            "World: changeAccountAddress with empty addresses"
+        );
+
+        for (uint256 i = 0; i < _changes.length; i++) {
+            require(
+                _changes[i]._asset != address(0) &&
+                    _assets[_changes[i]._asset]._isExist == true,
+                "World: changeAccountAddress with zero address or asset is invalid"
+            );
+
+            require(
+                _changes[i]._accountId != 0 &&
+                    _accountsById[_changes[i]._accountId]._isExist == true,
+                "World: changeAccountAddress with zero accountId"
+            );
+
+            IAsset(_changes[i]._asset).changeAccountAddress(
+                _changes[i]._accountId,
+                _accountsById[_changes[i]._accountId]._address
+            );
+        }
     }
 
     // func user修改Account _address
@@ -721,8 +784,27 @@ contract World is Context, Ownable, ERC165, IWorld {
         _accountsById[_id] = account;
         _addressesToIds[_newAddress] = _id;
 
-        // todo 修改assets
         emit ChangeAccount(_id, _msgSender(), _newAddress);
+    }
+
+    function changeAssertAccountAddressByUser(address[] calldata _addresses)
+        public
+    {
+        require(
+            _addresses.length > 0,
+            "World: changeAccountAddress with empty addresses"
+        );
+
+        uint256 id = _addressesToIds[_msgSender()];
+
+        for (uint256 i = 0; i < _addresses.length; i++) {
+            require(
+                _addresses[i] != address(0),
+                "World: changeAccountAddress with zero address"
+            );
+
+            IAsset(_addresses[i]).changeAccountAddress(id, _msgSender());
+        }
     }
 
     // 添加operator
@@ -750,6 +832,7 @@ contract World is Context, Ownable, ERC165, IWorld {
         _trustContracts[_contract] = true;
         emit AddContract(_contract);
     }
+
     // 删除contract
     function removeContract(address _contract) public onlyOwner {
         require(_contract != address(0), "contract is invalid");

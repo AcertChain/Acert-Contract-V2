@@ -9,7 +9,6 @@ interface IAsset {
 
     function changeAccountAddress(
         uint256 id,
-        address oldAddr,
         address newAddr
     ) external returns (bool);
 

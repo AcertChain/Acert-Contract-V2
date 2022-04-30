@@ -570,11 +570,10 @@ contract Item721 is Context, EIP712, ERC165, IItem721 {
 
     function changeAccountAddress(
         uint256 id,
-        address oldAddr,
         address newAddr
     ) public virtual override returns (bool) {
         require(_world != _msgSender(), "Cash: must be the world");
-
+        address oldAddr = _IdsToAddresses[id];
         _IdsToAddresses[id] = newAddr;
         _AddressesToIds[newAddr] = id;
         delete _AddressesToIds[oldAddr];
