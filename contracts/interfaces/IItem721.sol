@@ -90,14 +90,6 @@ interface IItem721 is IERC721Metadata, IItem721Bwo, IAsset {
         uint256 tokenId
     ) external;
 
-    function safeTransferFromByBWO(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId,
-        uint256 deadline,
-        bytes memory signature
-    ) external;
-
     /**
      * @dev Transfers `tokenId` token from `from` to `to`.
      *

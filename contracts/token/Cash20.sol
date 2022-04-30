@@ -83,7 +83,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     /**
      * @dev See {ICash-balanceOf}.
      */
-    function worldAddress() external view returns (address) {
+    function worldAddress() external view virtual override returns (address) {
         return _world;
     }
 
@@ -145,8 +145,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (bool)
     {
-        address owner = _msgSender();
-        _transfer(owner, to, amount);
+        _transfer(_msgSender(), to, amount);
         return true;
     }
 
@@ -165,8 +164,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (bool)
     {
         require(to != 0, "Cash: transfer to the zero Id");
-        uint256 ownerId = _getIdByAddress(_msgSender());
-        _transferById(ownerId, to, amount, false);
+        _transferById(_getIdByAddress(_msgSender()), to, amount, false);
         return true;
     }
 
@@ -364,8 +362,7 @@ contract Cash20 is Context, EIP712, ICash20 {
             return true;
         }
 
-        uint256 spenderId = _getIdByAddress(_msgSender());
-        _spendAllowanceById(from, spenderId, amount, false);
+        _spendAllowanceById(from, _getIdByAddress(_msgSender()), amount, false);
         _transferById(from, to, amount, false);
         return true;
     }
