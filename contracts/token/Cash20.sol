@@ -498,7 +498,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 toId = _getIdByAddress(to);
 
         uint256 fromBalance = _balancesById[fromId];
-        require(fromBalance >= amount, "ICash transfer amount exceeds balance");
+        require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
         unchecked {
             _balancesById[fromId] = fromBalance - amount;
         }
@@ -532,7 +532,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         _getAddressById(from);
         _getAddressById(to);
         uint256 fromBalance = _balancesById[from];
-        require(fromBalance >= amount, "ICash transfer amount exceeds balance");
+        require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
         unchecked {
             _balancesById[from] = fromBalance - amount;
         }
@@ -616,7 +616,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount
     ) internal virtual {
         require(owner != address(0), "Cash: approve from the zero address");
-        require(spender != address(0), "ICash approve to the zero address");
+        require(spender != address(0), "Cash: approve to the zero address");
 
         uint256 ownerId = _getIdByAddress(owner);
         uint256 spenderId = _getIdByAddress(spender);

@@ -26,8 +26,6 @@ W15:empty data
 W16:asset is invalid or is not exist
 W17:account is invalid or is not exist
 W18:only owner
-W19:contract is not safe contract
-W20:account not trust contract
  */
 contract World is ERC165, IWorld {
     enum TypeOperation {
@@ -804,11 +802,15 @@ contract World is ERC165, IWorld {
         override
         returns (bool _isTrust)
     {
-        require(_safeContracts[_contract] == true, "W19");
+        if (_safeContracts[_contract] == false){
+            return false;
+        }
         if (_accountsById[_id]._isTrustWorld == true) {
             return true;
         }
-        require(_isTrustContractByAccountId[_id][_contract] == true, "W20");
+        if (_isTrustContractByAccountId[_id][_contract] == false){
+            return false;
+        }
         return true;
     }
 }
