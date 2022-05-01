@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "npx hardhat compile",
-    "test": "npx hardhat test"
+    "test": "npx hardhat test",
+    "clean":"npx hardhat clean"
   },
   "repository": {
     "type": "git",
