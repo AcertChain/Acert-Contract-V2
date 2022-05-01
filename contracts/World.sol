@@ -7,6 +7,28 @@ import "./interfaces/IAsset.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
+/**
+W01:not equal
+W02:approve caller is not owner nor approved for all
+W03:token is not exist
+W04:transfer caller is not owner nor approved
+W05:transfer to non ERC721Receiver implementer
+W06:zero id
+W07:token is exist
+W08:transfer from incorrect owner
+W09:zero address
+W10:contract is invalid or is exist
+W11:world is not equal
+W12:asset is invalid
+W13:address is invalid or is exist
+W14:only operator or world can exec
+W15:empty data
+W16:asset is invalid or is not exist
+W17:account is invalid or is not exist
+W18:only owner
+W19:contract is not safe contract
+W20:account not trust contract
+ */
 contract World is ERC165, IWorld {
     enum TypeOperation {
         CASH,
@@ -210,11 +232,11 @@ contract World is ERC165, IWorld {
         bool isById
     ) internal {
         uint256 owner = World.ownerOfById(tokenId);
-        require(toId != owner, "approval to current owner");
+        require(toId != owner, "W01");
         uint256 senderId = _addressesToIds[msg.sender];
         require(
             senderId == owner || isApprovedForAllById(owner, senderId),
-            "approve caller is not owner nor approved for all"
+            "W02"
         );
         _approve(toId, tokenId, isById);
     }
@@ -226,7 +248,7 @@ contract World is ERC165, IWorld {
         override
         returns (address)
     {
-        require(_exists(tokenId), "approved query for nonexistent token");
+        require(_exists(tokenId), "W03");
         return _accountsById[_tokenApprovalsById[tokenId]]._address;
     }
 
@@ -237,7 +259,7 @@ contract World is ERC165, IWorld {
         override
         returns (uint256)
     {
-        require(_exists(tokenId), "approved query for nonexistent token");
+        require(_exists(tokenId), "W03");
         return _tokenApprovalsById[tokenId];
     }
 
@@ -297,7 +319,7 @@ contract World is ERC165, IWorld {
     ) public virtual override {
         require(
             _isApprovedOrOwner(_addressesToIds[msg.sender], tokenId),
-            "transfer caller is not owner nor approved"
+            "W04"
         );
         _transfer(_addressesToIds[from], _addressesToIds[to], tokenId, false);
     }
@@ -309,7 +331,7 @@ contract World is ERC165, IWorld {
     ) public virtual override {
         require(
             _isApprovedOrOwner(_addressesToIds[msg.sender], tokenId),
-            "transfer caller is not owner nor approved"
+            "W04"
         );
         _transfer(from, to, tokenId, true);
     }
@@ -338,7 +360,7 @@ contract World is ERC165, IWorld {
     ) public virtual override {
         require(
             _isApprovedOrOwner(_addressesToIds[msg.sender], tokenId),
-            "transfer caller is not owner nor approved"
+            "W04"
         );
         _safeTransfer(
             _addressesToIds[from],
@@ -357,7 +379,7 @@ contract World is ERC165, IWorld {
     ) public virtual override {
         require(
             _isApprovedOrOwner(_addressesToIds[msg.sender], tokenId),
-            "transfer caller is not owner nor approved"
+            "W04"
         );
         _safeTransfer(from, to, tokenId, _data, true);
     }
@@ -377,7 +399,7 @@ contract World is ERC165, IWorld {
                 tokenId,
                 _data
             ),
-            "transfer to non ERC721Receiver implementer"
+            "W05"
         );
     }
 
@@ -391,7 +413,7 @@ contract World is ERC165, IWorld {
         virtual
         returns (bool)
     {
-        require(_exists(tokenId), "operator query for nonexistent token");
+        require(_exists(tokenId), "W03");
         uint256 owner = World.ownerOfById(tokenId);
         return (spender == owner ||
             isApprovedForAllById(owner, spender) ||
@@ -428,8 +450,8 @@ contract World is ERC165, IWorld {
     // }
 
     function _mint(uint256 toId, uint256 tokenId) internal virtual {
-        require(toId != 0, "mint to the zero ");
-        require(!_exists(tokenId), "token already minted");
+        require(toId != 0, "W06");
+        require(!_exists(tokenId), "W07");
 
         _balancesById[toId] += 1;
         _ownersById[tokenId] = toId;
@@ -452,10 +474,10 @@ contract World is ERC165, IWorld {
         bool isById
     ) internal virtual {
         require(
-            World.ownerOfById(tokenId) == from,
-            "transfer from incorrect owner"
+            _ownersById[tokenId] == from,
+            "W08"
         );
-        require(to != 0, "transfer to the zero");
+        require(to != 0, "W06");
         _approve(0, tokenId, true);
         _balancesById[from] -= 1;
         _balancesById[to] += 1;
@@ -494,7 +516,7 @@ contract World is ERC165, IWorld {
         bool approved,
         bool isById
     ) internal virtual {
-        require(owner != operator, "approve to caller");
+        require(owner != operator, "W01");
         _operatorApprovalsById[owner][operator] = approved;
         if (isById) {
             emit ApprovalForAllById(owner, operator, approved);
@@ -525,7 +547,7 @@ contract World is ERC165, IWorld {
                 return retval == IERC721Receiver.onERC721Received.selector;
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
-                    revert("transfer to non ERC721Receiver implementer");
+                    revert("W05");
                 } else {
                     assembly {
                         revert(add(32, reason), mload(reason))
@@ -543,7 +565,7 @@ contract World is ERC165, IWorld {
         override
         returns (uint256 id)
     {
-        require(_address != address(0), "address zero");
+        require(_address != address(0), "W09");
         if (_addressesToIds[_address] == 0) {
             // create account
             accountId++;
@@ -577,11 +599,11 @@ contract World is ERC165, IWorld {
         onlyOwner();
         require(
             _contract != address(0) && _assets[_contract]._isExist == false,
-            "contract is invalid or is exist"
+            "W10"
         );
         require(
             msg.sender == IAsset(_contract).worldAddress(),
-            "only world can register cash"
+            "W11"
         );
         Asset memory asset = Asset(
             uint8(_typeOperation),
@@ -601,7 +623,7 @@ contract World is ERC165, IWorld {
             _contract != address(0) &&
                 _assets[_contract]._isExist == true &&
                 _assets[_contract]._type == asset._type,
-            "asset is invalid"
+            "W12"
         );
         _assets[_contract] = asset;
         emit ChangeAsset(_contract, asset._name, asset._image);
@@ -611,7 +633,7 @@ contract World is ERC165, IWorld {
     function createAccount(address _address) public {
         require(
             _address != address(0) && _addressesToIds[_address] != 0,
-            "address is invalid"
+            "W13"
         );
         accountId++;
         uint256 id = accountId;
@@ -624,13 +646,13 @@ contract World is ERC165, IWorld {
     function changeAccountByOperator(uint256 _id, address _newAddress) public {
         require(
             _isOperatorByAddress[msg.sender] == true || _owner == msg.sender,
-            "only operator or world can change account"
+            "W14"
         );
         require(
             _id != 0 &&
                 _accountsById[_id]._isExist == true &&
                 _addressesToIds[_newAddress] != 0,
-            "account is invalid"
+            "W13"
         );
         Account memory account = _accountsById[_id];
         delete _addressesToIds[account._address];
@@ -645,24 +667,23 @@ contract World is ERC165, IWorld {
     {
         require(
             _isOperatorByAddress[msg.sender] == true || _owner == msg.sender,
-            "only operator or world can change account"
+            "W14"
         );
         require(
             _changes.length > 0,
-            "changeAccountAddress with empty addresses"
+            "W15"
         );
 
         for (uint256 i = 0; i < _changes.length; i++) {
             require(
                 _changes[i]._asset != address(0) &&
                     _assets[_changes[i]._asset]._isExist == true,
-                "changeAccountAddress with zero address or asset is invalid"
+                "W16"
             );
 
             require(
-                _changes[i]._accountId != 0 &&
                     _accountsById[_changes[i]._accountId]._isExist == true,
-                "changeAccountAddress with zero accountId"
+                "W17"
             );
 
             IAsset(_changes[i]._asset).changeAccountAddress(
@@ -679,7 +700,7 @@ contract World is ERC165, IWorld {
                 _accountsById[_id]._isExist == true &&
                 _addressesToIds[_newAddress] != 0 &&
                 _accountsById[_id]._address == msg.sender,
-            "account is invalid"
+            "W17"
         );
 
         Account memory account = _accountsById[_id];
@@ -694,10 +715,10 @@ contract World is ERC165, IWorld {
     function changeAssertAccountAddressByUser(address[] calldata _addresses)
         public
     {
-        require(_addresses.length > 0, "empty addresses");
+        require(_addresses.length > 0, "W15");
         uint256 id = _addressesToIds[msg.sender];
         for (uint256 i = 0; i < _addresses.length; i++) {
-            require(_addresses[i] != address(0), "zero address");
+            require(_addresses[i] != address(0), "W09");
             IAsset(_addresses[i]).changeAccountAddress(id, msg.sender);
         }
     }
@@ -705,7 +726,7 @@ contract World is ERC165, IWorld {
     // 添加operator
     function addOperator(address _operator) public {
         onlyOwner();
-        require(_operator != address(0), "operator is 0");
+        require(_operator != address(0), "W09");
         _isOperatorByAddress[_operator] = true;
         emit AddOperator(_operator);
     }
@@ -725,7 +746,7 @@ contract World is ERC165, IWorld {
     // 添加conttract
     function addContract(address _contract) public {
         onlyOwner();
-        require(_contract != address(0), "contract is invalid");
+        require(_contract != address(0), "W09");
         _safeContracts[_contract] = true;
         emit AddSafeContract(_contract);
     }
@@ -738,7 +759,7 @@ contract World is ERC165, IWorld {
     }
 
     function onlyOwner() internal view {
-        require(_owner == msg.sender, "only owner");
+        require(_owner == msg.sender, "W18");
     }
 
     function changeOwner(address newOwner) public {
@@ -780,14 +801,14 @@ contract World is ERC165, IWorld {
     {
         require(
             _safeContracts[_contract] == true,
-            "contract is not safe contract"
+            "W19"
         );
         if (_accountsById[_id]._isTrustWorld == true) {
             return true;
         }
         require(
             _isTrustContractByAccountId[_id][_contract] == true,
-            "contract is not account trust contract"
+            "W20"
         );
         return true;
     }
