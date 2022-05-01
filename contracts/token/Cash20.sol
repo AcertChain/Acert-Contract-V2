@@ -527,8 +527,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount,
         bool isBWO
     ) internal virtual {
-        require(from != 0, "Cash: transfer from the zero address");
-        require(to != 0, "Cash: transfer to the zero address");
+        require(from != 0, "Cash: transfer from the zero id");
+        require(to != 0, "Cash: transfer to the zero id");
         _getAddressById(from);
         _getAddressById(to);
         uint256 fromBalance = _balancesById[from];
@@ -643,8 +643,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount,
         bool isBWO
     ) internal virtual {
-        require(ownerId != 0, "Cash: approve from the zero ");
-        require(spenderId != 0, "Cash: approve to the zero ");
+        require(ownerId != 0, "Cash: approve from the zero Id");
+        require(spenderId != 0, "Cash: approve to the zero Id");
 
         _getAddressById(ownerId);
         _getAddressById(spenderId);

@@ -573,6 +573,10 @@ contract World is ERC165, IWorld {
         }
     }
 
+    function getAccountIdByAddress(address _address) public view returns (uint256) {
+        return _addressesToIds[_address];
+    }
+
     function getAddressById(uint256 _id)
         public
         view
@@ -802,13 +806,13 @@ contract World is ERC165, IWorld {
         override
         returns (bool _isTrust)
     {
-        if (_safeContracts[_contract] == false){
+        if (_safeContracts[_contract] == false) {
             return false;
         }
         if (_accountsById[_id]._isTrustWorld == true) {
             return true;
         }
-        if (_isTrustContractByAccountId[_id][_contract] == false){
+        if (_isTrustContractByAccountId[_id][_contract] == false) {
             return false;
         }
         return true;
