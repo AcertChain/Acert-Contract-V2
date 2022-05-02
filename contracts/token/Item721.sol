@@ -4,13 +4,30 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IItem721.sol";
+import "../interfaces/IAsset.sol";
+import "../interfaces/IItem721Bwo.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
+/**
+I01:must be the BWO
+I02:recoverSig failed
+I03:BWO call expired
+I04:approval to current owner
+I05:approve caller is not owner nor approved for all
+ */
+
 contract Item721 is EIP712, ERC165, IItem721 {
+    using Address for address;
+
+    enum TypeOperation {
+        ADDRESS,
+        ID,
+        BWO
+    }
     // Token name
     string private _name;
     // Token symbol
@@ -70,8 +87,22 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return
             interfaceId == type(IERC721).interfaceId ||
             interfaceId == type(IERC721Metadata).interfaceId ||
-            interfaceId == type(IItem721).interfaceId ||
+            // interfaceId == type(IItem721).interfaceId ||
+            // interfaceId == type(IItem721Bwo).interfaceId ||
+            // interfaceId == type(IAsset).interfaceId ||
             super.supportsInterface(interfaceId);
+    }
+
+    function safeMint(address to, uint256 tokenId) public {
+        _safeMint(to, tokenId);
+    }
+
+    function safeMint(
+        address to,
+        uint256 tokenId,
+        bytes memory _data
+    ) public {
+        _safeMint(to, tokenId, _data);
     }
 
     /**
@@ -84,7 +115,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (uint256)
     {
-        require(owner != address(0), "address zero");
+        require(owner != address(0), "Item: address zero is not a valid owner");
         return _balancesById[_AddressesToIds[owner]];
     }
 
@@ -98,7 +129,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (uint256)
     {
-        require(ownerId != 0, "id zero");
+        require(ownerId != 0, "Item: id zero is not a valid owner");
         return _balancesById[ownerId];
     }
 
@@ -113,7 +144,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         returns (address)
     {
         address owner = _IdsToAddresses[_ownersById[tokenId]];
-        require(owner != address(0), "owner zero");
+        require(owner != address(0), "Item: owner query for nonexistent token");
         return owner;
     }
 
@@ -128,7 +159,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         returns (uint256)
     {
         uint256 owner = _ownersById[tokenId];
-        require(owner != 0, "owner zero");
+        require(owner != 0, "Item: owner query for nonexistent token");
         return owner;
     }
 
@@ -176,13 +207,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
      */
     function approve(address to, uint256 tokenId) public virtual override {
         address owner = Item721.ownerOf(tokenId);
-        require(to != owner, "approval to current owner");
+        require(to != owner, "Item: approval to current owner");
         require(
             msg.sender == owner || isApprovedForAll(owner, msg.sender),
-            "approve caller is not owner nor approved for all"
+            "Item: approve caller is not owner nor approved for all"
         );
-
-        _approve(to, tokenId);
+        _approve(_getIdByAddress(to), tokenId, TypeOperation.ADDRESS);
     }
 
     /**
@@ -190,15 +220,15 @@ contract Item721 is EIP712, ERC165, IItem721 {
      */
     function approveById(uint256 to, uint256 tokenId) public virtual override {
         uint256 owner = Item721.ownerOfById(tokenId);
-        require(to != owner, "approval to current owner");
+        require(to != owner, "Item: approval to current owner");
 
         uint256 senderId = _getIdByAddress(msg.sender);
         require(
             senderId == owner || isApprovedForAllById(owner, senderId),
-            "approve caller is not owner nor approved for all"
+            "Item: approve caller is not owner nor approved for all"
         );
 
-        _approveById(to, tokenId, false);
+        _approve(to, tokenId, TypeOperation.ID);
     }
 
     function approveByBWO(
@@ -209,7 +239,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) public virtual override {
         // todo: check BWO
-        require(_world != msg.sender, "must be the world");
+        require(_world != msg.sender, "I01");
 
         uint256[] memory digest = new uint256[](5);
         digest[0] = from;
@@ -218,26 +248,21 @@ contract Item721 is EIP712, ERC165, IItem721 {
         digest[3] = _nonces[from];
         digest[4] = deadline;
 
-        require(
-            _getAddressById(from) != _recoverSig(_hashArgs(digest), signature),
-            "approveByBWO : recoverSig failed"
+        _recoverSig(
+            deadline,
+            _getAddressById(from),
+            _hashArgs(digest),
+            signature
         );
-
-        require(
-            block.timestamp < deadline,
-            "approveByBWO: signed transaction expired"
-        );
-        _nonces[from]++;
 
         uint256 owner = Item721.ownerOfById(tokenId);
-        require(to != owner, "approval to current owner");
+        require(to != owner, "I04");
 
-        require(
-            from == owner || isApprovedForAllById(owner, from),
-            "approve caller is not owner nor approved for all"
-        );
+        require(from == owner || isApprovedForAllById(owner, from), "I05");
 
-        _approveById(to, tokenId, true);
+        _nonces[from]++;
+
+        _approve(to, tokenId, TypeOperation.BWO);
     }
 
     /**
@@ -250,7 +275,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (address)
     {
-        require(_exists(tokenId), "approved query for nonexistent token");
+        require(_exists(tokenId), "Item: approved query for nonexistent token");
         return _IdsToAddresses[_tokenApprovalsById[tokenId]];
     }
 
@@ -261,7 +286,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (uint256)
     {
-        require(_exists(tokenId), "approved query for nonexistent token");
+        require(_exists(tokenId), "Item: approved query for nonexistent token");
         return _tokenApprovalsById[tokenId];
     }
 
@@ -273,7 +298,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         virtual
         override
     {
-        require(msg.sender != operator, "approve to caller");
+        require(msg.sender != operator, "Item: approve to caller");
         _operatorApprovalsById[_getIdByAddress(msg.sender)][
             _getIdByAddress(operator)
         ] = approved;
@@ -301,20 +326,17 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) public virtual override {
         // todo: check BWO
-        require(_world != msg.sender, "must be the world");
+        require(_world != msg.sender, "I01");
         uint256[] memory digest = new uint256[](4);
         digest[0] = sender;
         digest[1] = operator;
         digest[2] = _nonces[sender];
         digest[3] = deadline;
-        address fromAddr = _getAddressById(sender);
-        require(
-            fromAddr != _recoverSig(_hashArgs(digest, approved), signature),
-            "approveByBWO : recoverSig failed"
-        );
-        require(
-            block.timestamp < deadline,
-            "approveByBWO: signed transaction expired"
+        _recoverSig(
+            deadline,
+            _getAddressById(sender),
+            _hashArgs(digest, approved),
+            signature
         );
         _nonces[sender]++;
         _setApprovalForAllById(sender, operator, approved, true);
@@ -354,17 +376,19 @@ contract Item721 is EIP712, ERC165, IItem721 {
         address to,
         uint256 tokenId
     ) public virtual override {
-        //solhint-disable-next-line max-line-length
-        if (_iWorld.isTrust(msg.sender, _getIdByAddress(from))) {
-            _transfer(from, to, tokenId);
+        require(to != address(0), "Item: transfer to the zero address");
+        uint256 fromId = _getIdByAddress(from);
+        uint256 toId = _getIdByAddress(to);
+        if (_iWorld.isTrust(msg.sender, fromId)) {
+            _transfer(fromId, toId, tokenId, TypeOperation.ADDRESS);
         }
 
         require(
             _isApprovedOrOwner(msg.sender, tokenId),
-            "transfer caller is not owner nor approved"
+            "Item: transfer caller is not owner nor approved"
         );
 
-        _transfer(from, to, tokenId);
+        _transfer(fromId, toId, tokenId, TypeOperation.ADDRESS);
     }
 
     function transferFromById(
@@ -374,14 +398,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) public virtual override {
         //solhint-disable-next-line max-line-length
         if (_iWorld.isTrust(msg.sender, from)) {
-            _transferById(from, to, tokenId, false);
+            _transfer(from, to, tokenId, TypeOperation.ID);
         }
         require(
             _isApprovedOrOwner(msg.sender, tokenId),
-            "transfer caller is not owner nor approved"
+            "Item: transfer caller is not owner nor approved"
         );
 
-        _transferById(from, to, tokenId, false);
+        _transfer(from, to, tokenId, TypeOperation.ID);
     }
 
     function transferFromByBWO(
@@ -393,7 +417,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) public virtual override {
         // todo: check BWO
-        require(_world != msg.sender, "must be the world");
+        require(_world != msg.sender, "I01");
 
         uint256[] memory digest = new uint256[](6);
         digest[0] = sender;
@@ -404,23 +428,11 @@ contract Item721 is EIP712, ERC165, IItem721 {
         digest[5] = deadline;
 
         address senderAddr = _getAddressById(sender);
-        require(
-            senderAddr != _recoverSig(_hashArgs(digest), signature),
-            "approveByBWO : recoverSig failed"
-        );
+        _recoverSig(deadline, senderAddr, _hashArgs(digest), signature);
 
-        require(
-            block.timestamp < deadline,
-            "approveByBWO: signed transaction expired"
-        );
+        require(_isApprovedOrOwner(senderAddr, tokenId), "I04");
         _nonces[from]++;
-
-        require(
-            _isApprovedOrOwner(senderAddr, tokenId),
-            "transfer caller is not owner nor approved"
-        );
-
-        _transferById(from, to, tokenId, true);
+        _transfer(from, to, tokenId, TypeOperation.BWO);
     }
 
     /**
@@ -450,7 +462,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) public virtual override {
         // todo: check BWO
-        require(_world != msg.sender, "must be the world");
+        require(_world != msg.sender, "I01");
 
         uint256[] memory digest = new uint256[](5);
         digest[0] = from;
@@ -459,16 +471,13 @@ contract Item721 is EIP712, ERC165, IItem721 {
         digest[3] = _nonces[from];
         digest[4] = deadline;
 
-        address fromAddr = _getAddressById(from);
-        require(
-            fromAddr != _recoverSig(_hashArgs(digest), signature),
-            "approveByBWO : recoverSig failed"
+        _recoverSig(
+            deadline,
+            _getAddressById(from),
+            _hashArgs(digest),
+            signature
         );
 
-        require(
-            block.timestamp < deadline,
-            "approveByBWO: signed transaction expired"
-        );
         _nonces[from]++;
 
         safeTransferFromById(from, to, tokenId, "");
@@ -485,9 +494,16 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) public virtual override {
         require(
             _isApprovedOrOwner(msg.sender, tokenId),
-            "transfer caller is not owner nor approved"
+            "Item: transfer caller is not owner nor approved"
         );
-        _safeTransfer(from, to, tokenId, _data);
+        require(to != address(0), "Item: transfer to the zero address");
+        _safeTransfer(
+            _getIdByAddress(from),
+            _getIdByAddress(to),
+            tokenId,
+            _data,
+            TypeOperation.ADDRESS
+        );
     }
 
     function safeTransferFromById(
@@ -498,9 +514,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) public virtual override {
         require(
             _isApprovedOrOwner(msg.sender, tokenId),
-            "transfer caller is not owner nor approved"
+            "Item: transfer caller is not owner nor approved"
         );
-        _safeTransferById(from, to, tokenId, _data);
+        _safeTransfer(from, to, tokenId, _data, TypeOperation.ID);
     }
 
     function safeTransferFromByBWO(
@@ -513,7 +529,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) public virtual override {
         // todo: check BWO
-        require(_world != msg.sender, "must be the world");
+        require(_world != msg.sender, "I01");
 
         uint256[] memory digest = new uint256[](6);
         digest[0] = sender;
@@ -524,22 +540,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
         digest[5] = deadline;
 
         address senderAddr = _getAddressById(sender);
-        require(
-            senderAddr != _recoverSig(_hashArgs(digest, data), signature),
-            "approveByBWO: recoverSig failed"
-        );
+        _recoverSig(deadline, senderAddr, _hashArgs(digest, data), signature);
 
-        require(
-            block.timestamp < deadline,
-            "approveByBWO: signed transaction expired"
-        );
         _nonces[from]++;
 
-        require(
-            _isApprovedOrOwner(senderAddr, tokenId),
-            "transfer caller is not owner nor approved"
-        );
-        _safeTransferById(from, to, tokenId, data);
+        require(_isApprovedOrOwner(senderAddr, tokenId), "I05");
+        _safeTransfer(from, to, tokenId, data, TypeOperation.BWO);
     }
 
     function changeAccountAddress(uint256 id, address newAddr)
@@ -575,32 +581,18 @@ contract Item721 is EIP712, ERC165, IItem721 {
      * Emits a {Transfer} event.
      */
     function _safeTransfer(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory _data
-    ) internal virtual {
-        _transfer(from, to, tokenId);
-        require(
-            _checkOnERC721Received(from, to, tokenId, _data),
-            "transfer to non ERC721Receiver implementer"
-        );
-    }
-
-    function _safeTransferById(
         uint256 from,
         uint256 to,
         uint256 tokenId,
-        bytes memory _data
+        bytes memory _data,
+        TypeOperation op
     ) internal virtual {
-        _transferById(from, to, tokenId, false);
-
+        _transfer(from, to, tokenId, op);
         address fromAddr = _getAddressById(from);
         address toAddr = _getAddressById(to);
-
         require(
             _checkOnERC721Received(fromAddr, toAddr, tokenId, _data),
-            "transfer to non ERC721Receiver implementer"
+            "Item: transfer to non ERC721Receiver implementer"
         );
     }
 
@@ -629,7 +621,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         virtual
         returns (bool)
     {
-        require(_exists(tokenId), "operator query for nonexistent token");
+        require(_exists(tokenId), "Item: operator query for nonexistent token");
         address owner = Item721.ownerOf(tokenId);
         return (spender == owner ||
             isApprovedForAll(owner, spender) ||
@@ -642,42 +634,42 @@ contract Item721 is EIP712, ERC165, IItem721 {
         virtual
         returns (bool)
     {
-        require(_exists(tokenId), "operator query for nonexistent token");
+        require(_exists(tokenId), "Item: operator query for nonexistent token");
         uint256 owner = Item721.ownerOfById(tokenId);
         return (spender == owner ||
             isApprovedForAllById(owner, spender) ||
             getApprovedById(tokenId) == spender);
     }
 
-    // /**
-    //  * @dev Safely mints `tokenId` and transfers it to `to`.
-    //  *
-    //  * Requirements:
-    //  *
-    //  * - `tokenId` must not exist.
-    //  * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-    //  *
-    //  * Emits a {Transfer} event.
-    //  */
-    // function _safeMint(address to, uint256 tokenId) internal virtual {
-    //     _safeMint(to, tokenId, "");
-    // }
+    /**
+     * @dev Safely mints `tokenId` and transfers it to `to`.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must not exist.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
+     */
+    function _safeMint(address to, uint256 tokenId) internal virtual {
+        _safeMint(to, tokenId, "");
+    }
 
-    // /**
-    //  * @dev Same as {xref-ERC721-_safeMint-address-uint256-}[`_safeMint`], with an additional `data` parameter which is
-    //  * forwarded in {IERC721Receiver-onERC721Received} to contract recipients.
-    //  */
-    // function _safeMint(
-    //     address to,
-    //     uint256 tokenId,
-    //     bytes memory _data
-    // ) internal virtual {
-    //     _mint(to, tokenId);
-    //     require(
-    //         _checkOnERC721Received(address(0), to, tokenId, _data),
-    //         "transfer to non ERC721Receiver implementer"
-    //     );
-    // }
+    /**
+     * @dev Same as {xref-ERC721-_safeMint-address-uint256-}[`_safeMint`], with an additional `data` parameter which is
+     * forwarded in {IERC721Receiver-onERC721Received} to contract recipients.
+     */
+    function _safeMint(
+        address to,
+        uint256 tokenId,
+        bytes memory _data
+    ) internal virtual {
+        _mint(to, tokenId);
+        require(
+            _checkOnERC721Received(address(0), to, tokenId, _data),
+            "Item: transfer to non ERC721Receiver implementer"
+        );
+    }
 
     function mint(address to, uint256 tokenId) public {
         require(_owner == msg.sender, "must be owner to mint");
@@ -697,8 +689,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
      * Emits a {Transfer} event.
      */
     function _mint(address to, uint256 tokenId) internal virtual {
-        require(to != address(0), "mint to the zero address");
-        require(!_exists(tokenId), "token already minted");
+        require(to != address(0), "Item: mint to the zero address");
+        require(!_exists(tokenId), "Item: token already minted");
 
         uint256 toId = _getIdByAddress(to);
 
@@ -709,7 +701,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function burn(uint256 tokenId) public {
-        require(_owner == msg.sender, "must be owner to burn");
+        require(_owner == msg.sender, "Item: must be owner to burn");
         _burn(tokenId);
     }
 
@@ -726,7 +718,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     function _burn(uint256 tokenId) internal virtual {
         address owner = Item721.ownerOf(tokenId);
         // Clear approvals
-        _approve(address(0), tokenId);
+        _approve(0, tokenId, TypeOperation.ADDRESS);
 
         uint256 ownerId = _getIdByAddress(owner);
 
@@ -736,87 +728,50 @@ contract Item721 is EIP712, ERC165, IItem721 {
         emit Transfer(owner, address(0), tokenId);
     }
 
-    /**
-     * @dev Transfers `tokenId` from `from` to `to`.
-     *  As opposed to {transferFrom}, this imposes no restrictions on msg.sender.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     * - `tokenId` token must be owned by `from`.
-     *
-     * Emits a {Transfer} event.
-     */
     function _transfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual {
-        require(
-            Item721.ownerOf(tokenId) == from,
-            "transfer from incorrect owner"
-        );
-        require(to != address(0), "transfer to  zero address");
-
-        // Clear approvals from the previous owner
-        _approve(address(0), tokenId);
-
-        uint256 fromId = _getIdByAddress(from);
-        uint256 toId = _getIdByAddress(to);
-
-        _balancesById[fromId] -= 1;
-        _balancesById[toId] += 1;
-        _ownersById[tokenId] = toId;
-
-        emit Transfer(from, to, tokenId);
-    }
-
-    function _transferById(
         uint256 from,
         uint256 to,
         uint256 tokenId,
-        bool isBWO
+        TypeOperation operation
     ) internal virtual {
         require(
             Item721.ownerOfById(tokenId) == from,
-            "transfer from incorrect owner"
+            "Item: transfer from incorrect owner"
         );
-        require(to != 0, "transfer to the zero");
+        require(to != 0, "Item: transfer to the zero address or zero id");
 
         // Clear approvals from the previous owner
-        _approve(address(0), tokenId);
+        _approve(0, tokenId, operation);
 
         _balancesById[from] -= 1;
         _balancesById[to] += 1;
         _ownersById[tokenId] = to;
 
-        if (isBWO) {
+        if (operation == TypeOperation.BWO) {
             emit TransferByBWO(from, to, tokenId);
-        } else {
+        } else if (operation == TypeOperation.ID) {
             emit TransferById(from, to, tokenId);
+        } else if (operation == TypeOperation.ADDRESS) {
+            emit Transfer(_getAddressById(from), _getAddressById(to), tokenId);
         }
     }
 
-    /**
-     * @dev Approve `to` to operate on `tokenId`
-     *
-     * Emits a {Approval} event.
-     */
-    function _approve(address to, uint256 tokenId) internal virtual {
-        _tokenApprovalsById[tokenId] = _getIdByAddress(to);
-        emit Approval(Item721.ownerOf(tokenId), to, tokenId);
-    }
-
-    function _approveById(
+    function _approve(
         uint256 to,
         uint256 tokenId,
-        bool isBWO
+        TypeOperation typeOperation
     ) internal virtual {
         _tokenApprovalsById[tokenId] = to;
-        if (isBWO) {
+        if (typeOperation == TypeOperation.BWO) {
             emit ApprovalByBWO(Item721.ownerOfById(tokenId), to, tokenId);
-        } else {
+        } else if (typeOperation == TypeOperation.ID) {
             emit ApprovalById(Item721.ownerOfById(tokenId), to, tokenId);
+        } else {
+            emit Approval(
+                Item721.ownerOf(tokenId),
+                _getAddressById(to),
+                tokenId
+            );
         }
     }
 
@@ -826,7 +781,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bool approved,
         bool isBWO
     ) internal virtual {
-        require(owner != operator, "approve to caller");
+        require(owner != operator, "Item: approve to caller");
         _operatorApprovalsById[owner][operator] = approved;
         if (isBWO) {
             emit ApprovalForAllByBWO(owner, operator, approved);
@@ -863,7 +818,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
                 return retval == IERC721Receiver.onERC721Received.selector;
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
-                    revert("transfer to non ERC721Receiver implementer");
+                    revert("Item: transfer to non ERC721Receiver implementer");
                 } else {
                     assembly {
                         revert(add(32, reason), mload(reason))
@@ -876,9 +831,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function _getIdByAddress(address addr) internal returns (uint256) {
-        uint256 id;
         if (_AddressesToIds[addr] == 0) {
-            id = _iWorld.getOrCreateAccountId(addr);
+            uint256 id = _iWorld.getOrCreateAccountId(addr);
             _AddressesToIds[addr] = id;
             _IdsToAddresses[id] = addr;
         }
@@ -886,65 +840,64 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function _getAddressById(uint256 id) internal returns (address) {
-        address addr;
         if (_IdsToAddresses[id] == address(0)) {
-            addr = _iWorld.getAddressById(id);
+            address addr = _iWorld.getAddressById(id);
             _AddressesToIds[addr] = id;
             _IdsToAddresses[id] = addr;
         }
         return _IdsToAddresses[id];
     }
 
-    function _recoverSig(bytes32 digest, bytes memory signature)
-        internal
-        pure
-        returns (address)
-    {
-        return ECDSA.recover(digest, signature);
+    function _recoverSig(
+        uint256 deadline,
+        address signer,
+        bytes32 digest,
+        bytes memory signature
+    ) internal view {
+        require(block.timestamp < deadline, "I03");
+        require(signer != ECDSA.recover(digest, signature), "I02");
     }
 
-    function _hashArgs(uint256[] memory args)
-        internal
-        view
-        returns (bytes32 hash)
-    {
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(abi.encode(keccak256("MyFunction(uint256[] args)"), args))
-        );
-        return digest;
+    function _hashArgs(uint256[] memory args) internal view returns (bytes32) {
+        return
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(keccak256("MyFunction(uint256[] args)"), args)
+                )
+            );
     }
 
     function _hashArgs(uint256[] memory args, bytes memory data)
         internal
         view
-        returns (bytes32 hash)
+        returns (bytes32)
     {
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(
-                    keccak256("MyFunction(uint256[] args,bytes data)"),
-                    args,
-                    data
+        return
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256("MyFunction(uint256[] args,bytes data)"),
+                        args,
+                        data
+                    )
                 )
-            )
-        );
-        return digest;
+            );
     }
 
     function _hashArgs(uint256[] memory args, bool flag)
         internal
         view
-        returns (bytes32 hash)
+        returns (bytes32)
     {
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(
-                    keccak256("MyFunction(uint256[] args,bool flag)"),
-                    args,
-                    flag
+        return
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256("MyFunction(uint256[] args,bool flag)"),
+                        args,
+                        flag
+                    )
                 )
-            )
-        );
-        return digest;
+            );
     }
 }

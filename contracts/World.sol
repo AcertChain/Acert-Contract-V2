@@ -559,7 +559,6 @@ contract World is ERC165, IWorld {
         override
         returns (uint256 id)
     {
-        require(_address != address(0), "W09");
         if (_addressesToIds[_address] == 0) {
             // create account
             accountId++;

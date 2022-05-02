@@ -173,7 +173,7 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
       it('reverts', async function () {
         await expectRevert(
           this.token.transferFrom(tokenOwner, to, amount, { from: spender }),
-          'W09',
+          'from the zero address',
         );
       });
     });

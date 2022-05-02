@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npx hardhat compile",
     "test": "npx hardhat test",
-    "clean":"npx hardhat clean"
+    "clean":"npx hardhat clean",
+    "size":"npx hardhat size-contracts"
   },
   "repository": {
     "type": "git",
