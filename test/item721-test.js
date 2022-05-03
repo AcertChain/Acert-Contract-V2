@@ -2,6 +2,11 @@ const {
     shouldBehaveLikeERC721,
     shouldBehaveLikeERC721Metadata,
   } = require('./ERC721.behavior');
+
+const {
+    shouldBehaveLikeItem721,
+  } = require('./Item721.behavior');
+  
   
 const Item721 = artifacts.require('Item721');
 const World = artifacts.require('World');
@@ -20,6 +25,7 @@ contract('Item721', function (accounts) {
         this.token = await Item721.new(name, symbol,version , this.world.address);
     });
 
+    shouldBehaveLikeItem721('Item', ...accounts)
     shouldBehaveLikeERC721('Item', ...accounts);
     shouldBehaveLikeERC721Metadata('Item', name, symbol, ...accounts);
 });

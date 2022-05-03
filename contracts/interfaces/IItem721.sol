@@ -50,6 +50,26 @@ interface IItem721 is IERC721Metadata, IItem721Bwo, IAsset {
      */
     function ownerOfById(uint256 tokenId) external view returns (uint256 owner);
 
+     /**
+     * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
+     * are aware of the ERC721 protocol to prevent tokens from being forever locked.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero .
+     * - `to` cannot be the zero .
+     * - `tokenId` token must exist and be owned by `from`.
+     * - If the caller is not `from`, it must be have been allowed to move this token by either {approve} or {setApprovalForAll}.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
+     */
+    function safeTransferFromById(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId
+    ) external;
+
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`.
      *
@@ -68,26 +88,6 @@ interface IItem721 is IERC721Metadata, IItem721Bwo, IAsset {
         uint256 to,
         uint256 tokenId,
         bytes calldata data
-    ) external;
-
-    /**
-     * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
-     * are aware of the ERC721 protocol to prevent tokens from being forever locked.
-     *
-     * Requirements:
-     *
-     * - `from` cannot be the zero .
-     * - `to` cannot be the zero .
-     * - `tokenId` token must exist and be owned by `from`.
-     * - If the caller is not `from`, it must be have been allowed to move this token by either {approve} or {setApprovalForAll}.
-     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-     *
-     * Emits a {Transfer} event.
-     */
-    function safeTransferFromById(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId
     ) external;
 
     /**

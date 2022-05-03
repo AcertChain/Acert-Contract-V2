@@ -228,6 +228,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             "Item: approve caller is not owner nor approved for all"
         );
 
+        _getAddressById(to);
         _approve(to, tokenId, TypeOperation.ID);
     }
 
@@ -310,6 +311,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         virtual
         override
     {
+        _getAddressById(operator);
         _setApprovalForAllById(
             _getIdByAddress(msg.sender),
             operator,
@@ -435,9 +437,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _transfer(from, to, tokenId, TypeOperation.BWO);
     }
 
-    /**
-     * @dev See {IERC721-safeTransferFrom}.
-     */
     function safeTransferFrom(
         address from,
         address to,
@@ -562,24 +561,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return true;
     }
 
-    /**
-     * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
-     * are aware of the ERC721 protocol to prevent tokens from being forever locked.
-     *
-     * `_data` is additional data, it has no specified format and it is sent in call to `to`.
-     *
-     * This internal function is equivalent to {safeTransferFrom}, and can be used to e.g.
-     * implement alternative mechanisms to perform token transfer, such as signature-based.
-     *
-     * Requirements:
-     *
-     * - `from` cannot be the zero address.
-     * - `to` cannot be the zero address.
-     * - `tokenId` token must exist and be owned by `from`.
-     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-     *
-     * Emits a {Transfer} event.
-     */
     function _safeTransfer(
         uint256 from,
         uint256 to,
@@ -626,19 +607,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return (spender == owner ||
             isApprovedForAll(owner, spender) ||
             getApproved(tokenId) == spender);
-    }
-
-    function _isApprovedOrOwnerById(uint256 spender, uint256 tokenId)
-        internal
-        view
-        virtual
-        returns (bool)
-    {
-        require(_exists(tokenId), "Item: operator query for nonexistent token");
-        uint256 owner = Item721.ownerOfById(tokenId);
-        return (spender == owner ||
-            isApprovedForAllById(owner, spender) ||
-            getApprovedById(tokenId) == spender);
     }
 
     /**
