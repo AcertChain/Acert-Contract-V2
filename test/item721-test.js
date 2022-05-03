@@ -25,7 +25,7 @@ contract('Item721', function (accounts) {
         this.token = await Item721.new(name, symbol,version , this.world.address);
     });
 
-    shouldBehaveLikeItem721('Item', ...accounts)
+    shouldBehaveLikeItem721('Item', ...accounts);
     shouldBehaveLikeERC721('Item', ...accounts);
     shouldBehaveLikeERC721Metadata('Item', name, symbol, ...accounts);
 });

@@ -1,19 +1,40 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const {
+  shouldBehaveLikeWorld,
+  shouldBehaveLikeWorldMetadata,
+  shouldBehaveLikeWorldAsset,
+} = require('./World.behavior');
 
-describe("World", function () {
-  // it("Should return the new greeting once it's changed", async function () {
-  //   const World = await ethers.getContractFactory("World");
-  //   const world = await World.deploy();
-  //   await world.deployed();
+const Cash20 = artifacts.require('Cash20');
+const Item721 = artifacts.require('Item721');
+const World = artifacts.require('World');
 
-  //   expect(await world.greet()).to.equal("Hello, world!");
+contract('World', function (accounts) {
+  const itemName = 'Non Fungible Token';
+  const itemSymbol = 'NFT';
+  const itemVersion = '1.0.0';
 
-  //   const setGreetingTx = await world.setGreeting("Hola, mundo!");
+  const cashName = 'My Token';
+  const cashSymbol = 'MTKN';
+  const cashVersion = '1.0.0';
+  const cashInitialSupply = new BN(100);
 
-  //   // wait until the transaction is mined
-  //   await setGreetingTx.wait();
+  const worldName = 'My World';
+  const worldSymbol = 'MW';
+  const worldSupply = 100;
+  
+  const [ initialHolder] = accounts;
+  
+  const initialHolderId = new BN(1);
 
-  //   expect(await world.greet()).to.equal("Hola, mundo!");
-  // });
+  beforeEach(async function () {
+    this.token = await World.new(worldName, worldSymbol, worldSupply);
+    this.item = await Item721.new(itemName, itemSymbol, itemVersion, this.world.address);
+    this.cash = await Cash20.new(cashName, cashSymbol, cashVersion);
+    await this.token.mint(initialHolder, cashInitialSupply);
+    await this.token.getOrCreateAccountId(initialHolder);
+  });
+
+  shouldBehaveLikeWorld();
+  shouldBehaveLikeWorldMetadata();
+  shouldBehaveLikeWorldAsset();
 });
