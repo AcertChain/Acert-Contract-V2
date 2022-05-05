@@ -1,6 +1,7 @@
 const {
-  shouldBehaveLikeWorld,
-  shouldBehaveLikeWorldMetadata,
+  shouldBehaveLikeERC721,
+  shouldBehaveLikeItem721,
+  shouldBehaveLikeERC721Metadata,
   shouldBehaveLikeWorldAsset,
 } = require('./World.behavior');
 
@@ -34,7 +35,8 @@ contract('World', function (accounts) {
     await this.token.getOrCreateAccountId(initialHolder);
   });
 
-  shouldBehaveLikeWorld();
-  shouldBehaveLikeWorldMetadata();
+  shouldBehaveLikeERC721(accounts);
+  shouldBehaveLikeItem721(accounts);
+  shouldBehaveLikeERC721Metadata(name, symbol, ...accounts);
   shouldBehaveLikeWorldAsset();
 });
