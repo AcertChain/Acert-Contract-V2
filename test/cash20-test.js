@@ -3,7 +3,7 @@ const { expect } = require("chai");
 const { artifacts,ethers } = require("hardhat");
 const { ZERO_ADDRESS } = constants;
 
-const Cash20 = artifacts.require('Cash20');
+const Cash20 = artifacts.require('Cash20Mock');
 const World = artifacts.require('World');
 
 const {

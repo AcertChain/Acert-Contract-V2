@@ -8,7 +8,7 @@ const {
   } = require('./Item721.behavior');
   
   
-const Item721 = artifacts.require('Item721');
+const Item721 = artifacts.require('Item721Mock');
 const World = artifacts.require('World');
 
 contract('Item721', function (accounts) {

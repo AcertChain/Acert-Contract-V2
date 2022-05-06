@@ -572,7 +572,11 @@ contract World is ERC165, IWorld {
         }
     }
 
-    function getAccountIdByAddress(address _address) public view returns (uint256) {
+    function getAccountIdByAddress(address _address)
+        public
+        view
+        returns (uint256)
+    {
         return _addressesToIds[_address];
     }
 
@@ -815,5 +819,9 @@ contract World is ERC165, IWorld {
             return false;
         }
         return true;
+    }
+
+    function isBWO(address _addr) public view virtual override returns (bool) {
+        return _isOperatorByAddress[_addr] || _owner == _addr;
     }
 }

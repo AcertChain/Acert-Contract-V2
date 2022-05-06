@@ -37,8 +37,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
     // owner addr
     address private _owner;
 
-    IWorld _iWorld;
-
     // nonce
     mapping(uint256 => uint256) private _nonces;
 
@@ -71,7 +69,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _symbol = symbol_;
         _world = world_;
         _owner = msg.sender;
-        _iWorld = IWorld(_world);
     }
 
     /**
@@ -85,24 +82,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
         returns (bool)
     {
         return
-            interfaceId == type(IERC721).interfaceId ||
             interfaceId == type(IERC721Metadata).interfaceId ||
-            // interfaceId == type(IItem721).interfaceId ||
-            // interfaceId == type(IItem721Bwo).interfaceId ||
-            // interfaceId == type(IAsset).interfaceId ||
+            interfaceId == type(IERC721).interfaceId ||
             super.supportsInterface(interfaceId);
-    }
-
-    function safeMint(address to, uint256 tokenId) public {
-        _safeMint(to, tokenId);
-    }
-
-    function safeMint(
-        address to,
-        uint256 tokenId,
-        bytes memory _data
-    ) public {
-        _safeMint(to, tokenId, _data);
     }
 
     /**
@@ -187,9 +169,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return _symbol;
     }
 
-    /**
-     * @dev See {IItem721-worldAddress}.
-     */
     function worldAddress() external view virtual override returns (address) {
         return _world;
     }
@@ -239,8 +218,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        // todo: check BWO
-        require(_world != msg.sender, "I01");
+        require(IWorld(_world).isBWO(msg.sender), "I01");
 
         uint256[] memory digest = new uint256[](5);
         digest[0] = from;
@@ -258,11 +236,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         uint256 owner = Item721.ownerOfById(tokenId);
         require(to != owner, "I04");
-
         require(from == owner || isApprovedForAllById(owner, from), "I05");
-
         _nonces[from]++;
-
         _approve(to, tokenId, TypeOperation.BWO);
     }
 
@@ -327,8 +302,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        // todo: check BWO
-        require(_world != msg.sender, "I01");
+        require(IWorld(_world).isBWO(msg.sender), "I01");
         uint256[] memory digest = new uint256[](4);
         digest[0] = sender;
         digest[1] = operator;
@@ -381,7 +355,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         require(to != address(0), "Item: transfer to the zero address");
         uint256 fromId = _getIdByAddress(from);
         uint256 toId = _getIdByAddress(to);
-        if (_iWorld.isTrust(msg.sender, fromId)) {
+        if (IWorld(_world).isTrust(msg.sender, fromId)) {
             _transfer(fromId, toId, tokenId, TypeOperation.ADDRESS);
         }
 
@@ -398,8 +372,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 to,
         uint256 tokenId
     ) public virtual override {
-        //solhint-disable-next-line max-line-length
-        if (_iWorld.isTrust(msg.sender, from)) {
+        if (IWorld(_world).isTrust(msg.sender, from)) {
             _transfer(from, to, tokenId, TypeOperation.ID);
         }
         require(
@@ -418,8 +391,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        // todo: check BWO
-        require(_world != msg.sender, "I01");
+        require(IWorld(_world).isBWO(msg.sender), "I01");
 
         uint256[] memory digest = new uint256[](6);
         digest[0] = sender;
@@ -460,8 +432,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        // todo: check BWO
-        require(_world != msg.sender, "I01");
+        require(IWorld(_world).isBWO(msg.sender), "I01");
 
         uint256[] memory digest = new uint256[](5);
         digest[0] = from;
@@ -527,9 +498,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes calldata data,
         bytes memory signature
     ) public virtual override {
-        // todo: check BWO
-        require(_world != msg.sender, "I01");
-
+        require(IWorld(_world).isBWO(msg.sender), "I01");
         uint256[] memory digest = new uint256[](6);
         digest[0] = sender;
         digest[1] = from;
@@ -639,11 +608,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         );
     }
 
-    function mint(address to, uint256 tokenId) public {
-        require(_owner == msg.sender, "must be owner to mint");
-        _mint(to, tokenId);
-    }
-
     /**
      * @dev Mints `tokenId` and transfers it to `to`.
      *
@@ -668,11 +632,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         emit Transfer(address(0), to, tokenId);
     }
 
-    function burn(uint256 tokenId) public {
-        require(_owner == msg.sender, "Item: must be owner to burn");
-        _burn(tokenId);
-    }
-
     /**
      * @dev Destroys `tokenId`.
      * The approval is cleared when the token is burned.
@@ -689,7 +648,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _approve(0, tokenId, TypeOperation.ADDRESS);
 
         uint256 ownerId = _getIdByAddress(owner);
-
         _balancesById[ownerId] -= 1;
         delete _ownersById[tokenId];
 
@@ -800,7 +758,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
     function _getIdByAddress(address addr) internal returns (uint256) {
         if (_AddressesToIds[addr] == 0) {
-            uint256 id = _iWorld.getOrCreateAccountId(addr);
+            uint256 id = IWorld(_world).getOrCreateAccountId(addr);
             _AddressesToIds[addr] = id;
             _IdsToAddresses[id] = addr;
         }
@@ -809,7 +767,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
     function _getAddressById(uint256 id) internal returns (address) {
         if (_IdsToAddresses[id] == address(0)) {
-            address addr = _iWorld.getAddressById(id);
+            address addr = IWorld(_world).getAddressById(id);
             _AddressesToIds[addr] = id;
             _IdsToAddresses[id] = addr;
         }

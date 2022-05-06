@@ -175,8 +175,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
-        // TODO check BWO
-        require(_world != _msgSender(), "Cash: must be the world");
+        require(_iWorld.isBWO(_msgSender()), "Cash: must be the world BWO");
 
         uint256[] memory digest = new uint256[](5);
         digest[0] = from;
@@ -279,8 +278,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
-        // TODO check BWO
-        require(_world != _msgSender(), "Cash: must be the world");
+        require(_iWorld.isBWO(_msgSender()), "Cash: must be the world BWO");
 
         uint256[] memory digest = new uint256[](5);
         digest[0] = owner;
@@ -545,11 +543,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
     }
 
-    function mint(address account, uint256 amount) public {
-        require(_msgSender() == _owner, "Cash: mint must be owner");
-        _mint(account, amount);
-    }
-
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
      *
@@ -566,11 +559,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         _totalSupply += amount;
         _balancesById[accountId] += amount;
         emit Transfer(address(0), account, amount);
-    }
-
-    function burn(address account, uint256 amount) public {
-        require(_msgSender() == _owner, "Cash: burn must be owner");
-        _burn(account, amount);
     }
 
     /**
