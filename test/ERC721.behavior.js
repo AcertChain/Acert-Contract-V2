@@ -46,7 +46,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       context('when querying the zero address', function () {
         it('throws', async function () {
           await expectRevert(
-            this.token.balanceOf(ZERO_ADDRESS), 'Item: address zero is not a valid owner',
+            this.token.balanceOf(ZERO_ADDRESS), 'I06',
           );
         });
       });
@@ -66,7 +66,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
         it('reverts', async function () {
           await expectRevert(
-            this.token.ownerOf(tokenId), 'Item: owner query for nonexistent token',
+            this.token.ownerOf(tokenId), 'I08',
           );
         });
       });
@@ -183,7 +183,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             await expectRevert(
               transferFunction.call(this, other, other, tokenId, { from: owner }),
-              'Item: transfer from incorrect owner',
+              'I19',
             );
           });
         });
@@ -192,7 +192,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             await expectRevert(
               transferFunction.call(this, owner, other, tokenId, { from: other }),
-              'Item: transfer caller is not owner nor approved',
+              'I14',
             );
           });
         });
@@ -201,7 +201,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             await expectRevert(
               transferFunction.call(this, owner, other, nonExistentTokenId, { from: owner }),
-              'Item: operator query for nonexistent token',
+              'I16',
             );
           });
         });
@@ -210,7 +210,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             await expectRevert(
               transferFunction.call(this, owner, ZERO_ADDRESS, tokenId, { from: owner }),
-              'Item: transfer to the zero address',
+              'I13',
             );
           });
         });
@@ -276,7 +276,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
                     nonExistentTokenId,
                     { from: owner },
                   ),
-                  'Item: operator query for nonexistent token',
+                  'I16',
                 );
               });
             });
@@ -296,7 +296,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
             await expectRevert(
               this.token.safeTransferFrom(owner, invalidReceiver.address, tokenId, { from: owner }),
-              'Item: transfer to non ERC721Receiver implementer',
+              'I15',
             );
           });
         });
@@ -316,7 +316,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
             await expectRevert(
               this.token.safeTransferFrom(owner, revertingReceiver.address, tokenId, { from: owner }),
-              'Item: transfer to non ERC721Receiver implementer',
+              'I15',
             );
           });
         });
@@ -335,7 +335,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
             const nonReceiver = this.token;
             await expectRevert(
               this.token.safeTransferFrom(owner, nonReceiver.address, tokenId, { from: owner }),
-              'Item: transfer to non ERC721Receiver implementer',
+              'I15',
             );
           });
         });
@@ -373,7 +373,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
             await expectRevert(
               this.token.safeMint(invalidReceiver.address, tokenId),
-              'Item: transfer to non ERC721Receiver implementer',
+              'I15',
             );
           });
         });
@@ -393,7 +393,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
             await expectRevert(
               this.token.safeMint(revertingReceiver.address, tokenId),
-              'Item: transfer to non ERC721Receiver implementer',
+              'I15',
             );
           });
         });
@@ -412,7 +412,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
             const nonReceiver = this.token;
             await expectRevert(
               this.token.safeMint(nonReceiver.address, tokenId),
-              'Item: transfer to non ERC721Receiver implementer',
+              'I15',
             );
           });
         });
@@ -501,7 +501,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       context('when the address that receives the approval is the owner', function () {
         it('reverts', async function () {
           await expectRevert(
-            this.token.approve(owner, tokenId, { from: owner }), 'Item: approval to current owner',
+            this.token.approve(owner, tokenId, { from: owner }), 'I09',
           );
         });
       });
@@ -509,7 +509,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       context('when the sender does not own the given token ID', function () {
         it('reverts', async function () {
           await expectRevert(this.token.approve(approved, tokenId, { from: other }),
-            'Item: approve caller is not owner nor approved');
+            'I10');
         });
       });
 
@@ -517,7 +517,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
         it('reverts', async function () {
           await this.token.approve(approved, tokenId, { from: owner });
           await expectRevert(this.token.approve(anotherApproved, tokenId, { from: approved }),
-            'Item: approve caller is not owner nor approved for all');
+            'I10');
         });
       });
 
@@ -534,7 +534,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       context('when the given token ID does not exist', function () {
         it('reverts', async function () {
           await expectRevert(this.token.approve(approved, nonExistentTokenId, { from: operator }),
-            'Item: owner query for nonexistent token');
+            'I08');
         });
       });
     });
@@ -613,7 +613,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       context('when the operator is the owner', function () {
         it('reverts', async function () {
           await expectRevert(this.token.setApprovalForAll(owner, true, { from: owner }),
-            'Item: approve to caller');
+            'I12');
         });
       });
     });
@@ -623,7 +623,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
         it('reverts', async function () {
           await expectRevert(
             this.token.getApproved(nonExistentTokenId),
-            'Item: approved query for nonexistent token',
+            'I11',
           );
         });
       });
@@ -651,7 +651,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
   describe('_mint(address, uint256)', function () {
     it('reverts with a null destination address', async function () {
       await expectRevert(
-        this.token.mint(ZERO_ADDRESS, firstTokenId), 'Item: mint to the zero address',
+        this.token.mint(ZERO_ADDRESS, firstTokenId), 'I17',
       );
     });
 
@@ -670,7 +670,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       });
 
       it('reverts when adding a token id that already exists', async function () {
-        await expectRevert(this.token.mint(owner, firstTokenId), 'Item: token already minted');
+        await expectRevert(this.token.mint(owner, firstTokenId), 'I18');
       });
     });
   });
@@ -678,7 +678,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
   describe('_burn', function () {
     it('reverts when burning a non-existent token id', async function () {
       await expectRevert(
-        this.token.burn(nonExistentTokenId), 'Item: owner query for nonexistent token',
+        this.token.burn(nonExistentTokenId), 'I08',
       );
     });
 
@@ -704,13 +704,13 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
         it('deletes the token', async function () {
           expect(await this.token.balanceOf(owner)).to.be.bignumber.equal('1');
           await expectRevert(
-            this.token.ownerOf(firstTokenId), 'Item: owner query for nonexistent token',
+            this.token.ownerOf(firstTokenId), 'I08',
           );
         });
 
         it('reverts when burning a token id that has been deleted', async function () {
           await expectRevert(
-            this.token.burn(firstTokenId), 'Item: owner query for nonexistent token',
+            this.token.burn(firstTokenId), 'I08',
           );
         });
       });

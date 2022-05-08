@@ -16,12 +16,8 @@ contract('Item721', function (accounts) {
     const symbol = 'NFT';
     const version = '1.0.0';
 
-    const worldName = 'My World';
-    const worldSymbol = 'MW';
-    const worldSupply = 100;
-
     beforeEach(async function () {
-        this.world = await World.new(worldName, worldSymbol,worldSupply);
+        this.world = await World.new();
         this.token = await Item721.new(name, symbol,version , this.world.address);
     });
 

@@ -696,24 +696,26 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
     }
 
-    function _getIdByAddress(address addr) internal returns (uint256) {
-        uint256 id;
-        if (_AddressesToIds[addr] == 0) {
-            id = _iWorld.getOrCreateAccountId(addr);
-            _AddressesToIds[addr] = id;
+     function _getIdByAddress(address addr) internal returns (uint256) {
+        uint256 id = IWorld(_world).getOrCreateAccountId(addr);
+        if (_AddressesToIds[addr] != id) {
+            address oldAddr = _IdsToAddresses[id];
             _IdsToAddresses[id] = addr;
+            _AddressesToIds[addr] = id;
+            delete _AddressesToIds[oldAddr];
         }
-        return _AddressesToIds[addr];
+        return id;
     }
 
     function _getAddressById(uint256 id) internal returns (address) {
-        address addr;
-        if (_IdsToAddresses[id] == address(0)) {
-            addr = _iWorld.getAddressById(id);
-            _AddressesToIds[addr] = id;
+        address addr = IWorld(_world).getAddressById(id);
+        address oldAddr = _IdsToAddresses[id];
+        if (oldAddr != addr) {
             _IdsToAddresses[id] = addr;
+            _AddressesToIds[addr] = id;
+            delete _AddressesToIds[oldAddr];
         }
-        return _IdsToAddresses[id];
+        return addr;
     }
 
     function _isTrust(address _contract, uint256 _id)

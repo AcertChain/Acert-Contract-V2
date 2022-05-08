@@ -20,10 +20,6 @@ const {
 
 contract('Cash20', function (accounts) {
     // deploy World contract
-    const worldName = 'My World';
-    const worldSymbol = 'MW';
-    const worldSupply = 100;
-
     beforeEach(async function () {
       });
 
@@ -39,7 +35,7 @@ contract('Cash20', function (accounts) {
     const initialSupply = new BN(100);
     
     beforeEach(async function () {
-        this.world = await World.new(worldName, worldSymbol,worldSupply);
+        this.world = await World.new();
         this.token = await Cash20.new(name, symbol,version , this.world.address);
         this.receipt = await this.token.mint(initialHolder, initialSupply);
         await this.world.getOrCreateAccountId(initialHolder);

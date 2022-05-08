@@ -7,10 +7,9 @@ interface IAsset {
      */
     function worldAddress() external view returns (address);
 
-    function changeAccountAddress(
-        uint256 id,
-        address newAddr
-    ) external returns (bool);
+    function changeAccountAddress(uint256 id, address newAddr)
+        external
+        returns (bool);
 
     function getNonce(uint256 id) external view returns (uint256);
 }

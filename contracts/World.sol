@@ -4,30 +4,23 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "./interfaces/IWorld.sol";
 import "./interfaces/IAsset.sol";
+import "./interfaces/IItem721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /**
-W01:not equal
-W02:approve caller is not owner nor approved for all
-W03:token is not exist
-W04:transfer caller is not owner nor approved
-W05:transfer to non ERC721Receiver implementer
-W06:zero id
-W07:token is exist
-W08:transfer from incorrect owner
-W09:zero address
-W10:contract is invalid or is exist
-W11:world is not equal
-W12:asset is invalid
-W13:address is invalid or is exist
-W14:only operator or world can exec
-W15:empty data
-W16:asset is invalid or is not exist
-W17:account is invalid or is not exist
-W18:only owner
+W01:zero address
+W02:contract is invalid or is exist
+W03:world is not equal
+W04:asset is invalid
+W05:address is invalid or is exist
+W06:only operator or world can exec
+W07:empty data
+W08:asset is invalid or is not exist
+W09:account is invalid or is not exist
+W10:only owner
  */
-contract World is ERC165, IWorld {
+contract World is IWorld {
     enum TypeOperation {
         CASH,
         ITEM
@@ -55,30 +48,14 @@ contract World is ERC165, IWorld {
     // event remove contract
     event RemoveSafeContract(address _contract);
 
-    //  name
-    string private _name;
-    //  symbol
-    string private _symbol;
-    //  supply
-    uint256 private _supply;
-    // account Id
-    uint256 private accountId;
-    // avatar Id
-    uint256 private avatarId;
+    // avatar
+    address private _avatar;
     // owner
     address private _owner;
-
-    // constructor
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        uint256 supply_
-    ) {
-        _name = name_;
-        _symbol = symbol_;
-        _supply = supply_;
-        _owner = msg.sender;
-    }
+    // avatar max id
+    uint256 private _avatarMaxId;
+    // account Id
+    uint256 private _totalAccount;
 
     // struct Asset
     struct Asset {
@@ -88,6 +65,7 @@ contract World is ERC165, IWorld {
         string _name;
         string _image;
     }
+
     // struct Account
     struct Account {
         bool _isTrustWorld;
@@ -114,443 +92,41 @@ contract World is ERC165, IWorld {
     // Mapping from address to Asset
     mapping(address => Asset) private _assets;
 
-    // Mapping from owner ID to Account
+    // Mapping from account ID to Account
     mapping(uint256 => Account) private _accountsById;
 
-    // Mapping from adress to owner ID
+    // Mapping from adress to account ID
     mapping(address => uint256) private _addressesToIds;
 
-    // Mapping from token ID to owner ID
-    mapping(uint256 => uint256) private _ownersById;
-
-    // Mapping account ID to token count
-    mapping(uint256 => uint256) private _balancesById;
-
-    // Mapping from token ID to approved account ID
-    mapping(uint256 => uint256) private _tokenApprovalsById;
-
-    // Mapping from owner to operator approvals
-    mapping(uint256 => mapping(uint256 => bool)) private _operatorApprovalsById;
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(ERC165, IERC165)
-        returns (bool)
-    {
-        return
-            interfaceId == type(IERC721).interfaceId ||
-            interfaceId == type(IERC721Metadata).interfaceId ||
-            interfaceId == type(IWorld).interfaceId ||
-            super.supportsInterface(interfaceId);
+    // constructor
+    constructor() {
+        _owner = msg.sender;
     }
 
-    /**
-     * @dev See {IERC721-balanceOf}.
-     */
-    function balanceOf(address owner)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return _balancesById[_addressesToIds[owner]];
-    }
-
-    function balanceOfById(uint256 ownerId)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return _balancesById[ownerId];
-    }
-
-    function ownerOf(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (address)
-    {
-        return _accountsById[_ownersById[tokenId]]._address;
-    }
-
-    function ownerOfById(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return _ownersById[tokenId];
-    }
-
-    function name() public view virtual override returns (string memory) {
-        return _name;
-    }
-
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
-
-    function totalSupply() public view virtual returns (uint256) {
-        return _supply;
-    }
-
-    function getAccountId() public view virtual returns (uint256) {
-        return accountId;
-    }
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (string memory)
-    {}
-
-    function _baseURI() internal view virtual returns (string memory) {}
-
-    function approve(address to, uint256 tokenId) public virtual override {
-        _approveInternal(_addressesToIds[to], tokenId, false);
-    }
-
-    function approveById(uint256 to, uint256 tokenId) public virtual override {
-        _approveInternal(to, tokenId, true);
-    }
-
-    function _approveInternal(
-        uint256 toId,
-        uint256 tokenId,
-        bool isById
-    ) internal {
-        uint256 owner = World.ownerOfById(tokenId);
-        require(toId != owner, "W01");
-        uint256 senderId = _addressesToIds[msg.sender];
-        require(
-            senderId == owner || isApprovedForAllById(owner, senderId),
-            "W02"
-        );
-        _approve(toId, tokenId, isById);
-    }
-
-    function getApproved(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (address)
-    {
-        require(_exists(tokenId), "W03");
-        return _accountsById[_tokenApprovalsById[tokenId]]._address;
-    }
-
-    function getApprovedById(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        require(_exists(tokenId), "W03");
-        return _tokenApprovalsById[tokenId];
-    }
-
-    function setApprovalForAll(address operator, bool approved)
-        public
-        virtual
-        override
-    {
-        _setApprovalForAll(
-            _addressesToIds[msg.sender],
-            _addressesToIds[operator],
-            approved,
-            false
-        );
-    }
-
-    function setApprovalForAllById(uint256 operator, bool approved)
-        public
-        virtual
-        override
-    {
-        _setApprovalForAll(
-            _addressesToIds[msg.sender],
-            operator,
-            approved,
-            true
-        );
-    }
-
-    function isApprovedForAll(address owner, address operator)
-        public
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        return
-            _operatorApprovalsById[_addressesToIds[owner]][
-                _addressesToIds[operator]
-            ];
-    }
-
-    function isApprovedForAllById(uint256 owner, uint256 operator)
-        public
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        return _operatorApprovalsById[owner][operator];
-    }
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public virtual override {
-        require(
-            _isApprovedOrOwner(_addressesToIds[msg.sender], tokenId),
-            "W04"
-        );
-        _transfer(_addressesToIds[from], _addressesToIds[to], tokenId, false);
-    }
-
-    function transferFromById(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId
-    ) public virtual override {
-        require(
-            _isApprovedOrOwner(_addressesToIds[msg.sender], tokenId),
-            "W04"
-        );
-        _transfer(from, to, tokenId, true);
-    }
-
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public virtual override {
-        safeTransferFrom(from, to, tokenId, "");
-    }
-
-    function safeTransferFromById(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId
-    ) public virtual override {
-        safeTransferFromById(from, to, tokenId, "");
-    }
-
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory _data
-    ) public virtual override {
-        require(
-            _isApprovedOrOwner(_addressesToIds[msg.sender], tokenId),
-            "W04"
-        );
-        _safeTransfer(
-            _addressesToIds[from],
-            _addressesToIds[to],
-            tokenId,
-            _data,
-            false
-        );
-    }
-
-    function safeTransferFromById(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId,
-        bytes memory _data
-    ) public virtual override {
-        require(
-            _isApprovedOrOwner(_addressesToIds[msg.sender], tokenId),
-            "W04"
-        );
-        _safeTransfer(from, to, tokenId, _data, true);
-    }
-
-    function _safeTransfer(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId,
-        bytes memory _data,
-        bool isById
-    ) internal virtual {
-        _transfer(from, to, tokenId, isById);
-        require(
-            _checkOnERC721Received(
-                _accountsById[from]._address,
-                _accountsById[to]._address,
-                tokenId,
-                _data
-            ),
-            "W05"
-        );
-    }
-
-    function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        return _ownersById[tokenId] != 0;
-    }
-
-    function _isApprovedOrOwner(uint256 spender, uint256 tokenId)
-        internal
-        view
-        virtual
-        returns (bool)
-    {
-        require(_exists(tokenId), "W03");
-        uint256 owner = World.ownerOfById(tokenId);
-        return (spender == owner ||
-            isApprovedForAllById(owner, spender) ||
-            getApprovedById(tokenId) == spender);
-    }
-
-    function mint(uint256 toId) public {
+    function registerAvatar(
+        uint256 totalSupply,
+        address avatar,
+        string calldata name,
+        string calldata image
+    ) public {
         onlyOwner();
-        require(avatarId <= _supply, "minting is already finished");
-        avatarId++;
-        _mint(toId, avatarId);
+        require(avatar != address(0), "empty address");
+        _avatar = avatar;
+        _assets[_avatar] = Asset(
+            uint8(TypeOperation.ITEM),
+            true,
+            _avatar,
+            name,
+            image
+        );
+        _avatarMaxId = totalSupply;
+        _totalAccount = totalSupply;
+
+        emit RegisterAsset(uint8(TypeOperation.ITEM), _avatar, name, image);
     }
 
-    function burn(uint256 tokenId) public {
-        onlyOwner();
-        _burn(tokenId);
-    }
-
-    // function _safeMint(address to, uint256 tokenId) internal virtual {
-    //     _safeMint(to, tokenId, "");
-    // }
-
-    // function _safeMint(
-    //     address to,
-    //     uint256 tokenId,
-    //     bytes memory _data
-    // ) internal virtual {
-    //     uint256 toId = _addressesToIds[to];
-    //     _mint(toId, tokenId);
-    //     require(
-    //         _checkOnERC721Received(address(0), to, tokenId, _data),
-    //         "transfer to non ERC721Receiver implementer"
-    //     );
-    // }
-
-    function _mint(uint256 toId, uint256 tokenId) internal virtual {
-        require(toId != 0, "W06");
-        require(!_exists(tokenId), "W07");
-
-        _balancesById[toId] += 1;
-        _ownersById[tokenId] = toId;
-        emit Transfer(address(0), _accountsById[toId]._address, tokenId);
-    }
-
-    function _burn(uint256 tokenId) internal virtual {
-        address owner = World.ownerOf(tokenId);
-        _approve(0, tokenId, false);
-        uint256 ownerId = _addressesToIds[owner];
-        _balancesById[ownerId] -= 1;
-        delete _ownersById[tokenId];
-        emit Transfer(owner, address(0), tokenId);
-    }
-
-    function _transfer(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId,
-        bool isById
-    ) internal virtual {
-        require(_ownersById[tokenId] == from, "W08");
-        require(to != 0, "W06");
-        _approve(0, tokenId, true);
-        _balancesById[from] -= 1;
-        _balancesById[to] += 1;
-        _ownersById[tokenId] = to;
-        if (isById) {
-            emit TransferById(from, to, tokenId);
-        } else {
-            emit Transfer(
-                _accountsById[from]._address,
-                _accountsById[to]._address,
-                tokenId
-            );
-        }
-    }
-
-    function _approve(
-        uint256 to,
-        uint256 tokenId,
-        bool isById
-    ) internal virtual {
-        _tokenApprovalsById[tokenId] = to;
-        if (isById) {
-            emit ApprovalById(World.ownerOfById(tokenId), to, tokenId);
-        } else {
-            emit Approval(
-                World.ownerOf(tokenId),
-                _accountsById[to]._address,
-                tokenId
-            );
-        }
-    }
-
-    function _setApprovalForAll(
-        uint256 owner,
-        uint256 operator,
-        bool approved,
-        bool isById
-    ) internal virtual {
-        require(owner != operator, "W01");
-        _operatorApprovalsById[owner][operator] = approved;
-        if (isById) {
-            emit ApprovalForAllById(owner, operator, approved);
-        } else {
-            emit ApprovalForAll(
-                _accountsById[owner]._address,
-                _accountsById[operator]._address,
-                approved
-            );
-        }
-    }
-
-    function _checkOnERC721Received(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory _data
-    ) private returns (bool) {
-        if (to.code.length > 0) {
-            try
-                IERC721Receiver(to).onERC721Received(
-                    msg.sender,
-                    from,
-                    tokenId,
-                    _data
-                )
-            returns (bytes4 retval) {
-                return retval == IERC721Receiver.onERC721Received.selector;
-            } catch (bytes memory reason) {
-                if (reason.length == 0) {
-                    revert("W05");
-                } else {
-                    assembly {
-                        revert(add(32, reason), mload(reason))
-                    }
-                }
-            }
-        } else {
-            return true;
-        }
+    function getTotalAccount() public view virtual returns (uint256) {
+        return _totalAccount;
     }
 
     function getOrCreateAccountId(address _address)
@@ -561,8 +137,8 @@ contract World is ERC165, IWorld {
     {
         if (_addressesToIds[_address] == 0) {
             // create account
-            accountId++;
-            id = accountId;
+            _totalAccount++;
+            id = _totalAccount;
             Account memory account = Account(false, true, id, _address);
             _accountsById[id] = account;
             _addressesToIds[_address] = id;
@@ -587,7 +163,18 @@ contract World is ERC165, IWorld {
         override
         returns (address _address)
     {
-        _address = _accountsById[_id]._address;
+         console.log(
+            "Register Contract------- %s addr %s",
+            _id,
+            _avatarMaxId
+        );
+        if (_id >= _avatarMaxId ) {
+            _address = _accountsById[_id]._address;
+        } else {
+            // 查询avatar token的真正的用户Id
+            _address = _accountsById[IItem721(_avatar).ownerOfById(_id)]
+                ._address;
+        }
     }
 
     // func 注册cash
@@ -600,9 +187,9 @@ contract World is ERC165, IWorld {
         onlyOwner();
         require(
             _contract != address(0) && _assets[_contract]._isExist == false,
-            "W10"
+            "W02"
         );
-        require(msg.sender == IAsset(_contract).worldAddress(), "W11");
+        require(msg.sender == IAsset(_contract).worldAddress(), "W03");
         _assets[_contract] = Asset(
             uint8(_typeOperation),
             true,
@@ -610,7 +197,12 @@ contract World is ERC165, IWorld {
             _tokneName,
             _image
         );
-        emit RegisterAsset(uint8(_typeOperation), _contract, _name, _image);
+        emit RegisterAsset(
+            uint8(_typeOperation),
+            _contract,
+            _tokneName,
+            _image
+        );
     }
 
     // func 修改Asset _contract
@@ -620,7 +212,7 @@ contract World is ERC165, IWorld {
             _contract != address(0) &&
                 _assets[_contract]._isExist == true &&
                 _assets[_contract]._type == asset._type,
-            "W12"
+            "W04"
         );
         _assets[_contract] = asset;
         emit ChangeAsset(_contract, asset._name, asset._image);
@@ -633,7 +225,7 @@ contract World is ERC165, IWorld {
         onlyOwner();
         require(
             _contract != address(0) && _assets[_contract]._isExist == true,
-            "W13"
+            "W05"
         );
         (success, ) = _contract.call(_data);
     }
@@ -642,10 +234,10 @@ contract World is ERC165, IWorld {
     function createAccount(address _address) public {
         require(
             _address != address(0) && _addressesToIds[_address] != 0,
-            "W13"
+            "W05"
         );
-        accountId++;
-        uint256 id = accountId;
+        _totalAccount++;
+        uint256 id = _totalAccount;
         _accountsById[id] = Account(false, true, id, _address);
         _addressesToIds[_address] = id;
         emit CreateAccount(id, _address);
@@ -659,7 +251,7 @@ contract World is ERC165, IWorld {
     ) public {
         require(
             _isOperatorByAddress[msg.sender] == true || _owner == msg.sender,
-            "W14"
+            "W06"
         );
         _changeAccount(_id, _newAddress, _isTrustWorld);
     }
@@ -669,17 +261,17 @@ contract World is ERC165, IWorld {
     {
         require(
             _isOperatorByAddress[msg.sender] == true || _owner == msg.sender,
-            "W14"
+            "W06"
         );
         for (uint256 i = 0; i < _changes.length; i++) {
             require(
                 _changes[i]._asset != address(0) &&
                     _assets[_changes[i]._asset]._isExist == true,
-                "W16"
+                "W08"
             );
             require(
                 _accountsById[_changes[i]._accountId]._isExist == true,
-                "W17"
+                "W09"
             );
             IAsset(_changes[i]._asset).changeAccountAddress(
                 _changes[i]._accountId,
@@ -694,7 +286,7 @@ contract World is ERC165, IWorld {
         address _newAddress,
         bool _isTrustWorld
     ) public {
-        require(_accountsById[_id]._address == msg.sender, "W17");
+        require(_accountsById[_id]._address == msg.sender, "W09");
         _changeAccount(_id, _newAddress, _isTrustWorld);
     }
 
@@ -707,7 +299,7 @@ contract World is ERC165, IWorld {
             _id != 0 &&
                 _accountsById[_id]._isExist == true &&
                 _addressesToIds[_newAddress] != 0,
-            "W17"
+            "W09"
         );
 
         Account memory account = _accountsById[_id];
@@ -723,10 +315,10 @@ contract World is ERC165, IWorld {
     function changeAssetAccountAddressByUser(address[] calldata _assetAddrs)
         public
     {
-        require(_assetAddrs.length > 0, "W15");
+        require(_assetAddrs.length > 0, "W07");
         uint256 id = _addressesToIds[msg.sender];
         for (uint256 i = 0; i < _assetAddrs.length; i++) {
-            require(_assetAddrs[i] != address(0), "W09");
+            require(_assetAddrs[i] != address(0), "W01");
             IAsset(_assetAddrs[i]).changeAccountAddress(id, msg.sender);
         }
     }
@@ -734,7 +326,7 @@ contract World is ERC165, IWorld {
     // 添加operator
     function addOperator(address _operator) public {
         onlyOwner();
-        require(_operator != address(0), "W09");
+        require(_operator != address(0), "W01");
         _isOperatorByAddress[_operator] = true;
         emit AddOperator(_operator);
     }
@@ -754,7 +346,7 @@ contract World is ERC165, IWorld {
     // 添加conttract
     function addContract(address _contract) public {
         onlyOwner();
-        require(_contract != address(0), "W09");
+        require(_contract != address(0), "W01");
         _safeContracts[_contract] = true;
         emit AddSafeContract(_contract);
     }
@@ -767,7 +359,7 @@ contract World is ERC165, IWorld {
     }
 
     function onlyOwner() internal view {
-        require(_owner == msg.sender, "W18");
+        require(_owner == msg.sender, "W10");
     }
 
     function changeOwner(address newOwner) public {
