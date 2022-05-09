@@ -103,6 +103,22 @@ contract World is IWorld {
         _owner = msg.sender;
     }
 
+    function getTotalAccount() public view virtual returns (uint256) {
+        return _totalAccount;
+    }
+
+    function getAvatarMaxId() public view virtual returns (uint256) {
+        return _avatarMaxId;
+    }
+
+    function getAvatar() public view virtual returns (address) {
+        return _avatar;
+    }
+
+    function getOwner() public view virtual returns (address) {
+        return _owner;
+    }
+
     function registerAvatar(
         uint256 totalSupply,
         address avatar,
@@ -123,10 +139,6 @@ contract World is IWorld {
         _totalAccount = totalSupply;
 
         emit RegisterAsset(uint8(TypeOperation.ITEM), _avatar, name, image);
-    }
-
-    function getTotalAccount() public view virtual returns (uint256) {
-        return _totalAccount;
     }
 
     function getOrCreateAccountId(address _address)
@@ -163,12 +175,8 @@ contract World is IWorld {
         override
         returns (address _address)
     {
-         console.log(
-            "Register Contract------- %s addr %s",
-            _id,
-            _avatarMaxId
-        );
-        if (_id >= _avatarMaxId ) {
+        //console.log("Register Contract------- %s addr %s", _id, _avatarMaxId);
+        if (_id >= _avatarMaxId) {
             _address = _accountsById[_id]._address;
         } else {
             // 查询avatar token的真正的用户Id
@@ -218,17 +226,17 @@ contract World is IWorld {
         emit ChangeAsset(_contract, asset._name, asset._image);
     }
 
-    function callAsset(address _contract, bytes calldata _data)
-        public
-        returns (bool success)
-    {
-        onlyOwner();
-        require(
-            _contract != address(0) && _assets[_contract]._isExist == true,
-            "W05"
-        );
-        (success, ) = _contract.call(_data);
-    }
+    // function callAsset(address _contract, bytes calldata _data)
+    //     public
+    //     returns (bool success)
+    // {
+    //     onlyOwner();
+    //     require(
+    //         _contract != address(0) && _assets[_contract]._isExist == true,
+    //         "W05"
+    //     );
+    //     (success, ) = _contract.call(_data);
+    // }
 
     // func 创建Account
     function createAccount(address _address) public {
