@@ -37,7 +37,7 @@ contract('World', function (accounts) {
     shouldBehaveLikeWorld(...accounts);
     shouldBehaveLikeWorldOperator(...accounts);
     shouldBehaveLikeWorldTrust(...accounts);
-    // shouldBehaveLikeWorldAccount(...accounts);
-    // shouldBehaveLikeWorldAsset(...accounts);
-    // shouldBehaveLikeWorldAvatar(...accounts);
+    shouldBehaveLikeWorldAccount(...accounts);
+    shouldBehaveLikeWorldAsset(...accounts);
+    shouldBehaveLikeWorldAvatar(...accounts);
 });

@@ -53,6 +53,6 @@ contract AvatarMock is Item721 {
 
     function onlyOwnerAndLessSupply(uint256 tokenId) internal view {
         require(_owner == msg.sender, "only owner");
-        require(_supply > tokenId, "bigger than supply");
+        require(_supply >= tokenId, "bigger than supply");
     }
 }

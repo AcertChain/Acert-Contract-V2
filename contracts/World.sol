@@ -19,6 +19,7 @@ W07:empty data
 W08:asset is invalid or is not exist
 W09:account is invalid or is not exist
 W10:only owner
+W11:must safe contract
  */
 contract World is IWorld {
     enum TypeOperation {
@@ -38,7 +39,12 @@ contract World is IWorld {
     // event 创建Account
     event CreateAccount(uint256 _id, address _address);
     // event 修改Account _address
-    event ChangeAccount(uint256 _id, address _executor, address _newAddress);
+    event ChangeAccount(
+        uint256 _id,
+        address _executor,
+        address _newAddress,
+        bool _isTrust
+    );
     // event add operator
     event AddOperator(address _operator);
     // event remove operator
@@ -47,6 +53,10 @@ contract World is IWorld {
     event AddSafeContract(address _contract);
     // event remove contract
     event RemoveSafeContract(address _contract);
+    // event trustContract
+    event TrustContract(uint256 _id, address _contract);
+    // event AccountCancelTrustContract
+    event UntrustContract(uint256 _id, address _contract);
 
     // avatar
     address private _avatar;
@@ -151,8 +161,7 @@ contract World is IWorld {
             // create account
             _totalAccount++;
             id = _totalAccount;
-            Account memory account = Account(false, true, id, _address);
-            _accountsById[id] = account;
+            _accountsById[id] = Account(false, true, id, _address);
             _addressesToIds[_address] = id;
             emit CreateAccount(id, _address);
         } else {
@@ -175,17 +184,15 @@ contract World is IWorld {
         override
         returns (address _address)
     {
-        //console.log("Register Contract------- %s addr %s", _id, _avatarMaxId);
-        if (_id >= _avatarMaxId) {
+        if (_id > _avatarMaxId || _id == 0) {
             _address = _accountsById[_id]._address;
         } else {
-            // 查询avatar token的真正的用户Id
             _address = _accountsById[IItem721(_avatar).ownerOfById(_id)]
                 ._address;
         }
     }
 
-    // func 注册cash
+    // func 注册资产
     function registerAsset(
         address _contract,
         TypeOperation _typeOperation,
@@ -197,7 +204,7 @@ contract World is IWorld {
             _contract != address(0) && _assets[_contract]._isExist == false,
             "W02"
         );
-        require(msg.sender == IAsset(_contract).worldAddress(), "W03");
+        require(address(this) == IAsset(_contract).worldAddress(), "W03");
         _assets[_contract] = Asset(
             uint8(_typeOperation),
             true,
@@ -214,16 +221,22 @@ contract World is IWorld {
     }
 
     // func 修改Asset _contract
-    function changeAsset(address _contract, Asset memory asset) public {
+    function changeAsset(
+        address _contract,
+        TypeOperation _typeOperation,
+        string calldata _tokneName,
+        string calldata _image
+    ) public {
         onlyOwner();
         require(
             _contract != address(0) &&
                 _assets[_contract]._isExist == true &&
-                _assets[_contract]._type == asset._type,
+                _assets[_contract]._type == uint8(_typeOperation),
             "W04"
         );
-        _assets[_contract] = asset;
-        emit ChangeAsset(_contract, asset._name, asset._image);
+        _assets[_contract]._name = _tokneName;
+        _assets[_contract]._image = _image;
+        emit ChangeAsset(_contract, _tokneName, _image);
     }
 
     // function callAsset(address _contract, bytes calldata _data)
@@ -240,8 +253,9 @@ contract World is IWorld {
 
     // func 创建Account
     function createAccount(address _address) public {
+        //console.log("createAccount %s %s", _address,_addressesToIds[_address]);
         require(
-            _address != address(0) && _addressesToIds[_address] != 0,
+            _address != address(0) && _addressesToIds[_address] == 0,
             "W05"
         );
         _totalAccount++;
@@ -298,26 +312,36 @@ contract World is IWorld {
         _changeAccount(_id, _newAddress, _isTrustWorld);
     }
 
+    function accountTrustContract(uint256 _id, address _contract) public {
+        require(_accountsById[_id]._address == msg.sender, "W09");
+        require(_safeContracts[_contract] == true, "W11");
+        _isTrustContractByAccountId[_id][_contract] = true;
+        emit TrustContract(_id, _contract);
+    }
+
+    function accountUntrustContract(uint256 _id, address _contract) public {
+        require(_accountsById[_id]._address == msg.sender, "W09");
+        require(_safeContracts[_contract] == true, "W11");
+        delete _isTrustContractByAccountId[_id][_contract];
+        emit UntrustContract(_id, _contract);
+    }
+
     function _changeAccount(
         uint256 _id,
         address _newAddress,
         bool _isTrustWorld
     ) internal {
-        require(
-            _id != 0 &&
-                _accountsById[_id]._isExist == true &&
-                _addressesToIds[_newAddress] != 0,
-            "W09"
-        );
+        require(_id != 0 && _accountsById[_id]._isExist == true, "W09");
 
-        Account memory account = _accountsById[_id];
-        account._isTrustWorld = _isTrustWorld;
-        delete _addressesToIds[account._address];
-        account._address = _newAddress;
-        _accountsById[_id] = account;
-        _addressesToIds[_newAddress] = _id;
+        if (_accountsById[_id]._address != _newAddress) {
+            require(_addressesToIds[_newAddress] == 0, "W09");
+            delete _addressesToIds[_accountsById[_id]._address];
+            _accountsById[_id]._address = _newAddress;
+            _addressesToIds[_newAddress] = _id;
+        }
+        _accountsById[_id]._isTrustWorld = _isTrustWorld;
 
-        emit ChangeAccount(_id, msg.sender, _newAddress);
+        emit ChangeAccount(_id, msg.sender, _newAddress, _isTrustWorld);
     }
 
     function changeAssetAccountAddressByUser(address[] calldata _assetAddrs)
@@ -385,17 +409,9 @@ contract World is IWorld {
     function getAsset(address _contract)
         public
         view
-        returns (
-            uint8,
-            string memory,
-            string memory
-        )
+        returns (Asset memory)
     {
-        return (
-            _assets[_contract]._type,
-            _assets[_contract]._name,
-            _assets[_contract]._image
-        );
+        return  _assets[_contract];
     }
 
     function isTrustWorld(uint256 _id) public view returns (bool _isTrust) {
