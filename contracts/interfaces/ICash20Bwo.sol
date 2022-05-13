@@ -1,22 +1,22 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-interface ICash20Bwo {
-    event TransferByBWO(
+interface ICash20BWO {
+    event TransferBWO(
         uint256 indexed from,
         uint256 indexed to,
         uint256 value,
         uint256 nonce
     );
 
-    event ApprovalByBWO(
+    event ApprovalBWO(
         uint256 indexed owner,
         uint256 indexed spender,
         uint256 value,
         uint256 nonce
     );
 
-    function transferByBWO(
+    function transferBWO(
         uint256 from,
         uint256 to,
         uint256 amount,
@@ -24,7 +24,7 @@ interface ICash20Bwo {
         bytes memory signature
     ) external returns (bool);
 
-    function approveByBWO(
+    function approveBWO(
         uint256 owner,
         uint256 spender,
         uint256 amount,
@@ -32,7 +32,7 @@ interface ICash20Bwo {
         bytes memory signature
     ) external returns (bool);
 
-    function transferFromByBWO(
+    function transferFromBWO(
         uint256 spender,
         uint256 from,
         uint256 to,

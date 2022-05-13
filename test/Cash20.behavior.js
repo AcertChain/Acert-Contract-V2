@@ -1,33 +1,44 @@
-const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
-const { expect } = require('chai');
-const { MAX_UINT256 } = constants;
+const {
+  BN,
+  constants,
+  expectEvent,
+  expectRevert
+} = require('@openzeppelin/test-helpers');
+const {
+  expect
+} = require('chai');
+const {
+  MAX_UINT256
+} = constants;
 
 
-function shouldBehaveLikeCash20 (errorPrefix, initialSupply, initialHolder, initialHolderId, recipient, recipientId, anotherAccount, anotherAccountId) {
+function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initialHolderId, recipient, recipientId, anotherAccount, anotherAccountId) {
   describe('total supply', function () {
     it('returns the total amount of tokens', async function () {
       expect(await this.token.totalSupply()).to.be.bignumber.equal(initialSupply);
     });
   });
 
-  describe('balanceOfById', function () {
+  describe('balanceOfId', function () {
     describe('when the requested account has no tokens', function () {
       it('returns zero', async function () {
-        expect(await this.token.balanceOfById(anotherAccountId)).to.be.bignumber.equal('0');
+        expect(await this.token.balanceOfId(anotherAccountId)).to.be.bignumber.equal('0');
       });
     });
 
     describe('when the requested account has some tokens', function () {
       it('returns the total amount of tokens', async function () {
-        expect(await this.token.balanceOfById(initialHolderId)).to.be.bignumber.equal(initialSupply);
+        expect(await this.token.balanceOfId(initialHolderId)).to.be.bignumber.equal(initialSupply);
       });
     });
   });
 
-  describe('transferById', function () {
+  describe('transferCash', function () {
     shouldBehaveLikeCash20Transfer(errorPrefix, initialHolder, initialHolderId, recipientId, initialSupply,
       function (fromaddr, from, to, value) {
-        return this.token.transferById(to, value, { from: fromaddr });
+        return this.token.transferCash(from, to, value, {
+          from: fromaddr
+        });
       },
     );
   });
@@ -45,39 +56,55 @@ function shouldBehaveLikeCash20 (errorPrefix, initialSupply, initialHolder, init
 
         describe('when the spender has enough allowance', function () {
           beforeEach(async function () {
-            await this.token.approveById(spender, initialSupply, { from: initialHolder });
+            await this.token.approveId(initialHolderId, spender, initialSupply, {
+              from: initialHolder
+            });
           });
 
           describe('when the token owner has enough balance', function () {
             const amount = initialSupply;
 
             it('transfers the requested amount', async function () {
-              await this.token.transferFromById(tokenOwner, to, amount, { from: spenderAddr });
+              await this.token.transferCashFrom(tokenOwner, to, amount, {
+                from: spenderAddr
+              });
 
-              expect(await this.token.balanceOfById(tokenOwner)).to.be.bignumber.equal('0');
+              expect(await this.token.balanceOfId(tokenOwner)).to.be.bignumber.equal('0');
 
-              expect(await this.token.balanceOfById(to)).to.be.bignumber.equal(amount);
+              expect(await this.token.balanceOfId(to)).to.be.bignumber.equal(amount);
             });
 
             it('decreases the spender allowance', async function () {
-              await this.token.transferFromById(tokenOwner, to, amount, { from: spenderAddr });
+              await this.token.transferCashFrom(tokenOwner, to, amount, {
+                from: spenderAddr
+              });
 
-              expect(await this.token.allowanceById(tokenOwner, spender)).to.be.bignumber.equal('0');
+              expect(await this.token.allowanceId(tokenOwner, spender)).to.be.bignumber.equal('0');
             });
 
             it('emits a transfer by id event', async function () {
               expectEvent(
-                await this.token.transferFromById(tokenOwner, to, amount, { from: spenderAddr }),
-                'TransferById',
-                { from: tokenOwner, to: to, value: amount },
+                await this.token.transferCashFrom(tokenOwner, to, amount, {
+                  from: spenderAddr
+                }),
+                'TransferId', {
+                  from: tokenOwner,
+                  to: to,
+                  value: amount
+                },
               );
             });
 
             it('emits an approval by id event', async function () {
               expectEvent(
-                await this.token.transferFromById(tokenOwner, to, amount, { from: spenderAddr }),
-                'ApprovalById',
-                { owner: tokenOwner, spender: spender, value: await this.token.allowanceById(tokenOwner, spender) },
+                await this.token.transferCashFrom(tokenOwner, to, amount, {
+                  from: spenderAddr
+                }),
+                'ApprovalId', {
+                  owner: tokenOwner,
+                  spender: spender,
+                  value: await this.token.allowanceId(tokenOwner, spender)
+                },
               );
             });
           });
@@ -86,12 +113,16 @@ function shouldBehaveLikeCash20 (errorPrefix, initialSupply, initialHolder, init
             const amount = initialSupply;
 
             beforeEach('reducing balance', async function () {
-              await this.token.transferById(to, 1, { from: tokenOwnerAddr });
+              await this.token.transferCash(tokenOwner, to, 1, {
+                from: tokenOwnerAddr
+              });
             });
 
             it('reverts', async function () {
               await expectRevert(
-                this.token.transferFromById(tokenOwner, to, amount, { from: spenderAddr }),
+                this.token.transferCashFrom(tokenOwner, to, amount, {
+                  from: spenderAddr
+                }),
                 `${errorPrefix}: transfer amount exceeds balance`,
               );
             });
@@ -102,7 +133,9 @@ function shouldBehaveLikeCash20 (errorPrefix, initialSupply, initialHolder, init
           const allowance = initialSupply.subn(1);
 
           beforeEach(async function () {
-            await this.token.approveById(spender, allowance, { from: tokenOwnerAddr });
+            await this.token.approveId(tokenOwner, spender, allowance, {
+              from: tokenOwnerAddr
+            });
           });
 
           describe('when the token owner has enough balance', function () {
@@ -110,7 +143,9 @@ function shouldBehaveLikeCash20 (errorPrefix, initialSupply, initialHolder, init
 
             it('reverts', async function () {
               await expectRevert(
-                this.token.transferFromById(tokenOwner, to, amount, { from: spenderAddr }),
+                this.token.transferCashFrom(tokenOwner, to, amount, {
+                  from: spenderAddr
+                }),
                 `${errorPrefix}: insufficient allowance`,
               );
             });
@@ -120,12 +155,16 @@ function shouldBehaveLikeCash20 (errorPrefix, initialSupply, initialHolder, init
             const amount = allowance;
 
             beforeEach('reducing balance', async function () {
-              await this.token.transferById(to, 2, { from: tokenOwnerAddr });
+              await this.token.transferCash(tokenOwner, to, 2, {
+                from: tokenOwnerAddr
+              });
             });
 
             it('reverts', async function () {
               await expectRevert(
-                this.token.transferFromById(tokenOwner, to, amount, { from: spenderAddr }),
+                this.token.transferCashFrom(tokenOwner, to, amount, {
+                  from: spenderAddr
+                }),
                 `${errorPrefix}: transfer amount exceeds balance`,
               );
             });
@@ -134,19 +173,25 @@ function shouldBehaveLikeCash20 (errorPrefix, initialSupply, initialHolder, init
 
         describe('when the spender has unlimited allowance', function () {
           beforeEach(async function () {
-            await this.token.approveById(spender, MAX_UINT256, { from: initialHolder });
+            await this.token.approveId(initialHolderId, spender, MAX_UINT256, {
+              from: initialHolder
+            });
           });
 
           it('does not decrease the spender allowance', async function () {
-            await this.token.transferFromById(tokenOwner, to, 1, { from: spenderAddr });
+            await this.token.transferCashFrom(tokenOwner, to, 1, {
+              from: spenderAddr
+            });
 
-            expect(await this.token.allowanceById(tokenOwner, spender)).to.be.bignumber.equal(MAX_UINT256);
+            expect(await this.token.allowanceId(tokenOwner, spender)).to.be.bignumber.equal(MAX_UINT256);
           });
 
           it('does not emit an approval by id event', async function () {
             expectEvent.notEmitted(
-              await this.token.transferFromById(tokenOwner, to, 1, { from: spenderAddr }),
-              'ApprovalById',
+              await this.token.transferCashFrom(tokenOwner, to, 1, {
+                from: spenderAddr
+              }),
+              'ApprovalId',
             );
           });
         });
@@ -157,13 +202,16 @@ function shouldBehaveLikeCash20 (errorPrefix, initialSupply, initialHolder, init
         const to = 0;
 
         beforeEach(async function () {
-          await this.token.approveById(spender, amount, { from: tokenOwnerAddr });
+          await this.token.approveId(tokenOwner, spender, amount, {
+            from: tokenOwnerAddr
+          });
         });
 
         it('reverts', async function () {
-          await expectRevert(this.token.transferFromById(
-            tokenOwner, to, amount, { from: spenderAddr }), `${errorPrefix}: transfer to the zero id`,
-          );
+          await expectRevert(this.token.transferCashFrom(
+            tokenOwner, to, amount, {
+              from: spenderAddr
+            }), `${errorPrefix}: transfer to the zero id`, );
         });
       });
     });
@@ -175,23 +223,27 @@ function shouldBehaveLikeCash20 (errorPrefix, initialSupply, initialHolder, init
 
       it('reverts', async function () {
         await expectRevert(
-          this.token.transferFromById(tokenOwner, to, amount, { from: spenderAddr }),
+          this.token.transferCashFrom(tokenOwner, to, amount, {
+            from: spenderAddr
+          }),
           'Cash: approve from the zero Id',
         );
       });
     });
   });
 
-  describe('approveById', function () {
+  describe('approveId', function () {
     shouldBehaveLikeCash20Approve(errorPrefix, initialHolder, initialHolderId, recipientId, initialSupply,
       function (ownerAddr, owner, spender, amount) {
-        return this.token.approveById(spender, amount, { from: ownerAddr });
+        return this.token.approveId(owner, spender, amount, {
+          from: ownerAddr
+        });
       },
     );
   });
 }
 
-function shouldBehaveLikeCash20Transfer (errorPrefix, fromAddr, from, to, balance, transfer) {
+function shouldBehaveLikeCash20Transfer(errorPrefix, fromAddr, from, to, balance, transfer) {
   describe('when the recipientId is not the zero id', function () {
     describe('when the sender does not have enough balance', function () {
       const amount = balance.addn(1);
@@ -209,16 +261,19 @@ function shouldBehaveLikeCash20Transfer (errorPrefix, fromAddr, from, to, balanc
       it('transfers the requested amount', async function () {
         await transfer.call(this, fromAddr, from, to, amount);
 
-        expect(await this.token.balanceOfById(from)).to.be.bignumber.equal('0');
+        expect(await this.token.balanceOfId(from)).to.be.bignumber.equal('0');
 
-        expect(await this.token.balanceOfById(to)).to.be.bignumber.equal(amount);
+        expect(await this.token.balanceOfId(to)).to.be.bignumber.equal(amount);
       });
 
       it('emits a transfer by id event', async function () {
         expectEvent(
           await transfer.call(this, fromAddr, from, to, amount),
-          'TransferById',
-          { from, to, value: amount },
+          'TransferId', {
+            from,
+            to,
+            value: amount
+          },
         );
       });
     });
@@ -229,16 +284,19 @@ function shouldBehaveLikeCash20Transfer (errorPrefix, fromAddr, from, to, balanc
       it('transfers the requested amount', async function () {
         await transfer.call(this, fromAddr, from, to, amount);
 
-        expect(await this.token.balanceOfById(from)).to.be.bignumber.equal(balance);
+        expect(await this.token.balanceOfId(from)).to.be.bignumber.equal(balance);
 
-        expect(await this.token.balanceOfById(to)).to.be.bignumber.equal('0');
+        expect(await this.token.balanceOfId(to)).to.be.bignumber.equal('0');
       });
 
       it('emits a transfer by id event', async function () {
         expectEvent(
           await transfer.call(this, fromAddr, from, to, amount),
-          'TransferById',
-          { from, to, value: amount },
+          'TransferId', {
+            from,
+            to,
+            value: amount
+          },
         );
       });
     });
@@ -253,7 +311,7 @@ function shouldBehaveLikeCash20Transfer (errorPrefix, fromAddr, from, to, balanc
   });
 }
 
-function shouldBehaveLikeCash20Approve (errorPrefix, ownerAddr, owner, spender, supply, approve) {
+function shouldBehaveLikeCash20Approve(errorPrefix, ownerAddr, owner, spender, supply, approve) {
   describe('when the spender is not the zero Id', function () {
     describe('when the sender has enough balance', function () {
       const amount = supply;
@@ -261,8 +319,11 @@ function shouldBehaveLikeCash20Approve (errorPrefix, ownerAddr, owner, spender, 
       it('emits an approval by id event', async function () {
         expectEvent(
           await approve.call(this, ownerAddr, owner, spender, amount),
-          'ApprovalById',
-          { owner: owner, spender: spender, value: amount },
+          'ApprovalId', {
+            owner: owner,
+            spender: spender,
+            value: amount
+          },
         );
       });
 
@@ -270,7 +331,7 @@ function shouldBehaveLikeCash20Approve (errorPrefix, ownerAddr, owner, spender, 
         it('approves the requested amount', async function () {
           await approve.call(this, ownerAddr, owner, spender, amount);
 
-          expect(await this.token.allowanceById(owner, spender)).to.be.bignumber.equal(amount);
+          expect(await this.token.allowanceId(owner, spender)).to.be.bignumber.equal(amount);
         });
       });
 
@@ -282,7 +343,7 @@ function shouldBehaveLikeCash20Approve (errorPrefix, ownerAddr, owner, spender, 
         it('approves the requested amount and replaces the previous one', async function () {
           await approve.call(this, ownerAddr, owner, spender, amount);
 
-          expect(await this.token.allowanceById(owner, spender)).to.be.bignumber.equal(amount);
+          expect(await this.token.allowanceId(owner, spender)).to.be.bignumber.equal(amount);
         });
       });
     });
@@ -293,8 +354,11 @@ function shouldBehaveLikeCash20Approve (errorPrefix, ownerAddr, owner, spender, 
       it('emits an approval by Id event', async function () {
         expectEvent(
           await approve.call(this, ownerAddr, owner, spender, amount),
-          'ApprovalById',
-          { owner: owner, spender: spender, value: amount },
+          'ApprovalId', {
+            owner: owner,
+            spender: spender,
+            value: amount
+          },
         );
       });
 
@@ -302,7 +366,7 @@ function shouldBehaveLikeCash20Approve (errorPrefix, ownerAddr, owner, spender, 
         it('approves the requested amount', async function () {
           await approve.call(this, ownerAddr, owner, spender, amount);
 
-          expect(await this.token.allowanceById(owner, spender)).to.be.bignumber.equal(amount);
+          expect(await this.token.allowanceId(owner, spender)).to.be.bignumber.equal(amount);
         });
       });
 
@@ -314,7 +378,7 @@ function shouldBehaveLikeCash20Approve (errorPrefix, ownerAddr, owner, spender, 
         it('approves the requested amount and replaces the previous one', async function () {
           await approve.call(this, ownerAddr, owner, spender, amount);
 
-          expect(await this.token.allowanceById(owner, spender)).to.be.bignumber.equal(amount);
+          expect(await this.token.allowanceId(owner, spender)).to.be.bignumber.equal(amount);
         });
       });
     });

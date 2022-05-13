@@ -423,23 +423,124 @@ function shouldBehaveLikeWorldAsset() {
     });
 }
 
-function shouldBehaveLikeWorldAvatar(account) {
+function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccount) {
     context('World avatar', function () {
         beforeEach(async function () {
+            await this.world.getOrCreateAccountId(account)
+            this.accountId = new BN(await this.world.getAccountIdByAddress(account));
+            this.avatarTokenId = new BN(10);
+            await this.avatar.mint(account, this.avatarTokenId);
         });
-        describe('', function () {
-            context('', function () {
-                it('', async function () {});
+
+
+        describe('transfer cash', function () {
+            context('transfer by avatar token id', function () {
+                it('balance equal', async function () {
+                    const balance = new BN(1234);
+                    await this.cash.mint(cashAccount, balance);
+                    const cashAccountId = new BN(await this.world.getAccountIdByAddress(cashAccount));
+
+                    await this.cash.transferCash(cashAccountId, this.avatarTokenId, balance, {
+                        from: cashAccount
+                    });
+                    expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(balance);
+
+
+                    await this.cash.transferCash(this.avatarTokenId, cashAccountId, balance, {
+                        from: account
+                    });
+
+                    expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(new BN(0));
+                    expect(await this.cash.balanceOf(cashAccount)).to.bignumber.equal(balance);
+                });
             });
         });
-        describe('', function () {
-            context('', function () {
-                it('', async function () {});
+
+        describe('transfer item', function () {
+            context('transfer by avatar token id', function () {
+                it('owner equal', async function () {
+                    const itemTokenId = new BN(100)
+                    await this.item.mint(itemAccount, itemTokenId);
+                    const itemAccountId = new BN(await this.world.getAccountIdByAddress(itemAccount));
+                    await this.item.transferItemFrom(itemAccountId, this.avatarTokenId, itemTokenId, {
+                        from: itemAccount
+                    });
+                    expect(await this.item.ownerOfId(itemTokenId)).to.bignumber.equal(this.avatarTokenId);
+                    await this.item.transferItemFrom(this.avatarTokenId, itemAccountId, itemTokenId, {
+                        from: account
+                    });
+                    expect(await this.item.ownerOfId(itemTokenId)).to.bignumber.equal(itemAccountId);
+                });
             });
         });
-        describe('', function () {
-            context('', function () {
-                it('', async function () {});
+
+        describe('change avatar owner', function () {
+            context('change avatar owner', function () {
+                it('new owner', async function () {
+                    await this.world.changeAccountByUser(this.accountId, newAccount, false, {
+                        from: account
+                    });
+                    expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.accountId);
+                });
+                it('can transfer cash', async function () {
+                    const balance = new BN(1234)
+
+                    await this.cash.mint(cashAccount, balance);
+                    const cashAccountId = new BN(await this.world.getAccountIdByAddress(cashAccount));
+
+                    await this.cash.transferCash(cashAccountId, this.avatarTokenId, balance, {
+                        from: cashAccount
+                    });
+
+
+                    // 修改账户
+                    await this.world.changeAccountByUser(this.accountId, newAccount, false, {
+                        from: account
+                    });
+                    // 通知asset
+                    await this.world.changeAssetAccountAddressByUser([this.cash.address], {
+                        from: newAccount
+                    })
+
+                    expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.accountId);
+                    expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(balance);
+
+                    await this.cash.transferCash(this.accountId, cashAccountId, balance, {
+                        from: newAccount
+                    });
+                    expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(new BN(0));
+                    expect(await this.cash.balanceOf(cashAccount)).to.bignumber.equal(balance);
+
+                });
+
+                it('can transfer Item', async function () {
+                    const itemTokenId = new BN(100)
+
+                    await this.item.mint(itemAccount, itemTokenId);
+                    const itemAccountId = new BN(await this.world.getAccountIdByAddress(itemAccount));
+                    await this.item.transferItemFrom(itemAccountId, this.avatarTokenId, itemTokenId, {
+                        from: itemAccount
+                    });
+
+                    // 修改账户
+                    await this.world.changeAccountByUser(this.accountId, newAccount, false, {
+                        from: account
+                    });
+                    // 通知asset
+                    await this.world.changeAssetAccountAddressByUser([this.item.address], {
+                        from: newAccount
+                    })
+
+
+                    expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.avatarTokenId);
+
+                    expect(await this.item.ownerOfId(itemTokenId)).to.bignumber.equal(this.avatarTokenId);
+                    await this.item.transferItemFrom(this.avatarTokenId, itemAccountId, itemTokenId, {
+                        from: newAccount
+                    });
+                    expect(await this.item.ownerOfId(itemTokenId)).to.bignumber.equal(itemAccountId);
+
+                });
             });
         });
     });

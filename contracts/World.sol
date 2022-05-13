@@ -20,6 +20,7 @@ W08:asset is invalid or is not exist
 W09:account is invalid or is not exist
 W10:only owner
 W11:must safe contract
+W12:address should equal
  */
 contract World is IWorld {
     enum TypeOperation {
@@ -169,6 +170,22 @@ contract World is IWorld {
         }
     }
 
+    function getIdByAddress(address _address, uint256 _id)
+        public
+        virtual
+        override
+    {
+        if (_id > _avatarMaxId) {
+            require(_accountsById[_id]._address == _address, "W12");
+        } else {
+            require(
+                _address ==
+                    _accountsById[IItem721(_avatar).ownerOfId(_id)]._address,
+                "W12"
+            );
+        }
+    }
+
     function getAccountIdByAddress(address _address)
         public
         view
@@ -187,8 +204,8 @@ contract World is IWorld {
         if (_id > _avatarMaxId || _id == 0) {
             _address = _accountsById[_id]._address;
         } else {
-            _address = _accountsById[IItem721(_avatar).ownerOfById(_id)]
-                ._address;
+            console.log("get avatar id %s", _id);
+            _address = _accountsById[IItem721(_avatar).ownerOfId(_id)]._address;
         }
     }
 
@@ -406,12 +423,8 @@ contract World is IWorld {
     }
 
     // func 获取Asset
-    function getAsset(address _contract)
-        public
-        view
-        returns (Asset memory)
-    {
-        return  _assets[_contract];
+    function getAsset(address _contract) public view returns (Asset memory) {
+        return _assets[_contract];
     }
 
     function isTrustWorld(uint256 _id) public view returns (bool _isTrust) {

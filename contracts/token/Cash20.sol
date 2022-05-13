@@ -14,9 +14,8 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     // nonce
     mapping(uint256 => uint256) private _nonces;
-
-    mapping(address => uint256) private _AddressesToIds;
-    mapping(uint256 => address) private _IdsToAddresses;
+    mapping(address => uint256) private _AddrToId;
+    mapping(uint256 => address) private _IdToAddr;
 
     uint256 private _totalSupply;
 
@@ -80,9 +79,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         return 18;
     }
 
-    /**
-     * @dev See {ICash-balanceOf}.
-     */
     function worldAddress() external view virtual override returns (address) {
         return _world;
     }
@@ -95,7 +91,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {IERC20-balanceOfById}.
+     * @dev See {IERC20-balanceOf}.
      */
     function balanceOf(address account)
         public
@@ -104,20 +100,21 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        uint256 accountId = _AddressesToIds[account];
+        uint256 accountId = _AddrToId[account];
         return _balancesById[accountId];
     }
 
     /**
-     * @dev See {ICash-balanceOf}.
+     * @dev See {ICash-balanceOfId}.
      */
-    function balanceOfById(uint256 account)
+    function balanceOfId(uint256 account)
         public
         view
         virtual
         override
         returns (uint256)
     {
+        console.log("balanceOfId %d  %d", account, _balancesById[account]);
         return _balancesById[account];
     }
 
@@ -150,25 +147,30 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {ICash-transferById}.
+     * @dev See {ICash-transferCash}.
      *
      * Requirements:
      *
      * - `to` cannot be the zero .
      * - the caller must have a balance of at least `amount`.
      */
-    function transferById(uint256 to, uint256 amount)
-        public
-        virtual
-        override
-        returns (bool)
-    {
+    function transferCash(
+        uint256 from,
+        uint256 to,
+        uint256 amount
+    ) public virtual override returns (bool) {
         require(to != 0, "Cash: transfer to the zero Id");
-        _transferById(_getIdByAddress(_msgSender()), to, amount, false);
+        require(from != 0, "Cash: transfer from the zero Id");
+        _transferCash(
+            _getIdByAddressWithId(_msgSender(), from),
+            to,
+            amount,
+            false
+        );
         return true;
     }
 
-    function transferByBWO(
+    function transferBWO(
         uint256 from,
         uint256 to,
         uint256 amount,
@@ -187,16 +189,16 @@ contract Cash20 is Context, EIP712, ICash20 {
         address fromAddr = _getAddressById(from);
         require(
             fromAddr != _recoverSig(_hashArgs(digest), signature),
-            "transferByBWO : recoverSig failed"
+            "transferBWO : recoverSig failed"
         );
 
         require(
             block.timestamp < deadline,
-            "transferByBWO: signed transaction expired"
+            "transferBWO: signed transaction expired"
         );
         _nonces[from]++;
 
-        _transferById(from, to, amount, true);
+        _transferCash(from, to, amount, true);
 
         return true;
     }
@@ -211,15 +213,15 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        uint256 ownerId = _AddressesToIds[owner];
-        uint256 spenderId = _AddressesToIds[spender];
+        uint256 ownerId = _AddrToId[owner];
+        uint256 spenderId = _AddrToId[spender];
         return _allowancesById[ownerId][spenderId];
     }
 
     /**
-     * @dev See {IERC20-allowanceById}.
+     * @dev See {IERC20-allowanceId}.
      */
-    function allowanceById(uint256 owner, uint256 spender)
+    function allowanceId(uint256 owner, uint256 spender)
         public
         view
         virtual
@@ -251,7 +253,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {IERC20-approveById}.
+     * @dev See {IERC20-approveId}.
      *
      * NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on
      * `transferFrom`. This is semantically equivalent to an infinite approval.
@@ -260,18 +262,17 @@ contract Cash20 is Context, EIP712, ICash20 {
      *
      * - `spenderId` cannot be the zero .
      */
-    function approveById(uint256 spenderId, uint256 amount)
-        public
-        virtual
-        override
-        returns (bool)
-    {
-        uint256 ownerId = _getIdByAddress(_msgSender());
-        _approveById(ownerId, spenderId, amount, false);
+    function approveId(
+        uint256 ownerId,
+        uint256 spenderId,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        _getIdByAddressWithId(_msgSender(), ownerId);
+        _approveId(ownerId, spenderId, amount, false);
         return true;
     }
 
-    function approveByBWO(
+    function approveBWO(
         uint256 owner,
         uint256 spender,
         uint256 amount,
@@ -290,16 +291,16 @@ contract Cash20 is Context, EIP712, ICash20 {
         address ownerAddr = _getAddressById(owner);
         require(
             ownerAddr != _recoverSig(_hashArgs(digest), signature),
-            "approveByBWO : recoverSig failed"
+            "approveBWO : recoverSig failed"
         );
 
         require(
             block.timestamp < deadline,
-            "approveByBWO: signed transaction expired"
+            "approveBWO: signed transaction expired"
         );
         _nonces[owner]++;
 
-        _approveById(owner, spender, amount, true);
+        _approveId(owner, spender, amount, true);
         return true;
     }
 
@@ -324,8 +325,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         address to,
         uint256 amount
     ) public virtual override returns (bool) {
-        uint256 fromId = _getIdByAddress(from);
-        if (_isTrust(_msgSender(), fromId)) {
+        if (_isTrust(_msgSender(), _getIdByAddress(from))) {
             _transfer(from, to, amount);
             return true;
         }
@@ -336,9 +336,9 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {ICash-transferFromById}.
+     * @dev See {ICash-transferCashFrom}.
      *
-     * Emits an {ApprovalById} event indicating the updated allowance.
+     * Emits an {ApprovalId} event indicating the updated allowance.
      *
      * NOTE: Does not update the allowance if the current allowance
      * is the maximum `uint256`.
@@ -350,22 +350,22 @@ contract Cash20 is Context, EIP712, ICash20 {
      * - the caller must have allowance for ``from``'s tokens of at least
      * `amount`.
      */
-    function transferFromById(
+    function transferCashFrom(
         uint256 from,
         uint256 to,
         uint256 amount
     ) public virtual override returns (bool) {
         if (_isTrust(_msgSender(), from)) {
-            _transferById(from, to, amount, false);
+            _transferCash(from, to, amount, false);
             return true;
         }
 
         _spendAllowanceById(from, _getIdByAddress(_msgSender()), amount, false);
-        _transferById(from, to, amount, false);
+        _transferCash(from, to, amount, false);
         return true;
     }
 
-    function transferFromByBWO(
+    function transferFromBWO(
         uint256 spender,
         uint256 from,
         uint256 to,
@@ -373,8 +373,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
-        // TODO check BWO
-        require(_world != _msgSender(), "Cash: must be the world");
+        require(_iWorld.isBWO(_msgSender()), "Cash: must be the world BWO");
 
         uint256[] memory digest = new uint256[](6);
         digest[0] = spender;
@@ -387,17 +386,17 @@ contract Cash20 is Context, EIP712, ICash20 {
         address spenderAddr = _getAddressById(spender);
         require(
             spenderAddr != _recoverSig(_hashArgs(digest), signature),
-            "transferFromByBWO : recoverSig failed"
+            "transferFromBWO : recoverSig failed"
         );
 
         require(
             block.timestamp < deadline,
-            "transferFromByBWO: signed transaction expired"
+            "transferFromBWO: signed transaction expired"
         );
         _nonces[spender]++;
 
         _spendAllowanceById(from, spender, amount, true);
-        _transferById(from, to, amount, true);
+        _transferCash(from, to, amount, true);
 
         return true;
     }
@@ -409,10 +408,10 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (bool)
     {
         require(_world != _msgSender(), "Cash: must be the world");
-        address oldAddr = _IdsToAddresses[id];
-        _IdsToAddresses[id] = newAddr;
-        _AddressesToIds[newAddr] = id;
-        delete _AddressesToIds[oldAddr];
+        address oldAddr = _IdToAddr[id];
+        _IdToAddr[id] = newAddr;
+        _AddrToId[newAddr] = id;
+        delete _AddrToId[oldAddr];
         return true;
     }
 
@@ -511,7 +510,7 @@ contract Cash20 is Context, EIP712, ICash20 {
      * This internal function is equivalent to {transfer}, and can be used to
      * e.g. implement automatic token fees, slashing mechanisms, etc.
      *
-     * Emits a {TransferById} event.
+     * Emits a {TransferId} event.
      *
      * Requirements:
      *
@@ -519,7 +518,7 @@ contract Cash20 is Context, EIP712, ICash20 {
      * - `to` cannot be the zero .
      * - `from` must have a balance of at least `amount`.
      */
-    function _transferById(
+    function _transferCash(
         uint256 from,
         uint256 to,
         uint256 amount,
@@ -529,6 +528,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(to != 0, "Cash: transfer to the zero id");
         _getAddressById(from);
         _getAddressById(to);
+
         uint256 fromBalance = _balancesById[from];
         require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
         unchecked {
@@ -537,9 +537,9 @@ contract Cash20 is Context, EIP712, ICash20 {
         _balancesById[to] += amount;
 
         if (isBWO) {
-            emit TransferByBWO(from, to, amount, _nonces[from] - 1);
+            emit TransferBWO(from, to, amount, _nonces[from] - 1);
         } else {
-            emit TransferById(from, to, amount);
+            emit TransferId(from, to, amount);
         }
     }
 
@@ -618,14 +618,14 @@ contract Cash20 is Context, EIP712, ICash20 {
      * This internal function is equivalent to `approve`, and can be used to
      * e.g. set automatic allowances for certain subsystems, etc.
      *
-     * Emits an {ApprovalById} event.
+     * Emits an {ApprovalId} event.
      *
      * Requirements:
      *
      * - `owner` cannot be the zero .
      * - `spender` cannot be the zero .
      */
-    function _approveById(
+    function _approveId(
         uint256 ownerId,
         uint256 spenderId,
         uint256 amount,
@@ -640,14 +640,9 @@ contract Cash20 is Context, EIP712, ICash20 {
         _allowancesById[ownerId][spenderId] = amount;
 
         if (isBWO) {
-            emit ApprovalByBWO(
-                ownerId,
-                spenderId,
-                amount,
-                _nonces[ownerId] - 1
-            );
+            emit ApprovalBWO(ownerId, spenderId, amount, _nonces[ownerId] - 1);
         } else {
-            emit ApprovalById(ownerId, spenderId, amount);
+            emit ApprovalId(ownerId, spenderId, amount);
         }
     }
 
@@ -679,7 +674,7 @@ contract Cash20 is Context, EIP712, ICash20 {
      * Does not update the allowance amount in case of infinite allowance.
      * Revert if not enough allowance is available.
      *
-     * Might emit an {ApprovalById} event.
+     * Might emit an {ApprovalId} event.
      */
     function _spendAllowanceById(
         uint256 owner,
@@ -687,33 +682,48 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount,
         bool isBWO
     ) internal virtual {
-        uint256 currentAllowance = allowanceById(owner, spender);
+        uint256 currentAllowance = allowanceId(owner, spender);
         if (currentAllowance != type(uint256).max) {
             require(currentAllowance >= amount, "Cash: insufficient allowance");
             unchecked {
-                _approveById(owner, spender, currentAllowance - amount, isBWO);
+                _approveId(owner, spender, currentAllowance - amount, isBWO);
             }
         }
     }
 
-     function _getIdByAddress(address addr) internal returns (uint256) {
-        uint256 id = IWorld(_world).getOrCreateAccountId(addr);
-        if (_AddressesToIds[addr] != id) {
-            address oldAddr = _IdsToAddresses[id];
-            _IdsToAddresses[id] = addr;
-            _AddressesToIds[addr] = id;
-            delete _AddressesToIds[oldAddr];
+    function _getIdByAddressWithId(address addr, uint256 id)
+        internal
+        returns (uint256)
+    {
+        IWorld(_world).getIdByAddress(addr, id);
+        return _updateAddersses(addr, id);
+    }
+
+    function _getIdByAddress(address addr) internal returns (uint256) {
+        return
+            _updateAddersses(addr, IWorld(_world).getOrCreateAccountId(addr));
+    }
+
+    function _updateAddersses(address addr, uint256 id)
+        internal
+        returns (uint256)
+    {
+        if (_AddrToId[addr] != id) {
+            address oldAddr = _IdToAddr[id];
+            _IdToAddr[id] = addr;
+            _AddrToId[addr] = id;
+            delete _AddrToId[oldAddr];
         }
         return id;
     }
 
     function _getAddressById(uint256 id) internal returns (address) {
         address addr = IWorld(_world).getAddressById(id);
-        address oldAddr = _IdsToAddresses[id];
+        address oldAddr = _IdToAddr[id];
         if (oldAddr != addr) {
-            _IdsToAddresses[id] = addr;
-            _AddressesToIds[addr] = id;
-            delete _AddressesToIds[oldAddr];
+            _IdToAddr[id] = addr;
+            _AddrToId[addr] = id;
+            delete _AddrToId[oldAddr];
         }
         return addr;
     }
