@@ -505,7 +505,7 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
                     expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.accountId);
                     expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(balance);
 
-                    await this.cash.transferCash(this.accountId, cashAccountId, balance, {
+                    await this.cash.transferCash(this.avatarTokenId, cashAccountId, balance, {
                         from: newAccount
                     });
                     expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(new BN(0));
@@ -532,7 +532,7 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
                     })
 
 
-                    expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.avatarTokenId);
+                    expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.accountId);
 
                     expect(await this.item.ownerOfId(itemTokenId)).to.bignumber.equal(this.avatarTokenId);
                     await this.item.transferItemFrom(this.avatarTokenId, itemAccountId, itemTokenId, {

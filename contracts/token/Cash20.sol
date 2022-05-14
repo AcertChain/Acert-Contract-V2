@@ -407,7 +407,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (bool)
     {
-        require(_world != _msgSender(), "Cash: must be the world");
+        require(_world == _msgSender(), "Cash: must be the world");
         address oldAddr = _IdToAddr[id];
         _IdToAddr[id] = newAddr;
         _AddrToId[newAddr] = id;

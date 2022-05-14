@@ -501,7 +501,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (bool)
     {
-        require(_world != msg.sender, "I21");
+        require(_world == msg.sender, "I21");
         _update(id, newAddr, _IdToAddr[id]);
         return true;
     }
