@@ -459,8 +459,8 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, ownerAddr, owner, spender
   });
 }
 
-function signData(from, to, value, deadline) {
-  const nonce = this.token.getNonce(from);
+async function signData(from, to, value, deadline) {
+  const nonce = await this.token.getNonce(from);
   const chainId = this.chainId;
   const verifyingContract = this.token.address;
   const name = this.tokenName;
@@ -493,8 +493,8 @@ function signData(from, to, value, deadline) {
   return signature;
 }
 
-function signFromData(spender, from, to, value, deadline) {
-  const nonce = this.token.getNonce(spender);
+async function signFromData(spender, from, to, value, deadline) {
+  const nonce = await this.token.getNonce(spender);
   const chainId = this.chainId;
   const verifyingContract = this.token.address;
   const name = this.tokenName;
