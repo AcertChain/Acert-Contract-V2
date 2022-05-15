@@ -51,6 +51,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
   context('with minted tokens', function () {
     beforeEach(async function () {
       // create account
+
       await this.world.getOrCreateAccountId(owner);
       await this.world.getOrCreateAccountId(approved);
       await this.world.getOrCreateAccountId(anotherApproved);

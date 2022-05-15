@@ -384,6 +384,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         digest[5] = deadline;
 
         address spenderAddr = _getAddressById(spender);
+        console.log("spenderAddr: %s" ,spenderAddr);
+        console.log("signature: %s" , _recoverSig(_hashArgs(digest), signature));
         require(
             spenderAddr != _recoverSig(_hashArgs(digest), signature),
             "transferFromBWO : recoverSig failed"
@@ -525,7 +527,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         bool isBWO
     ) internal virtual {
         require(from != 0, "Cash: transfer from the zero id");
-        require(to != 0, "Cash: transfer to the zero id");
+        require(to != 0, "Cash: transfer to the zero Id");
         _getAddressById(from);
         _getAddressById(to);
 

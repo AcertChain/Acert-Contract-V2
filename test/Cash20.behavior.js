@@ -15,7 +15,7 @@ const {
 function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initialHolderId, recipient, recipientId, anotherAccount, anotherAccountId) {
   describe('total supply', function () {
     it('returns the total amount of tokens', async function () {
-      expect(await this.token.totalSupply()).to.be.bignumber.equal(initialSupply);
+      expect(await this.token.totalSupply()).to.be.bignumber.equal(initialSupply.mul(new BN(2)));
     });
   });
 
@@ -211,7 +211,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
           await expectRevert(this.token.transferFromCash(
             tokenOwner, to, amount, {
               from: spenderAddr
-            }), `${errorPrefix}: transfer to the zero id`, );
+            }), `${errorPrefix}: transfer to the zero Id`, );
         });
       });
     });
