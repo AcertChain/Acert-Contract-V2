@@ -114,7 +114,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        console.log("balanceOfId %d  %d", account, _balancesById[account]);
+        //console.log("balanceOfId %d  %d", account, _balancesById[account]);
         return _balancesById[account];
     }
 
@@ -336,7 +336,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {ICash-transferCashFrom}.
+     * @dev See {ICash-transferFromCash}.
      *
      * Emits an {ApprovalId} event indicating the updated allowance.
      *
@@ -350,7 +350,7 @@ contract Cash20 is Context, EIP712, ICash20 {
      * - the caller must have allowance for ``from``'s tokens of at least
      * `amount`.
      */
-    function transferCashFrom(
+    function transferFromCash(
         uint256 from,
         uint256 to,
         uint256 amount
@@ -750,7 +750,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (bytes32 hash)
     {
         bytes32 digest = _hashTypedDataV4(
-            keccak256(abi.encode(keccak256("MyFunction(uint256[] args)"), args))
+            keccak256(abi.encode(keccak256("BWO(uint256[] args)"), args))
         );
         return digest;
     }

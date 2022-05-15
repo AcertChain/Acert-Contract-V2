@@ -14,6 +14,8 @@ const {
 const {
   ZERO_ADDRESS
 } = constants;
+const Wallet = require('ethereumjs-wallet').default;
+
 
 const Cash20 = artifacts.require('Cash20Mock');
 const World = artifacts.require('World');
@@ -30,6 +32,12 @@ const {
   shouldBehaveLikeCash20Approve,
 } = require('./Cash20.behavior');
 
+const {
+  shouldBehaveLikeCash20BWO,
+  shouldBehaveLikeCash20TransferBWO,
+  shouldBehaveLikeCash20ApproveBWO,
+} = require('./Cash20BWO.behavior');
+
 contract('Cash20', function (accounts) {
   // deploy World contract
   beforeEach(async function () {});
@@ -39,19 +47,33 @@ contract('Cash20', function (accounts) {
   const initialHolderId = new BN(1);
   const recipientId = new BN(2);
   const anotherAccountId = new BN(3);
+  const BWOfromId = new BN(4);
 
   const name = 'My Token';
   const symbol = 'MTKN';
   const version = '1.0.0';
   const initialSupply = new BN(100);
 
+
   beforeEach(async function () {
     this.world = await World.new();
     this.token = await Cash20.new(name, symbol, version, this.world.address);
     this.receipt = await this.token.mint(initialHolder, initialSupply);
+    this.tokenName = name;
+    this.tokenVersion = version;
+    this.wallet = Wallet.generate();
+    this.BWO = initialHolder;
+
+    // 注册operater
+    await this.world.addOperator(initialHolder);
+
+    this.BWOInitialHolder = this.wallet.getAddressString();
+    await this.token.mint(this.BWOInitialHolder, initialSupply);
+    
     await this.world.getOrCreateAccountId(initialHolder);
     await this.world.getOrCreateAccountId(recipient);
     await this.world.getOrCreateAccountId(anotherAccount);
+    await this.world.getOrCreateAccountId(this.BWOInitialHolder);
   });
 
 
@@ -85,6 +107,8 @@ contract('Cash20', function (accounts) {
   shouldBehaveLikeERC20('Cash', initialSupply, initialHolder, recipient, anotherAccount);
 
   shouldBehaveLikeCash20('Cash', initialSupply, initialHolder, initialHolderId, recipient, recipientId, anotherAccount, anotherAccountId);
+  
+  shouldBehaveLikeCash20BWO('Cash', initialSupply, this.BWOfrom, BWOfromId, recipient, recipientId, anotherAccount, anotherAccountId);
 
   describe('decrease allowance', function () {
     describe('when the spender is not the zero address', function () {
