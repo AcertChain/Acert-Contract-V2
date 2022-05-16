@@ -179,16 +179,26 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) public virtual override returns (bool) {
         require(_iWorld.isBWO(_msgSender()), "Cash: must be the world BWO");
 
-        uint256[] memory digest = new uint256[](5);
-        digest[0] = from;
-        digest[1] = to;
-        digest[2] = amount;
-        digest[3] = _nonces[from];
-        digest[4] = deadline;
-
+        uint256 nonce = _nonces[from];
         address fromAddr = _getAddressById(from);
         require(
-            fromAddr != _recoverSig(_hashArgs(digest), signature),
+            fromAddr == _recoverSig(
+                _hashTypedDataV4(
+                    keccak256(
+                        abi.encode(
+                            keccak256(
+                                "BWO(uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
+                            ),
+                            from,
+                            to,
+                            amount,
+                            nonce,
+                            deadline
+                        )
+                    )
+                ),
+                signature
+            ),
             "transferBWO : recoverSig failed"
         );
 
@@ -196,10 +206,8 @@ contract Cash20 is Context, EIP712, ICash20 {
             block.timestamp < deadline,
             "transferBWO: signed transaction expired"
         );
-        _nonces[from]++;
-
+        _nonces[from] += 1;
         _transferCash(from, to, amount, true);
-
         return true;
     }
 
@@ -281,16 +289,26 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) public virtual override returns (bool) {
         require(_iWorld.isBWO(_msgSender()), "Cash: must be the world BWO");
 
-        uint256[] memory digest = new uint256[](5);
-        digest[0] = owner;
-        digest[1] = spender;
-        digest[2] = amount;
-        digest[3] = _nonces[owner];
-        digest[4] = deadline;
-
+        uint256 nonce = _nonces[owner];
         address ownerAddr = _getAddressById(owner);
         require(
-            ownerAddr != _recoverSig(_hashArgs(digest), signature),
+            ownerAddr == _recoverSig(
+                _hashTypedDataV4(
+                    keccak256(
+                        abi.encode(
+                            keccak256(
+                                "BWO(uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
+                            ),
+                            owner,
+                            spender,
+                            amount,
+                            nonce,
+                            deadline
+                        )
+                    )
+                ),
+                signature
+            ),
             "approveBWO : recoverSig failed"
         );
 
@@ -298,7 +316,7 @@ contract Cash20 is Context, EIP712, ICash20 {
             block.timestamp < deadline,
             "approveBWO: signed transaction expired"
         );
-        _nonces[owner]++;
+        _nonces[owner] += 1;
 
         _approveId(owner, spender, amount, true);
         return true;
@@ -375,19 +393,27 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) public virtual override returns (bool) {
         require(_iWorld.isBWO(_msgSender()), "Cash: must be the world BWO");
 
-        uint256[] memory digest = new uint256[](6);
-        digest[0] = spender;
-        digest[1] = from;
-        digest[2] = to;
-        digest[3] = amount;
-        digest[4] = _nonces[spender];
-        digest[5] = deadline;
-
+        uint256 nonce = _nonces[spender];
         address spenderAddr = _getAddressById(spender);
-        console.log("spenderAddr: %s" ,spenderAddr);
-        console.log("signature: %s" , _recoverSig(_hashArgs(digest), signature));
         require(
-            spenderAddr != _recoverSig(_hashArgs(digest), signature),
+            spenderAddr == _recoverSig(
+                _hashTypedDataV4(
+                    keccak256(
+                        abi.encode(
+                            keccak256(
+                                "BWO(uint256 spender,uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
+                            ),
+                            spender,
+                            from,
+                            to,
+                            amount,
+                            nonce,
+                            deadline
+                        )
+                    )
+                ),
+                signature
+            ),
             "transferFromBWO : recoverSig failed"
         );
 
@@ -395,11 +421,9 @@ contract Cash20 is Context, EIP712, ICash20 {
             block.timestamp < deadline,
             "transferFromBWO: signed transaction expired"
         );
-        _nonces[spender]++;
-
+        _nonces[spender] += 1;
         _spendAllowanceById(from, spender, amount, true);
         _transferCash(from, to, amount, true);
-
         return true;
     }
 
@@ -744,16 +768,5 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (address)
     {
         return ECDSA.recover(digest, signature);
-    }
-
-    function _hashArgs(uint256[] memory args)
-        internal
-        view
-        returns (bytes32 hash)
-    {
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(abi.encode(keccak256("BWO(uint256[] args)"), args))
-        );
-        return digest;
     }
 }
