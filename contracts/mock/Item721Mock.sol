@@ -47,4 +47,8 @@ contract Item721Mock is Item721 {
     function onlyOwner() internal view {
         require(_owner == msg.sender, "only owner");
     }
+
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
+    }
 }

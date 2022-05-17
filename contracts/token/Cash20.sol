@@ -182,23 +182,24 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 nonce = _nonces[from];
         address fromAddr = _getAddressById(from);
         require(
-            fromAddr == _recoverSig(
-                _hashTypedDataV4(
-                    keccak256(
-                        abi.encode(
-                            keccak256(
-                                "BWO(uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
-                            ),
-                            from,
-                            to,
-                            amount,
-                            nonce,
-                            deadline
+            fromAddr ==
+                _recoverSig(
+                    _hashTypedDataV4(
+                        keccak256(
+                            abi.encode(
+                                keccak256(
+                                    "BWO(uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
+                                ),
+                                from,
+                                to,
+                                amount,
+                                nonce,
+                                deadline
+                            )
                         )
-                    )
+                    ),
+                    signature
                 ),
-                signature
-            ),
             "transferBWO : recoverSig failed"
         );
 
@@ -292,23 +293,24 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 nonce = _nonces[owner];
         address ownerAddr = _getAddressById(owner);
         require(
-            ownerAddr == _recoverSig(
-                _hashTypedDataV4(
-                    keccak256(
-                        abi.encode(
-                            keccak256(
-                                "BWO(uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
-                            ),
-                            owner,
-                            spender,
-                            amount,
-                            nonce,
-                            deadline
+            ownerAddr ==
+                _recoverSig(
+                    _hashTypedDataV4(
+                        keccak256(
+                            abi.encode(
+                                keccak256(
+                                    "BWO(uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
+                                ),
+                                owner,
+                                spender,
+                                amount,
+                                nonce,
+                                deadline
+                            )
                         )
-                    )
+                    ),
+                    signature
                 ),
-                signature
-            ),
             "approveBWO : recoverSig failed"
         );
 
@@ -396,24 +398,25 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 nonce = _nonces[spender];
         address spenderAddr = _getAddressById(spender);
         require(
-            spenderAddr == _recoverSig(
-                _hashTypedDataV4(
-                    keccak256(
-                        abi.encode(
-                            keccak256(
-                                "BWO(uint256 spender,uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
-                            ),
-                            spender,
-                            from,
-                            to,
-                            amount,
-                            nonce,
-                            deadline
+            spenderAddr ==
+                _recoverSig(
+                    _hashTypedDataV4(
+                        keccak256(
+                            abi.encode(
+                                keccak256(
+                                    "BWO(uint256 spender,uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
+                                ),
+                                spender,
+                                from,
+                                to,
+                                amount,
+                                nonce,
+                                deadline
+                            )
                         )
-                    )
+                    ),
+                    signature
                 ),
-                signature
-            ),
             "transferFromBWO : recoverSig failed"
         );
 
@@ -721,25 +724,35 @@ contract Cash20 is Context, EIP712, ICash20 {
         internal
         returns (uint256)
     {
-        IWorld(_world).getIdByAddress(addr, id);
-        return _updateAddersses(addr, id);
+        return
+            _updateAddersses(addr, id, IWorld(_world).getIdByAddress(addr, id));
     }
 
     function _getIdByAddress(address addr) internal returns (uint256) {
         return
-            _updateAddersses(addr, IWorld(_world).getOrCreateAccountId(addr));
+            _updateAddersses(
+                addr,
+                IWorld(_world).getOrCreateAccountId(addr),
+                false
+            );
     }
 
-    function _updateAddersses(address addr, uint256 id)
-        internal
-        returns (uint256)
-    {
-        if (_AddrToId[addr] != id) {
-            address oldAddr = _IdToAddr[id];
+    function _updateAddersses(
+        address addr,
+        uint256 id,
+        bool isAvatar
+    ) internal returns (uint256) {
+        if (isAvatar) {
             _IdToAddr[id] = addr;
-            _AddrToId[addr] = id;
-            delete _AddrToId[oldAddr];
+        } else {
+            if (_AddrToId[addr] != id) {
+                address oldAddr = _IdToAddr[id];
+                _IdToAddr[id] = addr;
+                _AddrToId[addr] = id;
+                delete _AddrToId[oldAddr];
+            }
         }
+
         return id;
     }
 

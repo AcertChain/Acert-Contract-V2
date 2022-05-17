@@ -239,25 +239,31 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
-
-        uint256[] memory digest = new uint256[](5);
-        digest[0] = from;
-        digest[1] = to;
-        digest[2] = tokenId;
-        digest[3] = _nonces[from];
-        digest[4] = deadline;
-
+        uint256 nonce = _nonces[from];
         _recoverSig(
             deadline,
             _getAddressById(from),
-            _hashArgs(digest),
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 from,uint256 to,uint256 tokenId,uint256 nonce,uint256 deadline)"
+                        ),
+                        from,
+                        to,
+                        tokenId,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
             signature
         );
 
         uint256 owner = Item721.ownerOfId(tokenId);
-        require(to != owner, "I04");
-        require(from == owner || isApprovedForAllId(owner, from), "I05");
-        _nonces[from]++;
+        require(to != owner, "I09");
+        require(from == owner || isApprovedForAllId(owner, from), "I10");
+        _nonces[from] += 1;
         _approve(to, tokenId, TypeOperation.BWO);
     }
 
@@ -275,7 +281,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return IWorld(_world).getAddressById(_tokenApprovalsById[tokenId]);
     }
 
-    function getApprovedById(uint256 tokenId)
+    function getApprovedId(uint256 tokenId)
         public
         view
         virtual
@@ -302,13 +308,13 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function setApprovalForAllId(
-        uint256 owner,
+        uint256 sender,
         uint256 operator,
         bool approved
     ) public virtual override {
         _getAddressById(operator);
         _setApprovalForAllId(
-            _getIdByAddressWithId(msg.sender, owner),
+            _getIdByAddressWithId(msg.sender, sender),
             operator,
             approved,
             false
@@ -323,18 +329,27 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
-        uint256[] memory digest = new uint256[](4);
-        digest[0] = sender;
-        digest[1] = operator;
-        digest[2] = _nonces[sender];
-        digest[3] = deadline;
+        uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
             _getAddressById(sender),
-            _hashArgs(digest, approved),
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 sender,uint256 operator,uint256 nonce,uint256 deadline,bool approved)"
+                        ),
+                        sender,
+                        operator,
+                        nonce,
+                        deadline,
+                        approved
+                    )
+                )
+            ),
             signature
         );
-        _nonces[sender]++;
+        _nonces[sender] += 1;
         _setApprovalForAllId(sender, operator, approved, true);
     }
 
@@ -348,10 +363,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (bool)
     {
-        return
-            _operatorApprovalsById[_AddrToId[owner]][
-                _AddrToId[operator]
-            ];
+        return _operatorApprovalsById[_AddrToId[owner]][_AddrToId[operator]];
     }
 
     function isApprovedForAllId(uint256 owner, uint256 operator)
@@ -385,6 +397,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function transferItemFrom(
+        uint256 sender,
         uint256 from,
         uint256 to,
         uint256 tokenId
@@ -392,7 +405,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
         if (IWorld(_world).isTrust(msg.sender, from)) {
             _transfer(from, to, tokenId, TypeOperation.ID);
         }
-        require(_isApprovedOrOwner(msg.sender, tokenId), "I14");
+
+        require(
+            _isApprovedOrOwnerId(
+                _getIdByAddressWithId(msg.sender, sender),
+                tokenId
+            ),
+            "I14"
+        );
         _transfer(from, to, tokenId, TypeOperation.ID);
     }
 
@@ -405,20 +425,30 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
+        uint256 nonce = _nonces[sender];
+        _recoverSig(
+            deadline,
+            _getAddressById(sender),
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 sender,uint256 from,uint256 to,uint256 tokenId,uint256 nonce,uint256 deadline)"
+                        ),
+                        sender,
+                        from,
+                        to,
+                        tokenId,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
+        );
 
-        uint256[] memory digest = new uint256[](6);
-        digest[0] = sender;
-        digest[1] = from;
-        digest[2] = to;
-        digest[3] = tokenId;
-        digest[4] = _nonces[from];
-        digest[5] = deadline;
-
-        address senderAddr = _getAddressById(sender);
-        _recoverSig(deadline, senderAddr, _hashArgs(digest), signature);
-
-        require(_isApprovedOrOwner(senderAddr, tokenId), "I04");
-        _nonces[from]++;
+        require(_isApprovedOrOwnerId(sender, tokenId), "I14");
+        _nonces[sender] += 1;
         _transfer(from, to, tokenId, TypeOperation.BWO);
     }
 
@@ -431,11 +461,49 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function safeTransferItemFrom(
+        uint256 sender,
         uint256 from,
         uint256 to,
         uint256 tokenId
     ) public virtual override {
-        safeTransferItemFrom(from, to, tokenId, "");
+        safeTransferItemFrom(sender, from, to, tokenId, "");
+    }
+
+    function safeTransferFromBWO(
+        uint256 sender,
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory signature
+    ) public virtual override {
+        require(IWorld(_world).isBWO(msg.sender), "I01");
+        uint256 nonce = _nonces[sender];
+        _recoverSig(
+            deadline,
+            _getAddressById(sender),
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 sender,uint256 from,uint256 to,uint256 tokenId,uint256 nonce,uint256 deadline)"
+                        ),
+                        sender,
+                        from,
+                        to,
+                        tokenId,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
+        );
+
+        _nonces[sender] += 1;
+
+        require(_isApprovedOrOwnerId(sender, tokenId), "I14");
+        _safeTransfer(from, to, tokenId, "", TypeOperation.BWO);
     }
 
     /**
@@ -459,12 +527,19 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function safeTransferItemFrom(
+        uint256 sender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
         bytes memory _data
     ) public virtual override {
-        require(_isApprovedOrOwner(msg.sender, tokenId), "I14");
+        require(
+            _isApprovedOrOwnerId(
+                _getIdByAddressWithId(msg.sender, sender),
+                tokenId
+            ),
+            "I14"
+        );
         _safeTransfer(from, to, tokenId, _data, TypeOperation.ID);
     }
 
@@ -474,24 +549,36 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 to,
         uint256 tokenId,
         uint256 deadline,
-        bytes calldata data,
+        bytes memory data,
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
-        uint256[] memory digest = new uint256[](6);
-        digest[0] = sender;
-        digest[1] = from;
-        digest[2] = to;
-        digest[3] = tokenId;
-        digest[4] = _nonces[from];
-        digest[5] = deadline;
+        uint256 nonce = _nonces[sender];
+        _recoverSig(
+            deadline,
+            _getAddressById(sender),
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 sender,uint256 from,uint256 to,uint256 tokenId,uint256 nonce,uint256 deadline,bytes data)"
+                        ),
+                        sender,
+                        from,
+                        to,
+                        tokenId,
+                        nonce,
+                        deadline,
+                        keccak256(data)
+                    )
+                )
+            ),
+            signature
+        );
 
-        address senderAddr = _getAddressById(sender);
-        _recoverSig(deadline, senderAddr, _hashArgs(digest, data), signature);
+        _nonces[sender] += 1;
 
-        _nonces[from]++;
-
-        require(_isApprovedOrOwner(senderAddr, tokenId), "I05");
+        require(_isApprovedOrOwnerId(sender, tokenId), "I14");
         _safeTransfer(from, to, tokenId, data, TypeOperation.BWO);
     }
 
@@ -552,6 +639,19 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return (spender == owner ||
             isApprovedForAll(owner, spender) ||
             getApproved(tokenId) == spender);
+    }
+
+    function _isApprovedOrOwnerId(uint256 spender, uint256 tokenId)
+        internal
+        view
+        virtual
+        returns (bool)
+    {
+        require(_exists(tokenId), "I16");
+        uint256 owner = Item721.ownerOfId(tokenId);
+        return (spender == owner ||
+            isApprovedForAllId(owner, spender) ||
+            getApprovedId(tokenId) == spender);
     }
 
     /**
@@ -729,10 +829,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
         internal
         returns (uint256)
     {
-        IWorld(_world).getIdByAddress(addr, id);
-        if (_AddrToId[addr] != id) {
-            _update(id, addr, _IdToAddr[id]);
+        if (IWorld(_world).getIdByAddress(addr, id)) {
+            _IdToAddr[id] = addr;
+        } else {
+            if (_AddrToId[addr] != id) {
+                _update(id, addr, _IdToAddr[id]);
+            }
         }
+
         return id;
     }
 
@@ -770,49 +874,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) internal view {
         require(block.timestamp < deadline, "I03");
-        require(signer != ECDSA.recover(digest, signature), "I02");
-    }
-
-    function _hashArgs(uint256[] memory args) internal view returns (bytes32) {
-        return
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(keccak256("MyFunction(uint256[] args)"), args)
-                )
-            );
-    }
-
-    function _hashArgs(uint256[] memory args, bytes memory data)
-        internal
-        view
-        returns (bytes32)
-    {
-        return
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256("MyFunction(uint256[] args,bytes data)"),
-                        args,
-                        data
-                    )
-                )
-            );
-    }
-
-    function _hashArgs(uint256[] memory args, bool flag)
-        internal
-        view
-        returns (bytes32)
-    {
-        return
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256("MyFunction(uint256[] args,bool flag)"),
-                        args,
-                        flag
-                    )
-                )
-            );
+        require(signer == ECDSA.recover(digest, signature), "I02");
     }
 }

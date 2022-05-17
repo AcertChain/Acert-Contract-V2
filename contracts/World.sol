@@ -174,15 +174,19 @@ contract World is IWorld {
         public
         virtual
         override
+        returns (bool isAvatar)
+
     {
         if (_id > _avatarMaxId) {
             require(_accountsById[_id]._address == _address, "W12");
+            return false;
         } else {
             require(
                 _address ==
                     _accountsById[IItem721(_avatar).ownerOfId(_id)]._address,
                 "W12"
             );
+            return true;
         }
     }
 

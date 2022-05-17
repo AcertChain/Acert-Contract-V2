@@ -6,7 +6,7 @@ interface IWorld {
         external
         returns (uint256 id);
 
-    function getIdByAddress(address _address, uint256 _id) external;
+    function getIdByAddress(address _address, uint256 _id) external returns (bool);
 
     function getAddressById(uint256 _id)
         external

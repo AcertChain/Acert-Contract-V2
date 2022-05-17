@@ -28,7 +28,7 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
 
     function ownerOfId(uint256 tokenId) external view returns (uint256 owner);
 
-    function getApprovedById(uint256 tokenId)
+    function getApprovedId(uint256 tokenId)
         external
         view
         returns (uint256 operator);
@@ -39,12 +39,14 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
         returns (bool);
 
     function safeTransferItemFrom(
+        uint256 sender,
         uint256 from,
         uint256 to,
         uint256 tokenId
     ) external;
 
     function safeTransferItemFrom(
+        uint256 sender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
@@ -52,6 +54,7 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
     ) external;
 
     function transferItemFrom(
+        uint256 sender,
         uint256 from,
         uint256 to,
         uint256 tokenId

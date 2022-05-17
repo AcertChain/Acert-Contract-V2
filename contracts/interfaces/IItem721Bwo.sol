@@ -26,7 +26,16 @@ interface IItem721BWO {
         uint256 to,
         uint256 tokenId,
         uint256 deadline,
-        bytes calldata data,
+        bytes memory signature
+    ) external;
+
+    function safeTransferFromBWO(
+        uint256 sender,
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory data,
         bytes memory signature
     ) external;
 
