@@ -371,6 +371,7 @@ contract Cash20 is Context, EIP712, ICash20 {
      * `amount`.
      */
     function transferFromCash(
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 amount
@@ -380,7 +381,7 @@ contract Cash20 is Context, EIP712, ICash20 {
             return true;
         }
 
-        _spendAllowanceById(from, _getIdByAddress(_msgSender()), amount, false);
+        _spendAllowanceById(from, _getIdByAddressWithId(_msgSender(), spender), amount, false);
         _transferCash(from, to, amount, false);
         return true;
     }

@@ -65,7 +65,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
             const amount = initialSupply;
 
             it('transfers the requested amount', async function () {
-              await this.token.transferFromCash(tokenOwner, to, amount, {
+              await this.token.transferFromCash(spender, tokenOwner, to, amount, {
                 from: spenderAddr
               });
 
@@ -75,7 +75,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
             });
 
             it('decreases the spender allowance', async function () {
-              await this.token.transferFromCash(tokenOwner, to, amount, {
+              await this.token.transferFromCash(spender, tokenOwner, to, amount, {
                 from: spenderAddr
               });
 
@@ -84,7 +84,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
 
             it('emits a transfer by id event', async function () {
               expectEvent(
-                await this.token.transferFromCash(tokenOwner, to, amount, {
+                await this.token.transferFromCash(spender, tokenOwner, to, amount, {
                   from: spenderAddr
                 }),
                 'TransferId', {
@@ -97,7 +97,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
 
             it('emits an approval by id event', async function () {
               expectEvent(
-                await this.token.transferFromCash(tokenOwner, to, amount, {
+                await this.token.transferFromCash(spender, tokenOwner, to, amount, {
                   from: spenderAddr
                 }),
                 'ApprovalId', {
@@ -120,7 +120,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
 
             it('reverts', async function () {
               await expectRevert(
-                this.token.transferFromCash(tokenOwner, to, amount, {
+                this.token.transferFromCash(spender, tokenOwner, to, amount, {
                   from: spenderAddr
                 }),
                 `${errorPrefix}: transfer amount exceeds balance`,
@@ -143,7 +143,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
 
             it('reverts', async function () {
               await expectRevert(
-                this.token.transferFromCash(tokenOwner, to, amount, {
+                this.token.transferFromCash(spender, tokenOwner, to, amount, {
                   from: spenderAddr
                 }),
                 `${errorPrefix}: insufficient allowance`,
@@ -162,7 +162,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
 
             it('reverts', async function () {
               await expectRevert(
-                this.token.transferFromCash(tokenOwner, to, amount, {
+                this.token.transferFromCash(spender, tokenOwner, to, amount, {
                   from: spenderAddr
                 }),
                 `${errorPrefix}: transfer amount exceeds balance`,
@@ -179,7 +179,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
           });
 
           it('does not decrease the spender allowance', async function () {
-            await this.token.transferFromCash(tokenOwner, to, 1, {
+            await this.token.transferFromCash(spender, tokenOwner, to, 1, {
               from: spenderAddr
             });
 
@@ -188,7 +188,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
 
           it('does not emit an approval by id event', async function () {
             expectEvent.notEmitted(
-              await this.token.transferFromCash(tokenOwner, to, 1, {
+              await this.token.transferFromCash(spender, tokenOwner, to, 1, {
                 from: spenderAddr
               }),
               'ApprovalId',
@@ -208,7 +208,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
         });
 
         it('reverts', async function () {
-          await expectRevert(this.token.transferFromCash(
+          await expectRevert(this.token.transferFromCash(spender,
             tokenOwner, to, amount, {
               from: spenderAddr
             }), `${errorPrefix}: transfer to the zero Id`, );
@@ -223,7 +223,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
 
       it('reverts', async function () {
         await expectRevert(
-          this.token.transferFromCash(tokenOwner, to, amount, {
+          this.token.transferFromCash(spender, tokenOwner, to, amount, {
             from: spenderAddr
           }),
           'Cash: approve from the zero Id',

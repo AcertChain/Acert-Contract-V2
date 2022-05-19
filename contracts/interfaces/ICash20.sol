@@ -34,6 +34,7 @@ interface ICash20 is IERC20Metadata, ICash20BWO, IAsset {
     ) external returns (bool);
 
     function transferFromCash(
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 amount
