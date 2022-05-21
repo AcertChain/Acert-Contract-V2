@@ -582,12 +582,11 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _safeTransfer(from, to, tokenId, data, TypeOperation.BWO);
     }
 
-    function changeAccountAddress(uint256 id, address newAddr)
-        public
-        virtual
-        override
-        returns (bool)
-    {
+    function changeAccountAddress(
+        uint256 id,
+        address newAddr,
+        address oldAddr
+    ) public virtual override returns (bool) {
         require(_world == msg.sender, "I21");
         _update(id, newAddr, _IdToAddr[id]);
         return true;
@@ -829,7 +828,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         internal
         returns (uint256)
     {
-        if (IWorld(_world).getIdByAddress(addr, id)) {
+        if (IWorld(_world).checkAddress(addr, id)) {
             _IdToAddr[id] = addr;
         } else {
             if (_AddrToId[addr] != id) {

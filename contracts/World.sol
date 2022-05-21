@@ -83,6 +83,7 @@ contract World is IWorld {
         bool _isExist;
         uint256 _id;
         address _address;
+        address _preAddress;
     }
 
     struct Change {
@@ -162,7 +163,7 @@ contract World is IWorld {
             // create account
             _totalAccount++;
             id = _totalAccount;
-            _accountsById[id] = Account(false, true, id, _address);
+            _accountsById[id] = Account(false, true, id, _address, address(0));
             _addressesToIds[_address] = id;
             emit CreateAccount(id, _address);
         } else {
@@ -170,24 +171,17 @@ contract World is IWorld {
         }
     }
 
-    function getIdByAddress(address _address, uint256 _id)
+    function checkAddress(address _address, uint256 _id)
         public
         virtual
         override
-        returns (bool isAvatar)
-
+        returns (bool)
     {
-        if (_id > _avatarMaxId) {
-            require(_accountsById[_id]._address == _address, "W12");
-            return false;
-        } else {
-            require(
-                _address ==
-                    _accountsById[IItem721(_avatar).ownerOfId(_id)]._address,
-                "W12"
-            );
-            return true;
-        }
+        // 检查address 和 id是否匹配 ，如果匹配，返回true ，否则返回false
+        return
+            (_id > _avatarMaxId && (_accountsById[_id]._address == _address)) ||
+            (_address ==
+                _accountsById[IItem721(_avatar).ownerOfId(_id)]._address);
     }
 
     function getAccountIdByAddress(address _address)
@@ -260,18 +254,6 @@ contract World is IWorld {
         emit ChangeAsset(_contract, _tokneName, _image);
     }
 
-    // function callAsset(address _contract, bytes calldata _data)
-    //     public
-    //     returns (bool success)
-    // {
-    //     onlyOwner();
-    //     require(
-    //         _contract != address(0) && _assets[_contract]._isExist == true,
-    //         "W05"
-    //     );
-    //     (success, ) = _contract.call(_data);
-    // }
-
     // func 创建Account
     function createAccount(address _address) public {
         //console.log("createAccount %s %s", _address,_addressesToIds[_address]);
@@ -281,31 +263,33 @@ contract World is IWorld {
         );
         _totalAccount++;
         uint256 id = _totalAccount;
-        _accountsById[id] = Account(false, true, id, _address);
+        _accountsById[id] = Account(false, true, id, _address, address(0));
         _addressesToIds[_address] = id;
         emit CreateAccount(id, _address);
     }
 
     // func world修改Account _address
-    function changeAccountByOperator(
+    function changeAccount(
         uint256 _id,
         address _newAddress,
         bool _isTrustWorld
     ) public {
-        require(
-            _isOperatorByAddress[msg.sender] == true || _owner == msg.sender,
-            "W06"
-        );
-        _changeAccount(_id, _newAddress, _isTrustWorld);
+        onlyOwner();
+        require(_id != 0 && _accountsById[_id]._isExist == true, "W09");
+
+        if (_accountsById[_id]._address != _newAddress) {
+            require(_addressesToIds[_newAddress] == 0, "W09");
+            delete _addressesToIds[_accountsById[_id]._address];
+            _accountsById[_id]._preAddress = _accountsById[_id]._address;
+            _accountsById[_id]._address = _newAddress;
+            _addressesToIds[_newAddress] = _id;
+        }
+        _accountsById[_id]._isTrustWorld = _isTrustWorld;
+        emit ChangeAccount(_id, msg.sender, _newAddress, _isTrustWorld);
     }
 
-    function changeAssertAccountAddressByOperator(Change[] calldata _changes)
-        public
-    {
-        require(
-            _isOperatorByAddress[msg.sender] == true || _owner == msg.sender,
-            "W06"
-        );
+    function changeAssertAccountAddress(Change[] calldata _changes) public {
+        onlyOwner();
         for (uint256 i = 0; i < _changes.length; i++) {
             require(
                 _changes[i]._asset != address(0) &&
@@ -318,19 +302,10 @@ contract World is IWorld {
             );
             IAsset(_changes[i]._asset).changeAccountAddress(
                 _changes[i]._accountId,
-                _accountsById[_changes[i]._accountId]._address
+                _accountsById[_changes[i]._accountId]._address,
+                _accountsById[_changes[i]._accountId]._preAddress
             );
         }
-    }
-
-    // func user修改Account _address
-    function changeAccountByUser(
-        uint256 _id,
-        address _newAddress,
-        bool _isTrustWorld
-    ) public {
-        require(_accountsById[_id]._address == msg.sender, "W09");
-        _changeAccount(_id, _newAddress, _isTrustWorld);
     }
 
     function accountTrustContract(uint256 _id, address _contract) public {
@@ -345,35 +320,6 @@ contract World is IWorld {
         require(_safeContracts[_contract] == true, "W11");
         delete _isTrustContractByAccountId[_id][_contract];
         emit UntrustContract(_id, _contract);
-    }
-
-    function _changeAccount(
-        uint256 _id,
-        address _newAddress,
-        bool _isTrustWorld
-    ) internal {
-        require(_id != 0 && _accountsById[_id]._isExist == true, "W09");
-
-        if (_accountsById[_id]._address != _newAddress) {
-            require(_addressesToIds[_newAddress] == 0, "W09");
-            delete _addressesToIds[_accountsById[_id]._address];
-            _accountsById[_id]._address = _newAddress;
-            _addressesToIds[_newAddress] = _id;
-        }
-        _accountsById[_id]._isTrustWorld = _isTrustWorld;
-
-        emit ChangeAccount(_id, msg.sender, _newAddress, _isTrustWorld);
-    }
-
-    function changeAssetAccountAddressByUser(address[] calldata _assetAddrs)
-        public
-    {
-        require(_assetAddrs.length > 0, "W07");
-        uint256 id = _addressesToIds[msg.sender];
-        for (uint256 i = 0; i < _assetAddrs.length; i++) {
-            require(_assetAddrs[i] != address(0), "W01");
-            IAsset(_assetAddrs[i]).changeAccountAddress(id, msg.sender);
-        }
     }
 
     // 添加operator

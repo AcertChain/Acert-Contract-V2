@@ -11,19 +11,16 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 contract Cash20 is Context, EIP712, ICash20 {
     mapping(uint256 => uint256) private _balancesById;
     mapping(uint256 => mapping(uint256 => uint256)) private _allowancesById;
-
     // nonce
     mapping(uint256 => uint256) private _nonces;
+    // 地址对应accountId
     mapping(address => uint256) private _AddrToId;
-    mapping(uint256 => address) private _IdToAddr;
 
     uint256 private _totalSupply;
-
     string private _name;
     string private _symbol;
     address private _world;
     address private _owner;
-    IWorld _iWorld;
 
     /**
      * @dev Sets the values for {name} and {symbol}.
@@ -44,7 +41,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         _symbol = symbol_;
         _world = world_;
         _owner = _msgSender();
-        _iWorld = IWorld(_world);
     }
 
     /**
@@ -105,16 +101,15 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {ICash-balanceOfId}.
+     * @dev See {ICash-balanceOfCash}.
      */
-    function balanceOfId(uint256 account)
+    function balanceOfCash(uint256 account)
         public
         view
         virtual
         override
         returns (uint256)
     {
-        //console.log("balanceOfId %d  %d", account, _balancesById[account]);
         return _balancesById[account];
     }
 
@@ -148,11 +143,6 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     /**
      * @dev See {ICash-transferCash}.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero .
-     * - the caller must have a balance of at least `amount`.
      */
     function transferCash(
         uint256 from,
@@ -161,28 +151,37 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) public virtual override returns (bool) {
         require(to != 0, "Cash: transfer to the zero Id");
         require(from != 0, "Cash: transfer from the zero Id");
-        _transferCash(
-            _getIdByAddressWithId(_msgSender(), from),
-            to,
-            amount,
-            false
+
+        if (_isTrust(_msgSender(), from)) {
+            _transferCash(from, to, amount, false);
+            return true;
+        }
+
+        require(
+            _isApprovedOrOwner(_msgSender(), from, amount, false),
+            "Cash: transfer caller is not owner nor approved"
         );
+
+        _transferCash(from, to, amount, false);
         return true;
     }
 
-    function transferBWO(
+    function transferCashBWO(
         uint256 from,
         uint256 to,
         uint256 amount,
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
-        require(_iWorld.isBWO(_msgSender()), "Cash: must be the world BWO");
-
-        uint256 nonce = _nonces[from];
-        address fromAddr = _getAddressById(from);
         require(
-            fromAddr ==
+            IWorld(_world).isBWO(_msgSender()),
+            "Cash: must be the world BWO"
+        );
+        address sender = _msgSender();
+        uint256 senderId = _getIdByAddress(sender);
+        uint256 nonce = _nonces[senderId];
+        require(
+            sender ==
                 _recoverSig(
                     _hashTypedDataV4(
                         keccak256(
@@ -200,16 +199,41 @@ contract Cash20 is Context, EIP712, ICash20 {
                     ),
                     signature
                 ),
-            "transferBWO : recoverSig failed"
+            "Cash: recoverSig failed"
         );
 
+        require(block.timestamp < deadline, "Cash: signed transaction expired");
+        _nonces[senderId] += 1;
         require(
-            block.timestamp < deadline,
-            "transferBWO: signed transaction expired"
+            _isApprovedOrOwner(sender, from, amount, true),
+            "Cash: transfer caller is not owner nor approved"
         );
-        _nonces[from] += 1;
         _transferCash(from, to, amount, true);
         return true;
+    }
+
+    function _isApprovedOrOwner(
+        address sender,
+        uint256 from,
+        uint256 amount,
+        bool isBWO
+    ) internal virtual returns (bool) {
+        if (IWorld(_world).checkAddress(sender, from)) {
+            return true;
+        } else {
+            uint256 currentAllowance = allowanceCash(from, sender);
+            if (currentAllowance != type(uint256).max) {
+                require(
+                    currentAllowance >= amount,
+                    "Cash: insufficient allowance"
+                );
+                unchecked {
+                    _approveId(from, sender, currentAllowance - amount, isBWO);
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -228,16 +252,16 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {IERC20-allowanceId}.
+     * @dev See {IERC20-allowanceCash}.
      */
-    function allowanceId(uint256 owner, uint256 spender)
+    function allowanceCash(uint256 owner, address spender)
         public
         view
         virtual
         override
         returns (uint256)
     {
-        return _allowancesById[owner][spender];
+        return _allowancesById[owner][_AddrToId[spender]];
     }
 
     /**
@@ -262,33 +286,33 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {IERC20-approveId}.
-     *
-     * NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on
-     * `transferFrom`. This is semantically equivalent to an infinite approval.
-     *
-     * Requirements:
-     *
-     * - `spenderId` cannot be the zero .
+     * @dev See {IERC20-approveCash}.
      */
-    function approveId(
+    function approveCash(
         uint256 ownerId,
-        uint256 spenderId,
+        address spender,
         uint256 amount
     ) public virtual override returns (bool) {
-        _getIdByAddressWithId(_msgSender(), ownerId);
-        _approveId(ownerId, spenderId, amount, false);
+        require(
+            IWorld(_world).checkAddress(_msgSender(), ownerId),
+            "Cash: not owner"
+        );
+
+        _approveId(ownerId, spender, amount, false);
         return true;
     }
 
-    function approveBWO(
+    function approveCashBWO(
         uint256 owner,
-        uint256 spender,
+        address spender,
         uint256 amount,
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
-        require(_iWorld.isBWO(_msgSender()), "Cash: must be the world BWO");
+        require(
+            IWorld(_world).isBWO(_msgSender()),
+            "Cash: must be the world BWO"
+        );
 
         uint256 nonce = _nonces[owner];
         address ownerAddr = _getAddressById(owner);
@@ -299,7 +323,7 @@ contract Cash20 is Context, EIP712, ICash20 {
                         keccak256(
                             abi.encode(
                                 keccak256(
-                                    "BWO(uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
+                                    "BWO(uint256 from,addresss to,uint256 value,uint256 nonce,uint256 deadline)"
                                 ),
                                 owner,
                                 spender,
@@ -319,7 +343,6 @@ contract Cash20 is Context, EIP712, ICash20 {
             "approveBWO: signed transaction expired"
         );
         _nonces[owner] += 1;
-
         _approveId(owner, spender, amount, true);
         return true;
     }
@@ -349,97 +372,17 @@ contract Cash20 is Context, EIP712, ICash20 {
             _transfer(from, to, amount);
             return true;
         }
-
         _spendAllowance(from, _msgSender(), amount);
         _transfer(from, to, amount);
         return true;
     }
 
-    /**
-     * @dev See {ICash-transferFromCash}.
-     *
-     * Emits an {ApprovalId} event indicating the updated allowance.
-     *
-     * NOTE: Does not update the allowance if the current allowance
-     * is the maximum `uint256`.
-     *
-     * Requirements:
-     *
-     * - `from` and `to` cannot be the zero .
-     * - `from` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``from``'s tokens of at least
-     * `amount`.
-     */
-    function transferFromCash(
-        uint256 spender,
-        uint256 from,
-        uint256 to,
-        uint256 amount
+    function changeAccountAddress(
+        uint256 id,
+        address newAddr,
+        address oldAddr
     ) public virtual override returns (bool) {
-        if (_isTrust(_msgSender(), from)) {
-            _transferCash(from, to, amount, false);
-            return true;
-        }
-
-        _spendAllowanceById(from, _getIdByAddressWithId(_msgSender(), spender), amount, false);
-        _transferCash(from, to, amount, false);
-        return true;
-    }
-
-    function transferFromBWO(
-        uint256 spender,
-        uint256 from,
-        uint256 to,
-        uint256 amount,
-        uint256 deadline,
-        bytes memory signature
-    ) public virtual override returns (bool) {
-        require(_iWorld.isBWO(_msgSender()), "Cash: must be the world BWO");
-
-        uint256 nonce = _nonces[spender];
-        address spenderAddr = _getAddressById(spender);
-        require(
-            spenderAddr ==
-                _recoverSig(
-                    _hashTypedDataV4(
-                        keccak256(
-                            abi.encode(
-                                keccak256(
-                                    "BWO(uint256 spender,uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
-                                ),
-                                spender,
-                                from,
-                                to,
-                                amount,
-                                nonce,
-                                deadline
-                            )
-                        )
-                    ),
-                    signature
-                ),
-            "transferFromBWO : recoverSig failed"
-        );
-
-        require(
-            block.timestamp < deadline,
-            "transferFromBWO: signed transaction expired"
-        );
-        _nonces[spender] += 1;
-        _spendAllowanceById(from, spender, amount, true);
-        _transferCash(from, to, amount, true);
-        return true;
-    }
-
-    function changeAccountAddress(uint256 id, address newAddr)
-        public
-        virtual
-        override
-        returns (bool)
-    {
         require(_world == _msgSender(), "Cash: must be the world");
-        address oldAddr = _IdToAddr[id];
-        _IdToAddr[id] = newAddr;
         _AddrToId[newAddr] = id;
         delete _AddrToId[oldAddr];
         return true;
@@ -567,9 +510,9 @@ contract Cash20 is Context, EIP712, ICash20 {
         _balancesById[to] += amount;
 
         if (isBWO) {
-            emit TransferBWO(from, to, amount, _nonces[from] - 1);
+            emit TransferCashBWO(from, to, amount, _nonces[from] - 1);
         } else {
-            emit TransferId(from, to, amount);
+            emit TransferCash(from, to, amount);
         }
     }
 
@@ -657,22 +600,23 @@ contract Cash20 is Context, EIP712, ICash20 {
      */
     function _approveId(
         uint256 ownerId,
-        uint256 spenderId,
+        address spender,
         uint256 amount,
         bool isBWO
     ) internal virtual {
         require(ownerId != 0, "Cash: approve from the zero Id");
-        require(spenderId != 0, "Cash: approve to the zero Id");
-
         _getAddressById(ownerId);
-        _getAddressById(spenderId);
-
+        uint256 spenderId = _getIdByAddress(spender);
         _allowancesById[ownerId][spenderId] = amount;
-
         if (isBWO) {
-            emit ApprovalBWO(ownerId, spenderId, amount, _nonces[ownerId] - 1);
+            emit ApprovalCashBWO(
+                ownerId,
+                spenderId,
+                amount,
+                _nonces[ownerId] - 1
+            );
         } else {
-            emit ApprovalId(ownerId, spenderId, amount);
+            emit ApprovalCash(ownerId, spender, amount);
         }
     }
 
@@ -698,21 +642,13 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
     }
 
-    /**
-     * @dev Updates `owner` s allowance for `spender` based on spent `amount`.
-     *
-     * Does not update the allowance amount in case of infinite allowance.
-     * Revert if not enough allowance is available.
-     *
-     * Might emit an {ApprovalId} event.
-     */
     function _spendAllowanceById(
         uint256 owner,
-        uint256 spender,
+        address spender,
         uint256 amount,
         bool isBWO
     ) internal virtual {
-        uint256 currentAllowance = allowanceId(owner, spender);
+        uint256 currentAllowance = allowanceCash(owner, spender);
         if (currentAllowance != type(uint256).max) {
             require(currentAllowance >= amount, "Cash: insufficient allowance");
             unchecked {
@@ -721,50 +657,14 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
     }
 
-    function _getIdByAddressWithId(address addr, uint256 id)
-        internal
-        returns (uint256)
-    {
-        return
-            _updateAddersses(addr, id, IWorld(_world).getIdByAddress(addr, id));
-    }
-
     function _getIdByAddress(address addr) internal returns (uint256) {
-        return
-            _updateAddersses(
-                addr,
-                IWorld(_world).getOrCreateAccountId(addr),
-                false
-            );
-    }
-
-    function _updateAddersses(
-        address addr,
-        uint256 id,
-        bool isAvatar
-    ) internal returns (uint256) {
-        if (isAvatar) {
-            _IdToAddr[id] = addr;
-        } else {
-            if (_AddrToId[addr] != id) {
-                address oldAddr = _IdToAddr[id];
-                _IdToAddr[id] = addr;
-                _AddrToId[addr] = id;
-                delete _AddrToId[oldAddr];
-            }
-        }
-
-        return id;
+        _AddrToId[addr] = IWorld(_world).getOrCreateAccountId(addr);
+        return _AddrToId[addr];
     }
 
     function _getAddressById(uint256 id) internal returns (address) {
         address addr = IWorld(_world).getAddressById(id);
-        address oldAddr = _IdToAddr[id];
-        if (oldAddr != addr) {
-            _IdToAddr[id] = addr;
-            _AddrToId[addr] = id;
-            delete _AddrToId[oldAddr];
-        }
+        _AddrToId[addr] = id;
         return addr;
     }
 
@@ -773,7 +673,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         view
         returns (bool)
     {
-        return _iWorld.isTrust(_contract, _id);
+        return IWorld(_world).isTrust(_contract, _id);
     }
 
     function _recoverSig(bytes32 digest, bytes memory signature)

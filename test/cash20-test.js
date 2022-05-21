@@ -118,9 +118,9 @@ contract('Cash20', function (accounts) {
 
   shouldBehaveLikeERC20('Cash', initialSupply, initialHolder, recipient, anotherAccount);
 
-  shouldBehaveLikeCash20('Cash', initialSupply, initialHolder, initialHolderId, recipient, recipientId, anotherAccount, anotherAccountId);
+  // shouldBehaveLikeCash20('Cash', initialSupply, initialHolder, initialHolderId, recipient, recipientId, anotherAccount, anotherAccountId);
 
-  shouldBehaveLikeCash20BWO('Cash', initialSupply, BWOInitialHolder, BWOfromId, BWOReceipt, BWOToId, anotherAccount, anotherAccountId, BWOkey,BWOReceiptkey);
+  // shouldBehaveLikeCash20BWO('Cash', initialSupply, BWOInitialHolder, BWOfromId, BWOReceipt, BWOToId, anotherAccount, anotherAccountId, BWOkey,BWOReceiptkey);
 
   describe('decrease allowance', function () {
     describe('when the spender is not the zero address', function () {
@@ -408,14 +408,14 @@ contract('Cash20', function (accounts) {
 
   });
 
-  describe('_transferCash', function () {
-    shouldBehaveLikeCash20Transfer('Cash', initialHolder, initialHolderId,  recipientId, initialSupply, function (from, fromId, toId, amount) {
-      return this.token.transferCash(fromId, toId, amount, {
-        from
-      });
-    });
+  // describe('_transferCash', function () {
+  //   shouldBehaveLikeCash20Transfer('Cash', initialHolder, initialHolderId,  recipientId, initialSupply, function (from, fromId, toId, amount) {
+  //     return this.token.transferCash(fromId, toId, amount, {
+  //       from
+  //     });
+  //   });
 
-  });
+  // });
 
   describe('_approve', function () {
     shouldBehaveLikeERC20Approve('Cash', initialHolder, recipient, initialSupply, function (owner, spender, amount) {
@@ -425,12 +425,12 @@ contract('Cash20', function (accounts) {
     });
   });
 
-  describe('_approveId', function () {
-    shouldBehaveLikeCash20Approve('Cash', initialHolder, initialHolderId, recipientId, initialSupply, function (owner, ownerId, spender, amount) {
-      return this.token.approveId(ownerId, spender, amount, {
-        from: owner
-      });
-    });
-  });
+  // describe('_approveCash', function () {
+  //   shouldBehaveLikeCash20Approve('Cash', initialHolder, initialHolderId, recipientId, initialSupply, function (owner, ownerId, spender, amount) {
+  //     return this.token.approveId(ownerId, spender, amount, {
+  //       from: owner
+  //     });
+  //   });
+  // });
 
 });
