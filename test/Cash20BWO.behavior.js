@@ -5,6 +5,9 @@ const {
   expectRevert
 } = require('@openzeppelin/test-helpers');
 const {
+  ZERO_ADDRESS
+} = require('@openzeppelin/test-helpers/src/constants');
+const {
   expect
 } = require('chai');
 const {
@@ -34,7 +37,8 @@ const EIP712Domain = [{
 ];
 
 
-function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, initialHolderId, recipient, recipientId, anotherAccount, anotherAccountId, BWOKey,receiptKey) {
+function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, initialHolderId,
+  recipient, recipientId, anotherAccount, anotherAccountId, BWOKey, receiptKey) {
 
   describe('total supply', function () {
     it('returns the total amount of tokens', async function () {
@@ -42,33 +46,33 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
     });
   });
 
-  describe('balanceOfId', function () {
+  describe('balanceOfCash', function () {
     describe('when the requested account has no tokens', function () {
       it('returns zero', async function () {
-        expect(await this.token.balanceOfId(anotherAccountId)).to.be.bignumber.equal('0');
+        expect(await this.token.balanceOfCash(anotherAccountId)).to.be.bignumber.equal('0');
       });
     });
 
     describe('when the requested account has some tokens', function () {
       it('returns the total amount of tokens', async function () {
-        expect(await this.token.balanceOfId(initialHolderId)).to.be.bignumber.equal(initialSupply);
+        expect(await this.token.balanceOfCash(initialHolderId)).to.be.bignumber.equal(initialSupply);
       });
     });
   });
 
-  describe('transferBWO', function () {
-    shouldBehaveLikeCash20TransferBWO(errorPrefix, initialHolderId, recipientId, initialSupply, BWOKey,
-      function (from, to, value, nonce, key) {
-        
-        const signature = signData(this.chainId, this.token.address, this.tokenName, key, this.tokenVersion, from, to, value, deadline, nonce);
-        return this.token.transferBWO(from, to, value, deadline, signature, {
+  describe('transferCashBWO', function () {
+    shouldBehaveLikeCash20TransferBWO(errorPrefix, initialHolder, initialHolderId, recipientId, initialSupply, BWOKey,
+      function (spender, from, to, value, nonce, key) {
+        const signature = signTransferData(this.chainId, this.token.address, this.tokenName, key, this.tokenVersion,
+          spender, from, to, value, deadline, nonce);
+        return this.token.transferCashBWO(spender, from, to, value, deadline, signature, {
           from: this.BWO
         });
       },
     );
   });
 
-  describe('transferFromBWO ', function () {
+  describe('transferCashBWO test', function () {
     const spender = recipientId;
     const spenderAddr = recipient;
 
@@ -82,9 +86,10 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
         describe('when the spender has enough allowance', function () {
           beforeEach(async function () {
             const nonce = await this.token.getNonce(initialHolderId);
-            
-            const signature = signData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion, initialHolderId, spender, initialSupply, deadline, nonce);
-            await this.token.approveBWO(initialHolderId, spender, initialSupply, deadline, signature, {
+
+            const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
+              initialHolderId, spenderAddr, initialSupply, deadline, nonce);
+            await this.token.approveCashBWO(initialHolderId, spenderAddr, initialSupply, deadline, signature, {
               from: this.BWO
             });
           });
@@ -94,39 +99,42 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
 
             it('transfers the requested amount', async function () {
               const nonce = await this.token.getNonce(spender);
-              
-              const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, amount, deadline, nonce);
-              await this.token.transferFromBWO(spender, tokenOwner, to, amount, deadline, signature, {
+              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+                spenderAddr, tokenOwner, to, amount, deadline, nonce);
+
+              await this.token.transferCashBWO(spenderAddr, tokenOwner, to, amount, deadline, signature, {
                 from: this.BWO
               });
 
-              expect(await this.token.balanceOfId(tokenOwner)).to.be.bignumber.equal('0');
+              expect(await this.token.balanceOfCash(tokenOwner)).to.be.bignumber.equal('0');
 
-              expect(await this.token.balanceOfId(to)).to.be.bignumber.equal(amount);
+              expect(await this.token.balanceOfCash(to)).to.be.bignumber.equal(amount);
             });
 
             it('decreases the spender allowance', async function () {
               const nonce = await this.token.getNonce(spender);
 
-              
-              const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, amount, deadline, nonce);
-              await this.token.transferFromBWO(spender, tokenOwner, to, amount, deadline, signature, {
+              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+                spenderAddr, tokenOwner, to, amount, deadline, nonce);
+
+              await this.token.transferCashBWO(spenderAddr, tokenOwner, to, amount, deadline, signature, {
                 from: this.BWO
               });
 
-              expect(await this.token.allowanceId(tokenOwner, spender)).to.be.bignumber.equal('0');
+              expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal('0');
             });
 
             it('emits a transfer by id event', async function () {
               const nonce = await this.token.getNonce(spender);
 
-              
-              const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, amount, deadline, nonce);
+
+              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+                spenderAddr, tokenOwner, to, amount, deadline, nonce);
               expectEvent(
-                await this.token.transferFromBWO(spender, tokenOwner, to, amount, deadline, signature, {
+                await this.token.transferCashBWO(spenderAddr, tokenOwner, to, amount, deadline, signature, {
                   from: this.BWO
                 }),
-                'TransferBWO', {
+                'TransferCashBWO', {
                   from: tokenOwner,
                   to: to,
                   value: amount
@@ -137,17 +145,17 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
             it('emits an approval by id event', async function () {
               const nonce = await this.token.getNonce(spender);
 
-              
-              const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, amount, deadline, nonce);
+              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+                spenderAddr, tokenOwner, to, amount, deadline, nonce);
 
               expectEvent(
-                await this.token.transferFromBWO(spender, tokenOwner, to, amount, deadline, signature, {
+                await this.token.transferCashBWO(spenderAddr, tokenOwner, to, amount, deadline, signature, {
                   from: this.BWO
                 }),
-                'ApprovalBWO', {
+                'ApprovalCashBWO', {
                   owner: tokenOwner,
-                  spender: spender,
-                  value: await this.token.allowanceId(tokenOwner, spender)
+                  spender: web3.utils.toChecksumAddress(spenderAddr),
+                  value: await this.token.allowanceCash(tokenOwner, spenderAddr)
                 },
               );
             });
@@ -158,9 +166,9 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
             beforeEach('reducing balance', async function () {
               const nonce = await this.token.getNonce(tokenOwner);
 
-              
-              const signature = signData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion, tokenOwner, to, 1, deadline, nonce);
-              await this.token.transferBWO(tokenOwner, to, 1, deadline, signature, {
+              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
+                tokenOwnerAddr, tokenOwner, to, 1, deadline, nonce);
+              await this.token.transferCashBWO(tokenOwnerAddr, tokenOwner, to, 1, deadline, signature, {
                 from: this.BWO
               });
             });
@@ -168,11 +176,11 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
             it('reverts', async function () {
               const nonce = await this.token.getNonce(spender);
 
-              
-              const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, amount, deadline, nonce);
+              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+                spenderAddr, tokenOwner, to, amount, deadline, nonce);
 
               await expectRevert(
-                this.token.transferFromBWO(spender, tokenOwner, to, amount, deadline, signature, {
+                this.token.transferCashBWO(spenderAddr, tokenOwner, to, amount, deadline, signature, {
                   from: this.BWO
                 }),
                 `${errorPrefix}: transfer amount exceeds balance`,
@@ -187,22 +195,25 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
           beforeEach(async function () {
             const nonce = await this.token.getNonce(tokenOwner);
 
-            
-            const signature = signData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion, tokenOwner, spender, allowance, deadline, nonce);
-            await this.token.approveBWO(tokenOwner, spender, allowance, deadline, signature, {
+            const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
+              tokenOwner, spenderAddr, allowance, deadline, nonce);
+
+            await this.token.approveCashBWO(tokenOwner, spenderAddr, allowance, deadline, signature, {
               from: this.BWO
             });
           });
 
           describe('when the token owner has enough balance', function () {
             const amount = initialSupply;
-            
+
             it('reverts', async function () {
               const nonce = await this.token.getNonce(spender);
-              const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, amount, deadline, nonce);
+
+              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+                spenderAddr, tokenOwner, to, amount, deadline, nonce);
 
               await expectRevert(
-                this.token.transferFromBWO(spender, tokenOwner, to, amount, deadline, signature, {
+                this.token.transferCashBWO(spenderAddr, tokenOwner, to, amount, deadline, signature, {
                   from: this.BWO
                 }),
                 `${errorPrefix}: insufficient allowance`,
@@ -215,20 +226,24 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
 
             beforeEach('reducing balance', async function () {
               const nonce = await this.token.getNonce(tokenOwner);
-              
-              const signature = signData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion, tokenOwner, to, 2, deadline, nonce);
 
-              await this.token.transferBWO(tokenOwner, to, 2, deadline, signature, {
+              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
+                tokenOwnerAddr, tokenOwner, to, 2, deadline, nonce);
+
+              await this.token.transferCashBWO(tokenOwnerAddr, tokenOwner, to, 2, deadline, signature, {
                 from: this.BWO
               });
             });
 
             it('reverts', async function () {
-              
+
               const nonce = await this.token.getNonce(spender);
-              const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, amount, deadline, nonce);
+
+              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+                spenderAddr, tokenOwner, to, amount, deadline, nonce);
+
               await expectRevert(
-                this.token.transferFromBWO(spender, tokenOwner, to, amount, deadline, signature, {
+                this.token.transferCashBWO(spenderAddr, tokenOwner, to, amount, deadline, signature, {
                   from: this.BWO
                 }),
                 `${errorPrefix}: transfer amount exceeds balance`,
@@ -239,39 +254,43 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
 
         describe('when the spender has unlimited allowance', function () {
           beforeEach(async function () {
-            
-            const nonce = await this.token.getNonce(initialHolderId);
-            const signature = signData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion, initialHolderId, spender, MAX_UINT256, deadline, nonce);
 
-            await this.token.approveBWO(initialHolderId, spender, MAX_UINT256, deadline, signature, {
+            const nonce = await this.token.getNonce(initialHolderId);
+
+            const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
+              initialHolderId, spenderAddr, MAX_UINT256, deadline, nonce);
+
+            await this.token.approveCashBWO(initialHolderId, spenderAddr, MAX_UINT256, deadline, signature, {
               from: this.BWO
             });
           });
 
           it('does not decrease the spender allowance', async function () {
-            
+
             const nonce = await this.token.getNonce(spender);
 
-            const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, 1, deadline, nonce);
+            const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+              spenderAddr, tokenOwner, to, 1, deadline, nonce);
 
-            await this.token.transferFromBWO(spender, tokenOwner, to, 1, deadline, signature, {
+            await this.token.transferCashBWO(spenderAddr, tokenOwner, to, 1, deadline, signature, {
               from: this.BWO
             });
 
-            expect(await this.token.allowanceId(tokenOwner, spender)).to.be.bignumber.equal(MAX_UINT256);
+            expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal(MAX_UINT256);
           });
 
           it('does not emit an approval by id event', async function () {
-            
+
             const nonce = await this.token.getNonce(spender);
 
-            const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, 1, deadline, nonce);
+            const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+              spenderAddr, tokenOwner, to, 1, deadline, nonce);
 
             expectEvent.notEmitted(
-              await this.token.transferFromBWO(spender, tokenOwner, to, 1, deadline, signature, {
+              await this.token.transferCashBWO(spenderAddr, tokenOwner, to, 1, deadline, signature, {
                 from: this.BWO
               }),
-              'ApprovalId',
+              'ApprovalCashBWO',
             );
           });
         });
@@ -282,20 +301,24 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
         const to = 0;
 
         beforeEach(async function () {
-          
+
           const nonce = await this.token.getNonce(tokenOwner);
-          const signature = signData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion, tokenOwner, spender, amount, deadline, nonce);
-          await this.token.approveBWO(tokenOwner, spender, amount, deadline, signature, {
+          const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
+            tokenOwner, spenderAddr, amount, deadline, nonce);
+
+          await this.token.approveCashBWO(tokenOwner, spenderAddr, amount, deadline, signature, {
             from: this.BWO
           });
         });
 
         it('reverts', async function () {
-          
-          const nonce = await this.token.getNonce(spender);
-          const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, amount, deadline, nonce);
 
-          await expectRevert(this.token.transferFromBWO(spender,
+          const nonce = await this.token.getNonce(spender);
+
+          const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+            spenderAddr, tokenOwner, to, amount, deadline, nonce);
+
+          await expectRevert(this.token.transferCashBWO(spenderAddr,
             tokenOwner, to, amount, deadline, signature, {
               from: this.BWO
             }), `${errorPrefix}: transfer to the zero Id`, );
@@ -309,25 +332,30 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
       const to = recipientId;
 
       it('reverts', async function () {
-        
+
         const nonce = await this.token.getNonce(spender);
-        const signature = signFromData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion, spender, tokenOwner, to, amount, deadline, nonce);
+
+        const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+          spenderAddr, tokenOwner, to, amount, deadline, nonce);
+
         await expectRevert(
-          this.token.transferFromBWO(spender, tokenOwner, to, amount, deadline, signature, {
+          this.token.transferCashBWO(spenderAddr, tokenOwner, to, amount, deadline, signature, {
             from: this.BWO
           }),
-          'Cash: approve from the zero Id',
+          'Cash: from is the zero id',
         );
       });
     });
   });
 
-  describe('approveBWO', function () {
-    shouldBehaveLikeCash20ApproveBWO(errorPrefix, initialHolderId, recipientId, initialSupply, BWOKey,
-      function (owner, spender, amount, nonce, key) {
-        
-        const signature = signData(this.chainId, this.token.address, this.tokenName, key, this.tokenVersion, owner, spender, amount, deadline, nonce)
-        return this.token.approveBWO(owner, spender, amount, deadline, signature, {
+  describe('approveCashBWO', function () {
+    shouldBehaveLikeCash20ApproveBWO(errorPrefix, initialHolderId, recipient, recipientId, initialSupply, BWOKey,
+      function (owner, spenderAddr, amount, nonce, key) {
+
+        const signature = signApproveData(this.chainId, this.token.address, this.tokenName, key, this.tokenVersion,
+          owner, spenderAddr, amount, deadline, nonce)
+
+        return this.token.approveCashBWO(owner, spenderAddr, amount, deadline, signature, {
           from: this.BWO
         });
       },
@@ -335,14 +363,14 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
   });
 }
 
-function shouldBehaveLikeCash20TransferBWO(errorPrefix, from, to, balance, key, transfer) {
+function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balance, key, transfer) {
   describe('when the recipientId is not the zero id', function () {
     describe('when the sender does not have enough balance', function () {
       const amount = balance.addn(1);
 
       it('reverts', async function () {
         const nonce = await this.token.getNonce(from);
-        await expectRevert(transfer.call(this, from, to, amount, nonce, key),
+        await expectRevert(transfer.call(this, spender, from, to, amount, nonce, key),
           `${errorPrefix}: transfer amount exceeds balance`,
         );
       });
@@ -354,18 +382,18 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, from, to, balance, key, 
       it('transfers the requested amount', async function () {
         const nonce = await this.token.getNonce(from);
 
-        await transfer.call(this, from, to, amount, nonce, key);
+        await transfer.call(this, spender, from, to, amount, nonce, key);
 
-        expect(await this.token.balanceOfId(from)).to.be.bignumber.equal('0');
+        expect(await this.token.balanceOfCash(from)).to.be.bignumber.equal('0');
 
-        expect(await this.token.balanceOfId(to)).to.be.bignumber.equal(amount);
+        expect(await this.token.balanceOfCash(to)).to.be.bignumber.equal(amount);
       });
 
       it('emits a transfer by id event', async function () {
         const nonce = await this.token.getNonce(from);
         expectEvent(
-          await transfer.call(this, from, to, amount, nonce, key),
-          'TransferBWO', {
+          await transfer.call(this, spender, from, to, amount, nonce, key),
+          'TransferCashBWO', {
             from,
             to,
             value: amount
@@ -380,19 +408,19 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, from, to, balance, key, 
       it('transfers the requested amount', async function () {
         const nonce = await this.token.getNonce(from);
 
-        await transfer.call(this, from, to, amount, nonce, key);
+        await transfer.call(this, spender, from, to, amount, nonce, key);
 
-        expect(await this.token.balanceOfId(from)).to.be.bignumber.equal(balance);
+        expect(await this.token.balanceOfCash(from)).to.be.bignumber.equal(balance);
 
-        expect(await this.token.balanceOfId(to)).to.be.bignumber.equal('0');
+        expect(await this.token.balanceOfCash(to)).to.be.bignumber.equal('0');
       });
 
       it('emits a transfer by id event', async function () {
         const nonce = await this.token.getNonce(from);
 
         expectEvent(
-          await transfer.call(this, from, to, amount, nonce, key),
-          'TransferBWO', {
+          await transfer.call(this, spender, from, to, amount, nonce, key),
+          'TransferCashBWO', {
             from,
             to,
             value: amount
@@ -405,14 +433,14 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, from, to, balance, key, 
   describe('when the recipientId is the zero Id', function () {
     it('reverts', async function () {
       const nonce = await this.token.getNonce(from);
-      await expectRevert(transfer.call(this, from, 0, balance, nonce, key),
+      await expectRevert(transfer.call(this, spender, from, 0, balance, nonce, key),
         `${errorPrefix}: transfer to the zero Id`,
       );
     });
   });
 }
 
-function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, spender, supply, key, approve) {
+function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, spenderAddr, spender, supply, key, approve) {
   describe('when the spender is not the zero Id', function () {
     describe('when the sender has enough balance', function () {
       const amount = supply;
@@ -420,10 +448,10 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, spender, supply, k
       it('emits an approval by id event', async function () {
         const nonce = await this.token.getNonce(owner);
         expectEvent(
-          await approve.call(this, owner, spender, amount, nonce, key),
-          'ApprovalBWO', {
+          await approve.call(this, owner, spenderAddr, amount, nonce, key),
+          'ApprovalCashBWO', {
             owner: owner,
-            spender: spender,
+            spender: web3.utils.toChecksumAddress(spenderAddr),
             value: amount
           },
         );
@@ -432,9 +460,9 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, spender, supply, k
       describe('when there was no approved amount before', function () {
         it('approves the requested amount', async function () {
           const nonce = await this.token.getNonce(owner);
-          await approve.call(this, owner, spender, amount, nonce, key);
+          await approve.call(this, owner, spenderAddr, amount, nonce, key);
 
-          expect(await this.token.allowanceId(owner, spender)).to.be.bignumber.equal(amount);
+          expect(await this.token.allowanceCash(owner, spenderAddr)).to.be.bignumber.equal(amount);
         });
       });
 
@@ -442,15 +470,15 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, spender, supply, k
         beforeEach(async function () {
           const nonce = await this.token.getNonce(owner);
 
-          await approve.call(this, owner, spender, new BN(1), nonce, key);
+          await approve.call(this, owner, spenderAddr, new BN(1), nonce, key);
         });
 
         it('approves the requested amount and replaces the previous one', async function () {
           const nonce = await this.token.getNonce(owner);
 
-          await approve.call(this, owner, spender, amount, nonce, key);
+          await approve.call(this, owner, spenderAddr, amount, nonce, key);
 
-          expect(await this.token.allowanceId(owner, spender)).to.be.bignumber.equal(amount);
+          expect(await this.token.allowanceCash(owner, spenderAddr)).to.be.bignumber.equal(amount);
         });
       });
     });
@@ -462,10 +490,10 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, spender, supply, k
         const nonce = await this.token.getNonce(owner);
 
         expectEvent(
-          await approve.call(this, owner, spender, amount, nonce, key),
-          'ApprovalBWO', {
+          await approve.call(this, owner, spenderAddr, amount, nonce, key),
+          'ApprovalCashBWO', {
             owner: owner,
-            spender: spender,
+            spender: web3.utils.toChecksumAddress(spenderAddr),
             value: amount
           },
         );
@@ -475,23 +503,23 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, spender, supply, k
         it('approves the requested amount', async function () {
           const nonce = await this.token.getNonce(owner);
 
-          await approve.call(this, owner, spender, amount, nonce, key);
+          await approve.call(this, owner, spenderAddr, amount, nonce, key);
 
-          expect(await this.token.allowanceId(owner, spender)).to.be.bignumber.equal(amount);
+          expect(await this.token.allowanceCash(owner, spenderAddr)).to.be.bignumber.equal(amount);
         });
       });
 
       describe('when the spender had an approved amount', function () {
         beforeEach(async function () {
           const nonce = await this.token.getNonce(owner);
-          await approve.call(this, owner, spender, new BN(1), nonce, key);
+          await approve.call(this, owner, spenderAddr, new BN(1), nonce, key);
         });
 
         it('approves the requested amount and replaces the previous one', async function () {
           const nonce = await this.token.getNonce(owner);
-          await approve.call(this, owner, spender, amount, nonce, key);
+          await approve.call(this, owner, spenderAddr, amount, nonce, key);
 
-          expect(await this.token.allowanceId(owner, spender)).to.be.bignumber.equal(amount);
+          expect(await this.token.allowanceCash(owner, spenderAddr)).to.be.bignumber.equal(amount);
         });
       });
     });
@@ -500,14 +528,15 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, spender, supply, k
   describe('when the spender is the zero address', function () {
     it('reverts', async function () {
       const nonce = await this.token.getNonce(owner);
-      await expectRevert(approve.call(this, owner, 0, supply, nonce, key),
-        `${errorPrefix}: approve to the zero Id`,
+      await expectRevert(approve.call(this, owner, ZERO_ADDRESS, supply, nonce, key),
+        `${errorPrefix}: approve to the zero address`,
       );
     });
   });
 }
 
-function signData(chainId, verifyingContract, name, key, version, from, to, value, deadline, nonce) {
+function signApproveData(chainId, verifyingContract, name, key, version,
+  from, to, value, deadline, nonce) {
   const data = {
     types: {
       EIP712Domain,
@@ -517,7 +546,7 @@ function signData(chainId, verifyingContract, name, key, version, from, to, valu
         },
         {
           name: 'to',
-          type: 'uint256'
+          type: 'address'
         },
         {
           name: 'value',
@@ -556,13 +585,14 @@ function signData(chainId, verifyingContract, name, key, version, from, to, valu
   return signature;
 }
 
-function signFromData(chainId, verifyingContract, name, key, version, spender, from, to, value, deadline, nonce) {
+function signTransferData(chainId, verifyingContract, name, key, version,
+  spender, from, to, value, deadline, nonce) {
   const data = {
     types: {
       EIP712Domain,
       BWO: [{
           name: 'spender',
-          type: 'uint256'
+          type: 'address'
         },
         {
           name: 'from',

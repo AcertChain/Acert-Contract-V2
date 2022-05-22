@@ -178,10 +178,20 @@ contract World is IWorld {
         returns (bool)
     {
         // 检查address 和 id是否匹配 ，如果匹配，返回true ，否则返回false
-        return
-            (_id > _avatarMaxId && (_accountsById[_id]._address == _address)) ||
-            (_address ==
-                _accountsById[IItem721(_avatar).ownerOfId(_id)]._address);
+        if (_id > _avatarMaxId) {
+            if (_accountsById[_id]._address == _address) {
+                return true;
+            }
+            return false;
+        } else {
+            if (
+                _address ==
+                _accountsById[IItem721(_avatar).ownerOfId(_id)]._address
+            ) {
+                return true;
+            }
+            return false;
+        }
     }
 
     function getAccountIdByAddress(address _address)

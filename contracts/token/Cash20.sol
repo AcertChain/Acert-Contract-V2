@@ -156,17 +156,13 @@ contract Cash20 is Context, EIP712, ICash20 {
             _transferCash(from, to, amount, false);
             return true;
         }
-
-        require(
-            _isApprovedOrOwner(_msgSender(), from, amount, false),
-            "Cash: transfer caller is not owner nor approved"
-        );
-
+        _isApprovedOrOwner(_msgSender(), from, amount, false);
         _transferCash(from, to, amount, false);
         return true;
     }
 
     function transferCashBWO(
+        address spender,
         uint256 from,
         uint256 to,
         uint256 amount,
@@ -177,18 +173,22 @@ contract Cash20 is Context, EIP712, ICash20 {
             IWorld(_world).isBWO(_msgSender()),
             "Cash: must be the world BWO"
         );
-        address sender = _msgSender();
-        uint256 senderId = _getIdByAddress(sender);
-        uint256 nonce = _nonces[senderId];
+        
+       require(spender != address(0), "Cash: spender is the zero address");
+       require(from != 0, "Cash: from is the zero id");
+
+        uint256 spenderId = _getIdByAddress(spender);
+        uint256 nonce = _nonces[spenderId];
         require(
-            sender ==
+            spender ==
                 _recoverSig(
                     _hashTypedDataV4(
                         keccak256(
                             abi.encode(
                                 keccak256(
-                                    "BWO(uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
+                                    "BWO(address spender,uint256 from,uint256 to,uint256 value,uint256 nonce,uint256 deadline)"
                                 ),
+                                spender,
                                 from,
                                 to,
                                 amount,
@@ -203,11 +203,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
-        _nonces[senderId] += 1;
-        require(
-            _isApprovedOrOwner(sender, from, amount, true),
-            "Cash: transfer caller is not owner nor approved"
-        );
+        _nonces[spenderId] += 1;
+        _isApprovedOrOwner(spender, from, amount, true);
         _transferCash(from, to, amount, true);
         return true;
     }
@@ -217,10 +214,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 from,
         uint256 amount,
         bool isBWO
-    ) internal virtual returns (bool) {
-        if (IWorld(_world).checkAddress(sender, from)) {
-            return true;
-        } else {
+    ) internal virtual {
+        if (IWorld(_world).checkAddress(sender, from)) {} else {
             uint256 currentAllowance = allowanceCash(from, sender);
             if (currentAllowance != type(uint256).max) {
                 require(
@@ -230,10 +225,8 @@ contract Cash20 is Context, EIP712, ICash20 {
                 unchecked {
                     _approveId(from, sender, currentAllowance - amount, isBWO);
                 }
-                return true;
             }
         }
-        return false;
     }
 
     /**
@@ -293,6 +286,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         address spender,
         uint256 amount
     ) public virtual override returns (bool) {
+        require(spender != address(0), "Cash: approve to the zero address");
         require(
             IWorld(_world).checkAddress(_msgSender(), ownerId),
             "Cash: not owner"
@@ -309,6 +303,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
+        require(spender != address(0), "Cash: approve to the zero address");
         require(
             IWorld(_world).isBWO(_msgSender()),
             "Cash: must be the world BWO"
@@ -323,7 +318,7 @@ contract Cash20 is Context, EIP712, ICash20 {
                         keccak256(
                             abi.encode(
                                 keccak256(
-                                    "BWO(uint256 from,addresss to,uint256 value,uint256 nonce,uint256 deadline)"
+                                    "BWO(uint256 from,address to,uint256 value,uint256 nonce,uint256 deadline)"
                                 ),
                                 owner,
                                 spender,
@@ -606,12 +601,11 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) internal virtual {
         require(ownerId != 0, "Cash: approve from the zero Id");
         _getAddressById(ownerId);
-        uint256 spenderId = _getIdByAddress(spender);
-        _allowancesById[ownerId][spenderId] = amount;
+        _allowancesById[ownerId][_getIdByAddress(spender)] = amount;
         if (isBWO) {
             emit ApprovalCashBWO(
                 ownerId,
-                spenderId,
+                spender,
                 amount,
                 _nonces[ownerId] - 1
             );
@@ -638,21 +632,6 @@ contract Cash20 is Context, EIP712, ICash20 {
             require(currentAllowance >= amount, "Cash: insufficient allowance");
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
-            }
-        }
-    }
-
-    function _spendAllowanceById(
-        uint256 owner,
-        address spender,
-        uint256 amount,
-        bool isBWO
-    ) internal virtual {
-        uint256 currentAllowance = allowanceCash(owner, spender);
-        if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "Cash: insufficient allowance");
-            unchecked {
-                _approveId(owner, spender, currentAllowance - amount, isBWO);
             }
         }
     }
