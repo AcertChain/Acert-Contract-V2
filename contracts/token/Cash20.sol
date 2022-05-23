@@ -173,9 +173,9 @@ contract Cash20 is Context, EIP712, ICash20 {
             IWorld(_world).isBWO(_msgSender()),
             "Cash: must be the world BWO"
         );
-        
-       require(spender != address(0), "Cash: spender is the zero address");
-       require(from != 0, "Cash: from is the zero id");
+
+        require(spender != address(0), "Cash: spender is the zero address");
+        require(from != 0, "Cash: from is the zero id");
 
         uint256 spenderId = _getIdByAddress(spender);
         uint256 nonce = _nonces[spenderId];
