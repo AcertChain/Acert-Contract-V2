@@ -152,11 +152,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(to != 0, "Cash: transfer to the zero Id");
         require(from != 0, "Cash: transfer from the zero Id");
 
-        if (_isTrust(_msgSender(), from)) {
-            _transferCash(from, to, amount, false);
-            return true;
-        }
-        _isApprovedOrOwner(_msgSender(), from, amount, false);
+        require(_isApprovedOrOwner(_msgSender(), from, amount, false), "Cash: transfer caller is not owner nor approved";
         _transferCash(from, to, amount, false);
         return true;
     }
@@ -204,29 +200,36 @@ contract Cash20 is Context, EIP712, ICash20 {
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _nonces[spenderId] += 1;
-        _isApprovedOrOwner(spender, from, amount, true);
+        require(_isApprovedOrOwner(spender, from, amount, true), "Cash: transfer spender is not owner nor approved";
         _transferCash(from, to, amount, true);
         return true;
     }
 
     function _isApprovedOrOwner(
-        address sender,
+        address spender,
         uint256 from,
         uint256 amount,
         bool isBWO
-    ) internal virtual {
-        if (IWorld(_world).checkAddress(sender, from)) {} else {
-            uint256 currentAllowance = allowanceCash(from, sender);
-            if (currentAllowance != type(uint256).max) {
-                require(
-                    currentAllowance >= amount,
-                    "Cash: insufficient allowance"
-                );
-                unchecked {
-                    _approveId(from, sender, currentAllowance - amount, isBWO);
-                }
+    ) internal virtual returns (bool) {
+        if (_isTrust(spender, from)) {
+            return true;
+        }
+    
+        if (IWorld(_world).checkAddress(spender, from)) {
+            return true;
+        }
+        
+        uint256 currentAllowance = allowanceCash(from, spender);
+        if (currentAllowance != type(uint256).max) {
+            require(
+                currentAllowance >= amount,
+                "Cash: insufficient allowance"
+            );
+            unchecked {
+                _approveId(from, spender, currentAllowance - amount, isBWO);
             }
         }
+        return true;
     }
 
     /**
