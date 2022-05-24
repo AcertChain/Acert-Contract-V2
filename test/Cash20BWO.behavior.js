@@ -342,7 +342,7 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
           this.token.transferCashBWO(spenderAddr, tokenOwner, to, amount, deadline, signature, {
             from: this.BWO
           }),
-          'Cash: from is the zero id',
+          'Cash: from is the zero Id',
         );
       });
     });

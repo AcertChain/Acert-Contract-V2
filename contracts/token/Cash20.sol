@@ -205,7 +205,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         bool isBWO
     ) internal virtual {
         require(spender != address(0), "Cash: spender is the zero address");
-        require(from != 0, "Cash: from is the zero id");
+        require(from != 0, "Cash: from is the zero Id");
         require(to != 0, "Cash: transfer to the zero Id");
 
         if (_isTrust(spender, from)) {
@@ -524,6 +524,14 @@ contract Cash20 is Context, EIP712, ICash20 {
         emit Transfer(address(0), account, amount);
     }
 
+    function _mintCash(uint256 accountId, uint256 amount) internal virtual {
+        require(accountId != 0, "Cash: mint to the zero Id");
+        _updateAddressById(accountId);
+        _totalSupply += amount;
+        _balancesById[accountId] += amount;
+        emit TransferCash(0, accountId, amount);
+    }
+
     /**
      * @dev Destroys `amount` tokens from `account`, reducing the
      * total supply.
@@ -546,6 +554,19 @@ contract Cash20 is Context, EIP712, ICash20 {
         _totalSupply -= amount;
 
         emit Transfer(account, address(0), amount);
+    }
+
+    function _burnCash(uint256 accountId, uint256 amount) internal virtual {
+        require(accountId != 0, "Cash: burn from the zero Id");
+        _updateAddressById(accountId);
+        uint256 accountBalance = _balancesById[accountId];
+        require(accountBalance >= amount, "Cash: burn amount exceeds balance");
+        unchecked {
+            _balancesById[accountId] = accountBalance - amount;
+        }
+        _totalSupply -= amount;
+
+        emit TransferCash(accountId, 0, amount);
     }
 
     /**

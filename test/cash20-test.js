@@ -399,6 +399,91 @@ contract('Cash20', function (accounts) {
     });
   });
 
+  describe('_mintCash', function () {
+    const amount = new BN(50);
+    it('rejects a null account', async function () {
+      await expectRevert(
+        this.token.mintCash(0, amount), 'Cash: mint to the zero Id',
+      );
+    });
+
+    describe('for a non zero account', function () {
+      beforeEach('minting', async function () {
+        this.receipt = await this.token.mintCash(recipientId, amount);
+      });
+
+      it('increments totalSupply', async function () {
+        tSupply = initialSupply.mul(new BN(2))
+        const expectedSupply = tSupply.add(amount);
+        expect(await this.token.totalSupply()).to.be.bignumber.equal(expectedSupply);
+      });
+
+      it('increments recipient balance', async function () {
+        expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(amount);
+      });
+
+      it('emits Transfer event', async function () {
+        const event = expectEvent(
+          this.receipt,
+          'TransferCash', {
+            from: new BN(0),
+            to: recipientId
+          },
+        );
+
+        expect(event.args.value).to.be.bignumber.equal(amount);
+      });
+    });
+  });
+
+  describe('_burn', function () {
+    it('rejects a null account', async function () {
+      await expectRevert(this.token.burnCash(0, new BN(1)),
+        'Cash: burn from the zero Id');
+    });
+
+    describe('for a non zero account', function () {
+      it('rejects burning more than balance', async function () {
+        await expectRevert(this.token.burnCash(
+          initialHolderId, initialSupply.addn(1)), 'Cash: burn amount exceeds balance', );
+      });
+
+      const describeBurn = function (description, amount) {
+        describe(description, function () {
+          beforeEach('burning', async function () {
+            this.receipt = await this.token.burnCash(initialHolderId, amount);
+          });
+
+          it('decrements totalSupply', async function () {
+            tSupply = initialSupply.mul(new BN(2))
+            const expectedSupply = tSupply.sub(amount);
+            expect(await this.token.totalSupply()).to.be.bignumber.equal(expectedSupply);
+          });
+
+          it('decrements initialHolder balance', async function () {
+            const expectedBalance = initialSupply.sub(amount);
+            expect(await this.token.balanceOf(initialHolder)).to.be.bignumber.equal(expectedBalance);
+          });
+
+          it('emits Transfer event', async function () {
+            const event = expectEvent(
+              this.receipt,
+              'TransferCash', {
+                from: initialHolderId,
+                to: new BN(0)
+              },
+            );
+
+            expect(event.args.value).to.be.bignumber.equal(amount);
+          });
+        });
+      };
+
+      describeBurn('for entire balance', initialSupply);
+      describeBurn('for less amount than balance', initialSupply.subn(1));
+    });
+  });
+
   describe('_transfer', function () {
     shouldBehaveLikeERC20Transfer('Cash', initialHolder, recipient, initialSupply, function (from, to, amount) {
       return this.token.transfer(to, amount, {

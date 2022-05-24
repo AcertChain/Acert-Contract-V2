@@ -228,7 +228,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
           this.token.transferCash(tokenOwner, to, amount, {
             from: spenderAddr
           }),
-          'Cash: transfer from the zero Id',
+          'Cash: from is the zero Id',
         );
       });
     });
