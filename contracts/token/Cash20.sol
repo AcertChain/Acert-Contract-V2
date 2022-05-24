@@ -217,11 +217,13 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
 
         uint256 currentAllowance = allowanceCash(from, spender);
-        require(currentAllowance >= amount, "Cash: insufficient allowance");
-        _transferCash(from, to, amount, isBWO);
-        unchecked {
-            _approveId(from, spender, currentAllowance - amount, isBWO);
+        if (currentAllowance != type(uint256).max) {
+            require(currentAllowance >= amount, "Cash: insufficient allowance");
+            unchecked {
+                _approveId(from, spender, currentAllowance - amount, isBWO);
+            }
         }
+        _transferCash(from, to, amount, isBWO);
     }
 
     /**
