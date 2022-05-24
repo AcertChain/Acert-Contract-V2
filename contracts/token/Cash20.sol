@@ -152,7 +152,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(to != 0, "Cash: transfer to the zero Id");
         require(from != 0, "Cash: transfer from the zero Id");
 
-        require(_isApprovedOrOwner(_msgSender(), from, amount, false), "Cash: transfer caller is not owner nor approved";
+        _isApprovedOrOwner(_msgSender(), from, amount, false);
         _transferCash(from, to, amount, false);
         return true;
     }
@@ -200,7 +200,7 @@ contract Cash20 is Context, EIP712, ICash20 {
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _nonces[spenderId] += 1;
-        require(_isApprovedOrOwner(spender, from, amount, true), "Cash: transfer spender is not owner nor approved";
+        _isApprovedOrOwner(spender, from, amount, true);
         _transferCash(from, to, amount, true);
         return true;
     }
@@ -210,26 +210,22 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 from,
         uint256 amount,
         bool isBWO
-    ) internal virtual returns (bool) {
+    ) internal virtual {
         if (_isTrust(spender, from)) {
-            return true;
+            return;
         }
-    
+
         if (IWorld(_world).checkAddress(spender, from)) {
-            return true;
+            return;
         }
-        
+
         uint256 currentAllowance = allowanceCash(from, spender);
         if (currentAllowance != type(uint256).max) {
-            require(
-                currentAllowance >= amount,
-                "Cash: insufficient allowance"
-            );
+            require(currentAllowance >= amount, "Cash: insufficient allowance");
             unchecked {
                 _approveId(from, spender, currentAllowance - amount, isBWO);
             }
         }
-        return true;
     }
 
     /**
