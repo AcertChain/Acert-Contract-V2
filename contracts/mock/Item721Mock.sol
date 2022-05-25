@@ -3,10 +3,9 @@
 pragma solidity ^0.8.0;
 
 import "../token/Item721.sol";
+import "../common/Ownable.sol";
 
-contract Item721Mock is Item721 {
-    address private _owner;
-
+contract Item721Mock is Item721, Ownable {
     constructor(
         string memory name,
         string memory symbol,
@@ -20,13 +19,11 @@ contract Item721Mock is Item721 {
         return _exists(tokenId);
     }
 
-    function mint(address to, uint256 tokenId) public {
-        onlyOwner();
+    function mint(address to, uint256 tokenId)  public onlyOwner {
         _mint(to, tokenId);
     }
 
-    function safeMint(address to, uint256 tokenId) public {
-        onlyOwner();
+    function safeMint(address to, uint256 tokenId) public onlyOwner{
         _safeMint(to, tokenId);
     }
 
@@ -34,18 +31,12 @@ contract Item721Mock is Item721 {
         address to,
         uint256 tokenId,
         bytes memory _data
-    ) public {
-        onlyOwner();
+    ) public onlyOwner {
         _safeMint(to, tokenId, _data);
     }
 
-    function burn(uint256 tokenId) public {
-        onlyOwner();
+    function burn(uint256 tokenId) public onlyOwner {
         _burn(tokenId);
-    }
-
-    function onlyOwner() internal view {
-        require(_owner == msg.sender, "only owner");
     }
 
     function getChainId() external view returns (uint256) {

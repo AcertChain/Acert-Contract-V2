@@ -7,6 +7,8 @@ import "./interfaces/IAsset.sol";
 import "./interfaces/IItem721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "./mock/AvatarMock.sol";
+import "./common/Ownable.sol";
 
 /**
 W01:zero address
@@ -22,12 +24,11 @@ W10:only owner
 W11:must safe contract
 W12:address should equal
  */
-contract World is IWorld {
+contract World is IWorld, Ownable {
     enum TypeOperation {
         CASH,
         ITEM
     }
-    event ChangeOwner(address owner);
     // event 注册Asset
     event RegisterAsset(
         uint8 _type,
@@ -61,8 +62,6 @@ contract World is IWorld {
 
     // avatar
     address private _avatar;
-    // owner
-    address private _owner;
     // avatar max id
     uint256 private _avatarMaxId;
     // account Id
@@ -132,13 +131,11 @@ contract World is IWorld {
     }
 
     function registerAvatar(
-        uint256 totalSupply,
         address avatar,
         string calldata name,
         string calldata image
-    ) public {
-        onlyOwner();
-        require(avatar != address(0), "empty address");
+    ) public onlyOwner {
+        require(avatar != address(0), "W01");
         _avatar = avatar;
         _assets[_avatar] = Asset(
             uint8(TypeOperation.ITEM),
@@ -147,9 +144,9 @@ contract World is IWorld {
             name,
             image
         );
-        _avatarMaxId = totalSupply;
-        _totalAccount = totalSupply;
-
+        uint256 maxId = AvatarMock(_avatar).maxAvatar();
+        _avatarMaxId = maxId;
+        _totalAccount = maxId;
         emit RegisterAsset(uint8(TypeOperation.ITEM), _avatar, name, image);
     }
 
@@ -160,7 +157,6 @@ contract World is IWorld {
         returns (uint256 id)
     {
         if (_addressesToIds[_address] == 0) {
-            // create account
             _totalAccount++;
             id = _totalAccount;
             _accountsById[id] = Account(false, true, id, _address, address(0));
@@ -182,7 +178,6 @@ contract World is IWorld {
             if (_accountsById[_id]._address == _address) {
                 return true;
             }
-            return false;
         } else {
             if (
                 _address ==
@@ -190,8 +185,8 @@ contract World is IWorld {
             ) {
                 return true;
             }
-            return false;
         }
+        return false;
     }
 
     function getAccountIdByAddress(address _address)
@@ -217,14 +212,12 @@ contract World is IWorld {
         }
     }
 
-    // func 注册资产
     function registerAsset(
         address _contract,
         TypeOperation _typeOperation,
         string calldata _tokneName,
         string calldata _image
-    ) public {
-        onlyOwner();
+    ) public onlyOwner {
         require(
             _contract != address(0) && _assets[_contract]._isExist == false,
             "W02"
@@ -251,8 +244,7 @@ contract World is IWorld {
         TypeOperation _typeOperation,
         string calldata _tokneName,
         string calldata _image
-    ) public {
-        onlyOwner();
+    ) public onlyOwner {
         require(
             _contract != address(0) &&
                 _assets[_contract]._isExist == true &&
@@ -264,7 +256,6 @@ contract World is IWorld {
         emit ChangeAsset(_contract, _tokneName, _image);
     }
 
-    // func 创建Account
     function createAccount(address _address) public {
         //console.log("createAccount %s %s", _address,_addressesToIds[_address]);
         require(
@@ -278,15 +269,12 @@ contract World is IWorld {
         emit CreateAccount(id, _address);
     }
 
-    // func world修改Account _address
     function changeAccount(
         uint256 _id,
         address _newAddress,
         bool _isTrustWorld
-    ) public {
-        onlyOwner();
+    ) public onlyOwner {
         require(_id != 0 && _accountsById[_id]._isExist == true, "W09");
-
         if (_accountsById[_id]._address != _newAddress) {
             require(_addressesToIds[_newAddress] == 0, "W09");
             delete _addressesToIds[_accountsById[_id]._address];
@@ -298,8 +286,10 @@ contract World is IWorld {
         emit ChangeAccount(_id, msg.sender, _newAddress, _isTrustWorld);
     }
 
-    function changeAssertAccountAddress(Change[] calldata _changes) public {
-        onlyOwner();
+    function changeAssertAccountAddress(Change[] calldata _changes)
+        public
+        onlyOwner
+    {
         for (uint256 i = 0; i < _changes.length; i++) {
             require(
                 _changes[i]._asset != address(0) &&
@@ -318,14 +308,14 @@ contract World is IWorld {
         }
     }
 
-    function accountTrustContract(uint256 _id, address _contract) public {
+    function trustContract(uint256 _id, address _contract) public {
         require(_accountsById[_id]._address == msg.sender, "W09");
         require(_safeContracts[_contract] == true, "W11");
         _isTrustContractByAccountId[_id][_contract] = true;
         emit TrustContract(_id, _contract);
     }
 
-    function accountUntrustContract(uint256 _id, address _contract) public {
+    function untrustContract(uint256 _id, address _contract) public {
         require(_accountsById[_id]._address == msg.sender, "W09");
         require(_safeContracts[_contract] == true, "W11");
         delete _isTrustContractByAccountId[_id][_contract];
@@ -333,16 +323,14 @@ contract World is IWorld {
     }
 
     // 添加operator
-    function addOperator(address _operator) public {
-        onlyOwner();
+    function addOperator(address _operator) public onlyOwner {
         require(_operator != address(0), "W01");
         _isOperatorByAddress[_operator] = true;
         emit AddOperator(_operator);
     }
 
     // 删除operator
-    function removeOperator(address _operator) public {
-        onlyOwner();
+    function removeOperator(address _operator) public onlyOwner {
         delete _isOperatorByAddress[_operator];
         emit RemoveOperator(_operator);
     }
@@ -353,28 +341,16 @@ contract World is IWorld {
     }
 
     // 添加conttract
-    function addContract(address _contract) public {
-        onlyOwner();
+    function addContract(address _contract) public onlyOwner {
         require(_contract != address(0), "W01");
         _safeContracts[_contract] = true;
         emit AddSafeContract(_contract);
     }
 
     // 删除contract
-    function removeContract(address _contract) public {
-        onlyOwner();
+    function removeContract(address _contract) public onlyOwner {
         delete _safeContracts[_contract];
         emit RemoveSafeContract(_contract);
-    }
-
-    function onlyOwner() internal view {
-        require(_owner == msg.sender, "W10");
-    }
-
-    function changeOwner(address newOwner) public {
-        onlyOwner();
-        _owner = newOwner;
-        emit ChangeOwner(_owner);
     }
 
     // is contract
