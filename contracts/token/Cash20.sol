@@ -149,15 +149,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 to,
         uint256 amount
     ) public virtual override returns (bool) {
-        require(to != 0, "Cash: transfer to the zero Id");
-        require(from != 0, "Cash: transfer from the zero Id");
-
-        if (_isTrust(_msgSender(), from)) {
-            _transferCash(from, to, amount, false);
-            return true;
-        }
-        _isApprovedOrOwner(_msgSender(), from, amount, false);
-        _transferCash(from, to, amount, false);
+        _checkAndTransferCash(_msgSender(), from, to, amount, false);
         return true;
     }
 
@@ -173,9 +165,6 @@ contract Cash20 is Context, EIP712, ICash20 {
             IWorld(_world).isBWO(_msgSender()),
             "Cash: must be the world BWO"
         );
-
-        require(spender != address(0), "Cash: spender is the zero address");
-        require(from != 0, "Cash: from is the zero id");
 
         uint256 spenderId = _getIdByAddress(spender);
         uint256 nonce = _nonces[spenderId];
@@ -204,29 +193,37 @@ contract Cash20 is Context, EIP712, ICash20 {
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _nonces[spenderId] += 1;
-        _isApprovedOrOwner(spender, from, amount, true);
-        _transferCash(from, to, amount, true);
+        _checkAndTransferCash(spender, from, to, amount, true);
         return true;
     }
 
-    function _isApprovedOrOwner(
-        address sender,
+    function _checkAndTransferCash(
+        address spender,
         uint256 from,
+        uint256 to,
         uint256 amount,
         bool isBWO
     ) internal virtual {
-        if (IWorld(_world).checkAddress(sender, from)) {} else {
-            uint256 currentAllowance = allowanceCash(from, sender);
-            if (currentAllowance != type(uint256).max) {
-                require(
-                    currentAllowance >= amount,
-                    "Cash: insufficient allowance"
-                );
-                unchecked {
-                    _approveId(from, sender, currentAllowance - amount, isBWO);
-                }
+        require(spender != address(0), "Cash: spender is the zero address");
+        require(from != 0, "Cash: from is the zero Id");
+        require(to != 0, "Cash: transfer to the zero Id");
+
+        if (_isTrust(spender, from)) {
+            return _transferCash(from, to, amount, isBWO);
+        }
+
+        if (IWorld(_world).checkAddress(spender, from)) {
+            return _transferCash(from, to, amount, isBWO);
+        }
+
+        uint256 currentAllowance = allowanceCash(from, spender);
+        if (currentAllowance != type(uint256).max) {
+            require(currentAllowance >= amount, "Cash: insufficient allowance");
+            unchecked {
+                _approveId(from, spender, currentAllowance - amount, isBWO);
             }
         }
+        _transferCash(from, to, amount, isBWO);
     }
 
     /**
@@ -310,7 +307,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
 
         uint256 nonce = _nonces[owner];
-        address ownerAddr = _getAddressById(owner);
+        address ownerAddr = _updateAddressById(owner);
         require(
             ownerAddr ==
                 _recoverSig(
@@ -492,10 +489,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount,
         bool isBWO
     ) internal virtual {
-        require(from != 0, "Cash: transfer from the zero id");
-        require(to != 0, "Cash: transfer to the zero Id");
-        _getAddressById(from);
-        _getAddressById(to);
+        _updateAddressById(from);
+        _updateAddressById(to);
 
         uint256 fromBalance = _balancesById[from];
         require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
@@ -529,6 +524,14 @@ contract Cash20 is Context, EIP712, ICash20 {
         emit Transfer(address(0), account, amount);
     }
 
+    function _mintCash(uint256 accountId, uint256 amount) internal virtual {
+        require(accountId != 0, "Cash: mint to the zero Id");
+        _updateAddressById(accountId);
+        _totalSupply += amount;
+        _balancesById[accountId] += amount;
+        emit TransferCash(0, accountId, amount);
+    }
+
     /**
      * @dev Destroys `amount` tokens from `account`, reducing the
      * total supply.
@@ -551,6 +554,19 @@ contract Cash20 is Context, EIP712, ICash20 {
         _totalSupply -= amount;
 
         emit Transfer(account, address(0), amount);
+    }
+
+    function _burnCash(uint256 accountId, uint256 amount) internal virtual {
+        require(accountId != 0, "Cash: burn from the zero Id");
+        _updateAddressById(accountId);
+        uint256 accountBalance = _balancesById[accountId];
+        require(accountBalance >= amount, "Cash: burn amount exceeds balance");
+        unchecked {
+            _balancesById[accountId] = accountBalance - amount;
+        }
+        _totalSupply -= amount;
+
+        emit TransferCash(accountId, 0, amount);
     }
 
     /**
@@ -600,7 +616,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         bool isBWO
     ) internal virtual {
         require(ownerId != 0, "Cash: approve from the zero Id");
-        _getAddressById(ownerId);
+        _updateAddressById(ownerId);
         _allowancesById[ownerId][_getIdByAddress(spender)] = amount;
         if (isBWO) {
             emit ApprovalCashBWO(
@@ -641,7 +657,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         return _AddrToId[addr];
     }
 
-    function _getAddressById(uint256 id) internal returns (address) {
+    function _updateAddressById(uint256 id) internal returns (address) {
         address addr = IWorld(_world).getAddressById(id);
         _AddrToId[addr] = id;
         return addr;

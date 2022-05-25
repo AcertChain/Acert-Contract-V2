@@ -26,6 +26,17 @@ contract Cash20Mock is Cash20 {
         _burn(account, amount);
     }
 
+     function mintCash(uint256 accountId, uint256 amount) public {
+        onlyOwner();
+        _mintCash(accountId, amount);
+    }
+
+    function burnCash(uint256 accountId, uint256 amount) public {
+        onlyOwner();
+        _burnCash(accountId, amount);
+    }
+
+
     function onlyOwner() internal view {
         require(_owner == msg.sender, "only owner");
     }
