@@ -10,20 +10,6 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "./mock/AvatarMock.sol";
 import "./common/Ownable.sol";
 
-/**
-W01:zero address
-W02:contract is invalid or is exist
-W03:world is not equal
-W04:asset is invalid
-W05:address is invalid or is exist
-W06:only operator or world can exec
-W07:empty data
-W08:asset is invalid or is not exist
-W09:account is invalid or is not exist
-W10:only owner
-W11:must safe contract
-W12:address should equal
- */
 contract World is IWorld, Ownable {
     enum AssetOperation {
         CASH20,
@@ -127,16 +113,12 @@ contract World is IWorld, Ownable {
         return _avatar;
     }
 
-    function getOwner() public view virtual returns (address) {
-        return _owner;
-    }
-
     function registerAvatar(
         address avatar,
         string calldata name,
         string calldata image
     ) public onlyOwner {
-        require(avatar != address(0), "W01");
+        require(avatar != address(0), "World: zero address");
         _avatar = avatar;
         _assets[_avatar] = Asset(
             uint8(AssetOperation.ITEM721),
@@ -203,7 +185,7 @@ contract World is IWorld, Ownable {
         view
         virtual
         override
-        returns (address )
+        returns (address)
     {
         return
             (_id > _avatarMaxId || _id == 0)
@@ -216,10 +198,9 @@ contract World is IWorld, Ownable {
         AssetOperation _operation,
         string calldata _image
     ) public onlyOwner {
-        require(
-            _contract != address(0) && _assets[_contract]._isExist == false,
-            "W02"
-        );
+        require(_contract != address(0), "World: zero address");
+        require(_assets[_contract]._isExist == false, "World: asset is exist");
+
         // 这个一步校验了world的address是否是相同的
         require(address(this) == IWorldAsset(_contract).worldAddress(), "W03");
         string memory symbol = IWorldAsset(_contract).symbol();
@@ -239,22 +220,18 @@ contract World is IWorld, Ownable {
         string calldata _tokneName,
         string calldata _image
     ) public onlyOwner {
-        require(
-            _contract != address(0) &&
-                _assets[_contract]._isExist == true &&
-                _assets[_contract]._type == uint8(_typeOperation),
-            "W04"
-        );
+        require( _assets[_contract]._isExist == true,"World: asset is not exist");
+        require(_assets[_contract]._type == uint8(_typeOperation),"World: asset type is not match");
+     
         _assets[_contract]._name = _tokneName;
         _assets[_contract]._image = _image;
         emit UpdateAsset(_contract, _tokneName, _image);
     }
 
     function createAccount(address _address) public {
-        require(
-            _address != address(0) && _addressesToIds[_address] == 0,
-            "W05"
-        );
+        require(_address != address(0), "World: zero address");
+        require(_addressesToIds[_address] == 0, "World: address is exist");
+
         _totalAccount++;
         uint256 id = _totalAccount;
         _accountsById[id] = Account(false, true, id, _address, address(0));
@@ -267,9 +244,10 @@ contract World is IWorld, Ownable {
         address _newAddress,
         bool _isTrustWorld
     ) public onlyOwner {
-        require(_id != 0 && _accountsById[_id]._isExist == true, "W09");
+        require(_accountsById[_id]._isExist == true,"World: account is not exist");
+        require(_addressesToIds[_newAddress] == 0, "World: address is exist");
+
         if (_accountsById[_id]._address != _newAddress) {
-            require(_addressesToIds[_newAddress] == 0, "W09");
             delete _addressesToIds[_accountsById[_id]._address];
             _accountsById[_id]._preAddress = _accountsById[_id]._address;
             _accountsById[_id]._address = _newAddress;
@@ -284,15 +262,9 @@ contract World is IWorld, Ownable {
         onlyOwner
     {
         for (uint256 i = 0; i < _changes.length; i++) {
-            require(
-                _changes[i]._asset != address(0) &&
-                    _assets[_changes[i]._asset]._isExist == true,
-                "W08"
-            );
-            require(
-                _accountsById[_changes[i]._accountId]._isExist == true,
-                "W09"
-            );
+            require(_assets[_changes[i]._asset]._isExist == true,"World: asset is not exist");
+            require(_accountsById[_changes[i]._accountId]._isExist == true,"World: account is not exist");
+
             IAsset(_changes[i]._asset).changeAccountAddress(
                 _changes[i]._accountId,
                 _accountsById[_changes[i]._accountId]._address,
@@ -302,22 +274,23 @@ contract World is IWorld, Ownable {
     }
 
     function trustContract(uint256 _id, address _contract) public {
-        require(_accountsById[_id]._address == msg.sender, "W09");
-        require(_safeContracts[_contract] == true, "W11");
+        require(_accountsById[_id]._address == msg.sender,"World: sender not account owner");
+        require(_safeContracts[_contract] == true,"World: contract is not safe");
         _isTrustContractByAccountId[_id][_contract] = true;
         emit TrustContract(_id, _contract);
     }
 
     function untrustContract(uint256 _id, address _contract) public {
-        require(_accountsById[_id]._address == msg.sender, "W09");
-        require(_safeContracts[_contract] == true, "W11");
+        require(_accountsById[_id]._address == msg.sender,"World: sender not account owner");
+        require(_safeContracts[_contract] == true,"World: contract is not safe");
+
         delete _isTrustContractByAccountId[_id][_contract];
         emit UntrustContract(_id, _contract);
     }
 
     // 添加operator
     function addOperator(address _operator) public onlyOwner {
-        require(_operator != address(0), "W01");
+        require(_operator != address(0), "World: zero address");
         _isOperatorByAddress[_operator] = true;
         emit AddOperator(_operator);
     }
@@ -335,7 +308,7 @@ contract World is IWorld, Ownable {
 
     // 添加conttract
     function addContract(address _contract) public onlyOwner {
-        require(_contract != address(0), "W01");
+        require(_contract != address(0), "World: zero address");
         _safeContracts[_contract] = true;
         emit AddSafeContract(_contract);
     }
