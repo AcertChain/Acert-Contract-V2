@@ -5,10 +5,11 @@ import "hardhat/console.sol";
 import "./interfaces/IWorld.sol";
 import "./interfaces/IWorldAsset.sol";
 import "./interfaces/IItem721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "./mock/AvatarMock.sol";
 import "./common/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+
 
 contract World is IWorld, Ownable {
     enum AssetOperation {
@@ -23,28 +24,22 @@ contract World is IWorld, Ownable {
         string image
     );
 
-    // event _worldOwner修改Asset
-    event UpdateAsset(address asset, string name, string image);
+    // event 修改Asset
+    event UpdateAsset(address asset, string image);
     // event 创建Account
     event CreateAccount(uint256 id, address account);
-    // event 修改Account _address
+    // event 修改Account 
     event UpdateAccount(
         uint256 id,
         address executor,
         address newAddress,
         bool isTrust
     );
-    // event add operator
     event AddOperator(address operator);
-    // event remove operator
     event RemoveOperator(address operator);
-    // event add contract
     event AddSafeContract(address safeContract);
-    // event remove contract
     event RemoveSafeContract(address safeContract);
-    // event trustContract
     event TrustContract(uint256 id, address safeContract);
-    // event AccountCancelTrustContract
     event UntrustContract(uint256 id, address safeContract);
 
     // avatar
@@ -200,9 +195,9 @@ contract World is IWorld, Ownable {
     ) public onlyOwner {
         require(_contract != address(0), "World: zero address");
         require(_assets[_contract]._isExist == false, "World: asset is exist");
-
         // 这个一步校验了world的address是否是相同的
-        require(address(this) == IWorldAsset(_contract).worldAddress(), "W03");
+        require(address(this) == IWorldAsset(_contract).worldAddress(), "World: world address is not match");
+       
         string memory symbol = IWorldAsset(_contract).symbol();
         _assets[_contract] = Asset(
             uint8(_operation),
@@ -217,15 +212,13 @@ contract World is IWorld, Ownable {
     function updateAsset(
         address _contract,
         AssetOperation _typeOperation,
-        string calldata _tokneName,
         string calldata _image
     ) public onlyOwner {
         require( _assets[_contract]._isExist == true,"World: asset is not exist");
         require(_assets[_contract]._type == uint8(_typeOperation),"World: asset type is not match");
      
-        _assets[_contract]._name = _tokneName;
         _assets[_contract]._image = _image;
-        emit UpdateAsset(_contract, _tokneName, _image);
+        emit UpdateAsset(_contract, _image);
     }
 
     function createAccount(address _address) public {
@@ -247,11 +240,12 @@ contract World is IWorld, Ownable {
         require(_accountsById[_id]._isExist == true,"World: account is not exist");
         require(_addressesToIds[_newAddress] == 0, "World: address is exist");
 
-        if (_accountsById[_id]._address != _newAddress) {
-            delete _addressesToIds[_accountsById[_id]._address];
-            _accountsById[_id]._preAddress = _accountsById[_id]._address;
+        address old = _accountsById[_id]._address;
+        if (old != _newAddress) {
+            _accountsById[_id]._preAddress = old;
             _accountsById[_id]._address = _newAddress;
             _addressesToIds[_newAddress] = _id;
+            delete _addressesToIds[old];
         }
         _accountsById[_id]._isTrustWorld = _isTrustWorld;
         emit UpdateAccount(_id, msg.sender, _newAddress, _isTrustWorld);
