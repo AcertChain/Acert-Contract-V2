@@ -96,7 +96,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        uint256 accountId = _AddrToId[account];
+        uint256 accountId = _getIdByAddress(account);
         return _balancesById[accountId];
     }
 
@@ -198,8 +198,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
-        _nonces[spenderId] += 1;
         _checkAndTransferCash(spender, from, to, amount, true);
+        _nonces[spenderId] += 1;
         return true;
     }
 
@@ -234,7 +234,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        uint256 ownerId = _AddrToId[owner];
+        uint256 ownerId = _getIdByAddress(owner);
         return _allowancesById[ownerId][spender];
     }
 
@@ -304,7 +304,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
 
         uint256 nonce = _nonces[owner];
-        address ownerAddr = _updateAddressById(owner);
+        address ownerAddr = IWorld(_world).getAddressById(owner);
         require(
             ownerAddr ==
                 _recoverSig(
@@ -331,8 +331,8 @@ contract Cash20 is Context, EIP712, ICash20 {
             block.timestamp < deadline,
             "approveBWO: signed transaction expired"
         );
-        _nonces[owner] += 1;
         _approveId(owner, spender, amount, true);
+        _nonces[owner] += 1;
         return true;
     }
 
@@ -489,9 +489,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(from != 0, "Cash: from is the zero Id");
         require(to != 0, "Cash: transfer to the zero Id");
 
-        _updateAddressById(from);
-        _updateAddressById(to);
-
         uint256 fromBalance = _balancesById[from];
         require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
         unchecked {
@@ -500,7 +497,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         _balancesById[to] += amount;
 
         if (isBWO) {
-            emit TransferCashBWO(from, to, amount, _nonces[from] - 1);
+            emit TransferCashBWO(from, to, amount, _nonces[from];
         } else {
             emit TransferCash(from, to, amount);
         }
@@ -526,7 +523,6 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     function _mintCash(uint256 accountId, uint256 amount) internal virtual {
         require(accountId != 0, "Cash: mint to the zero Id");
-        _updateAddressById(accountId);
         _totalSupply += amount;
         _balancesById[accountId] += amount;
         emit TransferCash(0, accountId, amount);
@@ -558,7 +554,6 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     function _burnCash(uint256 accountId, uint256 amount) internal virtual {
         require(accountId != 0, "Cash: burn from the zero Id");
-        _updateAddressById(accountId);
         uint256 accountBalance = _balancesById[accountId];
         require(accountBalance >= amount, "Cash: burn amount exceeds balance");
         unchecked {
@@ -615,15 +610,9 @@ contract Cash20 is Context, EIP712, ICash20 {
         bool isBWO
     ) internal virtual {
         require(ownerId != 0, "Cash: approve from the zero Id");
-        _updateAddressById(ownerId);
         _allowancesById[ownerId][spender] = amount;
         if (isBWO) {
-            emit ApprovalCashBWO(
-                ownerId,
-                spender,
-                amount,
-                _nonces[ownerId] - 1
-            );
+            emit ApprovalCashBWO(ownerId, spender, amount, _nonces[ownerId]);
         } else {
             emit ApprovalCash(ownerId, spender, amount);
         }
@@ -652,14 +641,13 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     function _getIdByAddress(address addr) internal returns (uint256) {
-        _AddrToId[addr] = IWorld(_world).getOrCreateAccountId(addr);
-        return _AddrToId[addr];
-    }
-
-    function _updateAddressById(uint256 id) internal returns (address) {
-        address addr = IWorld(_world).getAddressById(id);
-        _AddrToId[addr] = id;
-        return addr;
+        uint256 accountId = _AddrToId[addr];
+        if (accountId == 0) {
+            accountId = IWorld(_world).getOrCreateAccountId(addr);
+        }
+        _AddrToId[addr] = accountId;
+        _nonces[accountId] = 0;
+        return accountId;
     }
 
     function _isTrust(address _contract, uint256 _id)
