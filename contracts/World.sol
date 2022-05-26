@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "./interfaces/IWorld.sol";
-import "./interfaces/IAsset.sol";
+import "./interfaces/IWorldAsset.sol";
 import "./interfaces/IItem721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
@@ -25,40 +25,41 @@ W11:must safe contract
 W12:address should equal
  */
 contract World is IWorld, Ownable {
-    enum TypeOperation {
-        CASH,
-        ITEM
+    enum AssetOperation {
+        CASH20,
+        ITEM721
     }
     // event 注册Asset
     event RegisterAsset(
-        uint8 _type,
-        address _contract,
-        string _name,
-        string _image
+        uint8 operation,
+        address asset,
+        string name,
+        string image
     );
-    // event _worldOwner修改Asset _contract
-    event ChangeAsset(address _contract, string _name, string _image);
+
+    // event _worldOwner修改Asset
+    event UpdateAsset(address asset, string name, string image);
     // event 创建Account
-    event CreateAccount(uint256 _id, address _address);
+    event CreateAccount(uint256 id, address account);
     // event 修改Account _address
-    event ChangeAccount(
-        uint256 _id,
-        address _executor,
-        address _newAddress,
-        bool _isTrust
+    event UpdateAccount(
+        uint256 id,
+        address executor,
+        address newAddress,
+        bool isTrust
     );
     // event add operator
-    event AddOperator(address _operator);
+    event AddOperator(address operator);
     // event remove operator
-    event RemoveOperator(address _operator);
+    event RemoveOperator(address operator);
     // event add contract
-    event AddSafeContract(address _contract);
+    event AddSafeContract(address safeContract);
     // event remove contract
-    event RemoveSafeContract(address _contract);
+    event RemoveSafeContract(address safeContract);
     // event trustContract
-    event TrustContract(uint256 _id, address _contract);
+    event TrustContract(uint256 id, address safeContract);
     // event AccountCancelTrustContract
-    event UntrustContract(uint256 _id, address _contract);
+    event UntrustContract(uint256 id, address safeContract);
 
     // avatar
     address private _avatar;
@@ -138,7 +139,7 @@ contract World is IWorld, Ownable {
         require(avatar != address(0), "W01");
         _avatar = avatar;
         _assets[_avatar] = Asset(
-            uint8(TypeOperation.ITEM),
+            uint8(AssetOperation.ITEM721),
             true,
             _avatar,
             name,
@@ -147,7 +148,7 @@ contract World is IWorld, Ownable {
         uint256 maxId = AvatarMock(_avatar).maxAvatar();
         _avatarMaxId = maxId;
         _totalAccount = maxId;
-        emit RegisterAsset(uint8(TypeOperation.ITEM), _avatar, name, image);
+        emit RegisterAsset(uint8(AssetOperation.ITEM721), _avatar, name, image);
     }
 
     function getOrCreateAccountId(address _address)
@@ -202,46 +203,39 @@ contract World is IWorld, Ownable {
         view
         virtual
         override
-        returns (address _address)
+        returns (address )
     {
-        if (_id > _avatarMaxId || _id == 0) {
-            _address = _accountsById[_id]._address;
-        } else {
-            console.log("get avatar id %s", _id);
-            _address = _accountsById[IItem721(_avatar).ownerOfId(_id)]._address;
-        }
+        return
+            (_id > _avatarMaxId || _id == 0)
+                ? _accountsById[_id]._address
+                : _accountsById[IItem721(_avatar).ownerOfId(_id)]._address;
     }
 
     function registerAsset(
         address _contract,
-        TypeOperation _typeOperation,
-        string calldata _tokneName,
+        AssetOperation _operation,
         string calldata _image
     ) public onlyOwner {
         require(
             _contract != address(0) && _assets[_contract]._isExist == false,
             "W02"
         );
-        require(address(this) == IAsset(_contract).worldAddress(), "W03");
+        // 这个一步校验了world的address是否是相同的
+        require(address(this) == IWorldAsset(_contract).worldAddress(), "W03");
+        string memory symbol = IWorldAsset(_contract).symbol();
         _assets[_contract] = Asset(
-            uint8(_typeOperation),
+            uint8(_operation),
             true,
             _contract,
-            _tokneName,
+            symbol,
             _image
         );
-        emit RegisterAsset(
-            uint8(_typeOperation),
-            _contract,
-            _tokneName,
-            _image
-        );
+        emit RegisterAsset(uint8(_operation), _contract, symbol, _image);
     }
 
-    // func 修改Asset _contract
-    function changeAsset(
+    function updateAsset(
         address _contract,
-        TypeOperation _typeOperation,
+        AssetOperation _typeOperation,
         string calldata _tokneName,
         string calldata _image
     ) public onlyOwner {
@@ -253,11 +247,10 @@ contract World is IWorld, Ownable {
         );
         _assets[_contract]._name = _tokneName;
         _assets[_contract]._image = _image;
-        emit ChangeAsset(_contract, _tokneName, _image);
+        emit UpdateAsset(_contract, _tokneName, _image);
     }
 
     function createAccount(address _address) public {
-        //console.log("createAccount %s %s", _address,_addressesToIds[_address]);
         require(
             _address != address(0) && _addressesToIds[_address] == 0,
             "W05"
@@ -283,7 +276,7 @@ contract World is IWorld, Ownable {
             _addressesToIds[_newAddress] = _id;
         }
         _accountsById[_id]._isTrustWorld = _isTrustWorld;
-        emit ChangeAccount(_id, msg.sender, _newAddress, _isTrustWorld);
+        emit UpdateAccount(_id, msg.sender, _newAddress, _isTrustWorld);
     }
 
     function changeAssertAccountAddress(Change[] calldata _changes)
