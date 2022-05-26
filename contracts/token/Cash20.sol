@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract Cash20 is Context, EIP712, ICash20 {
     mapping(uint256 => uint256) private _balancesById;
-    mapping(uint256 => mapping(uint256 => uint256)) private _allowancesById;
+    mapping(uint256 => mapping(address => uint256)) private _allowancesById;
     // nonce
     mapping(uint256 => uint256) private _nonces;
     // 地址对应accountId
@@ -237,8 +237,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (uint256)
     {
         uint256 ownerId = _AddrToId[owner];
-        uint256 spenderId = _AddrToId[spender];
-        return _allowancesById[ownerId][spenderId];
+        return _allowancesById[ownerId][spender];
     }
 
     /**
@@ -251,7 +250,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        return _allowancesById[owner][_AddrToId[spender]];
+        return _allowancesById[owner][spender];
     }
 
     /**
@@ -591,8 +590,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(spender != address(0), "Cash: approve to the zero address");
 
         uint256 ownerId = _getIdByAddress(owner);
-        uint256 spenderId = _getIdByAddress(spender);
-        _allowancesById[ownerId][spenderId] = amount;
+        _allowancesById[ownerId][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
@@ -617,7 +615,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) internal virtual {
         require(ownerId != 0, "Cash: approve from the zero Id");
         _updateAddressById(ownerId);
-        _allowancesById[ownerId][_getIdByAddress(spender)] = amount;
+        _allowancesById[ownerId][spender] = amount;
         if (isBWO) {
             emit ApprovalCashBWO(
                 ownerId,
