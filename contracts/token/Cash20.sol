@@ -149,6 +149,11 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 to,
         uint256 amount
     ) public virtual override returns (bool) {
+        if (_isTrust(spender, from)) {
+            _transferCash(from, to, amount, isBWO);
+            return true;
+        }
+
         _checkAndTransferCash(_msgSender(), from, to, amount, false);
         return true;
     }
@@ -161,6 +166,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
+        require(spender != address(0), "Cash: spender is the zero address");
         require(
             IWorld(_world).isBWO(_msgSender()),
             "Cash: must be the world BWO"
@@ -204,14 +210,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount,
         bool isBWO
     ) internal virtual {
-        require(spender != address(0), "Cash: spender is the zero address");
-        require(from != 0, "Cash: from is the zero Id");
-        require(to != 0, "Cash: transfer to the zero Id");
-
-        if (_isTrust(spender, from)) {
-            return _transferCash(from, to, amount, isBWO);
-        }
-
         if (IWorld(_world).checkAddress(spender, from)) {
             return _transferCash(from, to, amount, isBWO);
         }
@@ -488,6 +486,9 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount,
         bool isBWO
     ) internal virtual {
+        require(from != 0, "Cash: from is the zero Id");
+        require(to != 0, "Cash: transfer to the zero Id");
+
         _updateAddressById(from);
         _updateAddressById(to);
 
