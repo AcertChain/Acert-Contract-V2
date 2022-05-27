@@ -42,7 +42,7 @@ contract World is IWorld, Ownable {
     event TrustContract(uint256 id, address safeContract);
     event UntrustContract(uint256 id, address safeContract);
 
-    // avatar
+    // avatar addr
     address private _avatar;
     // avatar max id
     uint256 private _avatarMaxId;
@@ -259,7 +259,7 @@ contract World is IWorld, Ownable {
             require(_assets[_changes[i]._asset]._isExist == true,"World: asset is not exist");
             require(_accountsById[_changes[i]._accountId]._isExist == true,"World: account is not exist");
 
-            IAsset(_changes[i]._asset).changeAccountAddress(
+            IAsset(_changes[i]._asset).updateAccountAddress(
                 _changes[i]._accountId,
                 _accountsById[_changes[i]._accountId]._address,
                 _accountsById[_changes[i]._accountId]._preAddress

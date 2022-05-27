@@ -369,7 +369,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         return true;
     }
 
-    function changeAccountAddress(
+    function updateAccountAddress(
         uint256 id,
         address newAddr,
         address oldAddr

@@ -582,7 +582,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _safeTransfer(from, to, tokenId, data, TypeOperation.BWO);
     }
 
-    function changeAccountAddress(
+    function updateAccountAddress(
         uint256 id,
         address newAddr,
         address oldAddr

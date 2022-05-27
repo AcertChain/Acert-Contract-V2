@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 interface IAsset {
     function worldAddress() external view returns (address);
 
-    function changeAccountAddress(
+    function updateAccountAddress(
         uint256 id,
         address newAddr,
         address oldAddr
