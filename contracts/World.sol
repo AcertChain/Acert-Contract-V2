@@ -10,7 +10,6 @@ import "./common/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-
 contract World is IWorld, Ownable {
     enum AssetOperation {
         CASH20,
@@ -28,7 +27,7 @@ contract World is IWorld, Ownable {
     event UpdateAsset(address asset, string image);
     // event 创建Account
     event CreateAccount(uint256 id, address account);
-    // event 修改Account 
+    // event 修改Account
     event UpdateAccount(
         uint256 id,
         address executor,
@@ -49,6 +48,8 @@ contract World is IWorld, Ownable {
     // account Id
     uint256 private _totalAccount;
 
+    uint256 private constant MAX_ASSET_COUNT = 200;
+
     // struct Asset
     struct Asset {
         uint8 _type;
@@ -64,12 +65,6 @@ contract World is IWorld, Ownable {
         bool _isExist;
         uint256 _id;
         address _address;
-        address _preAddress;
-    }
-
-    struct Change {
-        address _asset;
-        uint256 _accountId;
     }
 
     // Mapping from address to operator
@@ -84,6 +79,8 @@ contract World is IWorld, Ownable {
 
     // Mapping from address to Asset
     mapping(address => Asset) private _assets;
+
+    address[] private _assetAddresses;
 
     // Mapping from account ID to Account
     mapping(uint256 => Account) private _accountsById;
@@ -122,6 +119,7 @@ contract World is IWorld, Ownable {
             name,
             image
         );
+        _assetAddresses.push(_avatar);
         uint256 maxId = AvatarMock(_avatar).maxAvatar();
         _avatarMaxId = maxId;
         _totalAccount = maxId;
@@ -137,7 +135,7 @@ contract World is IWorld, Ownable {
         if (_addressesToIds[_address] == 0) {
             _totalAccount++;
             id = _totalAccount;
-            _accountsById[id] = Account(false, true, id, _address, address(0));
+            _accountsById[id] = Account(false, true, id, _address);
             _addressesToIds[_address] = id;
             emit CreateAccount(id, _address);
         } else {
@@ -193,11 +191,17 @@ contract World is IWorld, Ownable {
         AssetOperation _operation,
         string calldata _image
     ) public onlyOwner {
+        require(
+            _assetAddresses.length < MAX_ASSET_COUNT,
+            "World: max asset count"
+        );
         require(_contract != address(0), "World: zero address");
         require(_assets[_contract]._isExist == false, "World: asset is exist");
-        // 这个一步校验了world的address是否是相同的
-        require(address(this) == IWorldAsset(_contract).worldAddress(), "World: world address is not match");
-       
+        require(
+            address(this) == IWorldAsset(_contract).worldAddress(),
+            "World: world address is not match"
+        );
+
         string memory symbol = IWorldAsset(_contract).symbol();
         _assets[_contract] = Asset(
             uint8(_operation),
@@ -206,6 +210,7 @@ contract World is IWorld, Ownable {
             symbol,
             _image
         );
+        _assetAddresses.push(_contract);
         emit RegisterAsset(uint8(_operation), _contract, symbol, _image);
     }
 
@@ -214,9 +219,15 @@ contract World is IWorld, Ownable {
         AssetOperation _typeOperation,
         string calldata _image
     ) public onlyOwner {
-        require( _assets[_contract]._isExist == true,"World: asset is not exist");
-        require(_assets[_contract]._type == uint8(_typeOperation),"World: asset type is not match");
-     
+        require(
+            _assets[_contract]._isExist == true,
+            "World: asset is not exist"
+        );
+        require(
+            _assets[_contract]._type == uint8(_typeOperation),
+            "World: asset type is not match"
+        );
+
         _assets[_contract]._image = _image;
         emit UpdateAsset(_contract, _image);
     }
@@ -225,11 +236,11 @@ contract World is IWorld, Ownable {
         require(_address != address(0), "World: zero address");
         require(_addressesToIds[_address] == 0, "World: address is exist");
 
-        _totalAccount++;
         uint256 id = _totalAccount;
-        _accountsById[id] = Account(false, true, id, _address, address(0));
+        _accountsById[id] = Account(false, true, id, _address);
         _addressesToIds[_address] = id;
         emit CreateAccount(id, _address);
+        _totalAccount++;
     }
 
     function changeAccount(
@@ -237,46 +248,55 @@ contract World is IWorld, Ownable {
         address _newAddress,
         bool _isTrustWorld
     ) public onlyOwner {
-        require(_accountsById[_id]._isExist == true,"World: account is not exist");
+        require(
+            _accountsById[_id]._isExist == true,
+            "World: account is not exist"
+        );
         require(_addressesToIds[_newAddress] == 0, "World: address is exist");
 
-        address old = _accountsById[_id]._address;
-        if (old != _newAddress) {
-            _accountsById[_id]._preAddress = old;
+        address oldAddress = _accountsById[_id]._address;
+        if (oldAddress != _newAddress) {
             _accountsById[_id]._address = _newAddress;
             _addressesToIds[_newAddress] = _id;
-            delete _addressesToIds[old];
+            delete _addressesToIds[oldAddress];
         }
         _accountsById[_id]._isTrustWorld = _isTrustWorld;
         emit UpdateAccount(_id, msg.sender, _newAddress, _isTrustWorld);
-    }
 
-    function changeAssertAccountAddress(Change[] calldata _changes)
-        public
-        onlyOwner
-    {
-        for (uint256 i = 0; i < _changes.length; i++) {
-            require(_assets[_changes[i]._asset]._isExist == true,"World: asset is not exist");
-            require(_accountsById[_changes[i]._accountId]._isExist == true,"World: account is not exist");
-
-            IAsset(_changes[i]._asset).updateAccountAddress(
-                _changes[i]._accountId,
-                _accountsById[_changes[i]._accountId]._address,
-                _accountsById[_changes[i]._accountId]._preAddress
-            );
+        // 循环改变所有合约的账户的地址
+        for (uint256 i = 0; i < _assetAddresses.length; i++) {
+            if (IWorldAsset(_assetAddresses[i]).balanceOfId(_id) > 0) {
+                IWorldAsset(_assetAddresses[i]).updateAccountAddress(
+                    _id,
+                    _newAddress,
+                    oldAddress
+                );
+            }
         }
     }
 
     function trustContract(uint256 _id, address _contract) public {
-        require(_accountsById[_id]._address == msg.sender,"World: sender not account owner");
-        require(_safeContracts[_contract] == true,"World: contract is not safe");
+        require(
+            _accountsById[_id]._address == msg.sender,
+            "World: sender not account owner"
+        );
+        require(
+            _safeContracts[_contract] == true,
+            "World: contract is not safe"
+        );
         _isTrustContractByAccountId[_id][_contract] = true;
         emit TrustContract(_id, _contract);
     }
 
     function untrustContract(uint256 _id, address _contract) public {
-        require(_accountsById[_id]._address == msg.sender,"World: sender not account owner");
-        require(_safeContracts[_contract] == true,"World: contract is not safe");
+        require(
+            _accountsById[_id]._address == msg.sender,
+            "World: sender not account owner"
+        );
+        require(
+            _safeContracts[_contract] == true,
+            "World: contract is not safe"
+        );
 
         delete _isTrustContractByAccountId[_id][_contract];
         emit UntrustContract(_id, _contract);

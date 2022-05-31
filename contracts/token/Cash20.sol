@@ -96,8 +96,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        uint256 accountId = _AddrToId[account];
-        return _balancesById[accountId];
+        return _balancesById[_AddrToId[account]];
     }
 
     /**
@@ -202,8 +201,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
-        _nonces[spenderId] += 1;
         _checkAndTransferCash(spender, from, to, amount, true);
+        _nonces[spenderId] += 1;
         return true;
     }
 
@@ -238,8 +237,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        uint256 ownerId = _AddrToId[owner];
-        return _allowancesById[ownerId][spender];
+        return _allowancesById[_AddrToId[owner]][spender];
     }
 
     /**
@@ -591,8 +589,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(owner != address(0), "Cash: approve from the zero address");
         require(spender != address(0), "Cash: approve to the zero address");
 
-        uint256 ownerId = _getIdByAddress(owner);
-        _allowancesById[ownerId][spender] = amount;
+        _allowancesById[_getIdByAddress(owner)][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
