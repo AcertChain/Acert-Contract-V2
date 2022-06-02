@@ -33,7 +33,7 @@ contract('Item721', function (accounts) {
   });
 
   shouldBehaveLikeItem721BWO();
-  shouldBehaveLikeItem721('Item', ...accounts);
-  shouldBehaveLikeERC721('Item', ...accounts);
-  shouldBehaveLikeERC721Metadata('Item', name, symbol, ...accounts);
+  //shouldBehaveLikeItem721('Item', ...accounts);
+ // shouldBehaveLikeERC721('Item', ...accounts);
+  //shouldBehaveLikeERC721Metadata('Item', name, symbol, ...accounts);
 });

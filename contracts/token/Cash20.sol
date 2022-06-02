@@ -326,12 +326,12 @@ contract Cash20 is Context, EIP712, ICash20 {
                     ),
                     signature
                 ),
-            "approveBWO : recoverSig failed"
+            "approveItemBWO : recoverSig failed"
         );
 
         require(
             block.timestamp < deadline,
-            "approveBWO: signed transaction expired"
+            "approveItemBWO: signed transaction expired"
         );
         _nonces[owner] += 1;
         _approveId(owner, spender, amount, true);
@@ -474,7 +474,7 @@ contract Cash20 is Context, EIP712, ICash20 {
      * This internal function is equivalent to {transfer}, and can be used to
      * e.g. implement automatic token fees, slashing mechanisms, etc.
      *
-     * Emits a {TransferId} event.
+     * Emits a {TransferCash} event.
      *
      * Requirements:
      *
@@ -599,7 +599,7 @@ contract Cash20 is Context, EIP712, ICash20 {
      * This internal function is equivalent to `approve`, and can be used to
      * e.g. set automatic allowances for certain subsystems, etc.
      *
-     * Emits an {ApprovalId} event.
+     * Emits an {ApprovalCash} event.
      *
      * Requirements:
      *

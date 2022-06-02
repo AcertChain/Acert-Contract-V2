@@ -157,7 +157,7 @@ contract World is IWorld, Ownable {
         } else {
             if (
                 _address ==
-                _accountsById[IItem721(_avatar).ownerOfId(_id)]._address
+                _accountsById[IItem721(_avatar).ownerOfItem(_id)]._address
             ) {
                 return true;
             }
@@ -183,7 +183,7 @@ contract World is IWorld, Ownable {
         return
             (_id > _avatarMaxId || _id == 0)
                 ? _accountsById[_id]._address
-                : _accountsById[IItem721(_avatar).ownerOfId(_id)]._address;
+                : _accountsById[IItem721(_avatar).ownerOfItem(_id)]._address;
     }
 
     function registerAsset(
@@ -265,13 +265,11 @@ contract World is IWorld, Ownable {
 
         // 循环改变所有合约的账户的地址
         for (uint256 i = 0; i < _assetAddresses.length; i++) {
-            if (IWorldAsset(_assetAddresses[i]).balanceOfId(_id) > 0) {
-                IWorldAsset(_assetAddresses[i]).updateAccountAddress(
-                    _id,
-                    _newAddress,
-                    oldAddress
-                );
-            }
+            IWorldAsset(_assetAddresses[i]).updateAccountAddress(
+                _id,
+                _newAddress,
+                oldAddress
+            );
         }
     }
 

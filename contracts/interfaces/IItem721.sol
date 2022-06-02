@@ -6,46 +6,46 @@ import "./IItem721BWO.sol";
 import "./IAsset.sol";
 
 interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
-    event TransferId(
+    event TransferItem(
         uint256 indexed from,
         uint256 indexed to,
         uint256 indexed tokenId
     );
 
-    event ApprovalId(
+    event ApprovalItem(
         uint256 indexed owner,
         uint256 indexed approved,
         uint256 indexed tokenId
     );
 
-    event ApprovalForAllId(
+    event ApprovalForAllItem(
         uint256 indexed owner,
         address indexed operator,
         bool approved
     );
 
-    function balanceOfId(uint256 owner) external view returns (uint256 balance);
+    function balanceOfItem(uint256 owner) external view returns (uint256 balance);
 
-    function ownerOfId(uint256 tokenId) external view returns (uint256 owner);
+    function ownerOfItem(uint256 tokenId) external view returns (uint256 owner);
 
-    function getApprovedId(uint256 tokenId)
+    function getApprovedItem(uint256 tokenId)
         external
         view
         returns (uint256 operator);
 
-    function isApprovedForAllId(uint256 owner, address operator)
+    function isApprovedForAllItem(uint256 owner, address operator)
         external
         view
         returns (bool);
 
-    function safeTransferItemFrom(
+    function safeTransferFromItem(
         uint256 sender,
         uint256 from,
         uint256 to,
         uint256 tokenId
     ) external;
 
-    function safeTransferItemFrom(
+    function safeTransferFromItem(
         uint256 sender,
         uint256 from,
         uint256 to,
@@ -53,20 +53,20 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
         bytes calldata data
     ) external;
 
-    function transferItemFrom(
+    function transferFromItem(
         uint256 sender,
         uint256 from,
         uint256 to,
         uint256 tokenId
     ) external;
 
-    function approveId(
+    function approveItem(
         uint256 owner,
         uint256 to,
         uint256 tokenId
     ) external;
 
-    function setApprovalForAllId(
+    function setApprovalForAllItem(
         uint256 owner,
         address operator,
         bool _approved

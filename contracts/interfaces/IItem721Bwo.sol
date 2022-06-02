@@ -2,34 +2,25 @@
 pragma solidity ^0.8.0;
 
 interface IItem721BWO {
-    event TransferBWO(
+    event TransferItemBWO(
         uint256 indexed from,
         uint256 indexed to,
         uint256 indexed tokenId
     );
 
-    event ApprovalBWO(
+    event ApprovalItemBWO(
         uint256 indexed owner,
         uint256 indexed approved,
         uint256 indexed tokenId
     );
 
-    event ApprovalForAllBWO(
+    event ApprovalForAllItemBWO(
         uint256 indexed owner,
         address indexed operator,
         bool approved
     );
 
-    function safeTransferFromBWO(
-        uint256 sender,
-        uint256 from,
-        uint256 to,
-        uint256 tokenId,
-        uint256 deadline,
-        bytes memory signature
-    ) external;
-
-    function safeTransferFromBWO(
+    function safeTransferFromItemBWO(
         uint256 sender,
         uint256 from,
         uint256 to,
@@ -39,7 +30,7 @@ interface IItem721BWO {
         bytes memory signature
     ) external;
 
-    function transferFromBWO(
+    function safeTransferFromItemBWO(
         uint256 sender,
         uint256 from,
         uint256 to,
@@ -48,7 +39,16 @@ interface IItem721BWO {
         bytes memory signature
     ) external;
 
-    function approveBWO(
+    function transferFromItemBWO(
+        uint256 sender,
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
+
+    function approveItemBWO(
         address from,
         uint256 to,
         uint256 tokenId,
@@ -56,7 +56,7 @@ interface IItem721BWO {
         bytes memory signature
     ) external;
 
-    function setApprovalForAllBWO(
+    function setApprovalForAllItemBWO(
         uint256 sender,
         address operator,
         bool _approved,
