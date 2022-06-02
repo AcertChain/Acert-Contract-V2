@@ -20,7 +20,7 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
 
     event ApprovalForAllId(
         uint256 indexed owner,
-        uint256 indexed operator,
+        address indexed operator,
         bool approved
     );
 
@@ -33,7 +33,7 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
         view
         returns (uint256 operator);
 
-    function isApprovedForAllId(uint256 owner, uint256 operator)
+    function isApprovedForAllId(uint256 owner, address operator)
         external
         view
         returns (bool);
@@ -68,7 +68,7 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
 
     function setApprovalForAllId(
         uint256 owner,
-        uint256 operator,
+        address operator,
         bool _approved
     ) external;
 }
