@@ -25,13 +25,14 @@ contract('World', function (accounts) {
     const avatarSymbol = 'MAVT';
     const avatarVersion = '1.0.0';
     const avataSupply = 100;
-
+    const maxAvatarId =100;
+    
     beforeEach(async function () {
         this.world = await World.new();
-        this.avatar = await Avatar.new(avataSupply, avatarName, avatarSymbol, avatarVersion, this.world.address);
+        this.avatar = await Avatar.new(avataSupply,maxAvatarId, avatarName, avatarSymbol, avatarVersion, this.world.address);
         this.item = await Item721.new(itemName, itemSymbol, itemVersion, this.world.address);
         this.cash = await Cash20.new(cashName, cashSymbol, cashVersion, this.world.address);
-        await this.world.registerAvatar(avataSupply, this.avatar.address, avatarName, "");
+        await this.world.registerAvatar(this.avatar.address, avatarName, "");
     });
 
     shouldBehaveLikeWorld(...accounts);

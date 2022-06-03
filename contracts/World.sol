@@ -5,6 +5,7 @@ import "hardhat/console.sol";
 import "./interfaces/IWorld.sol";
 import "./interfaces/IWorldAsset.sol";
 import "./interfaces/IItem721.sol";
+import "./interfaces/ICash20.sol";
 import "./mock/AvatarMock.sol";
 import "./common/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -30,7 +31,6 @@ contract World is IWorld, Ownable {
     // event 修改Account
     event UpdateAccount(
         uint256 id,
-        address executor,
         address newAddress,
         bool isTrust
     );
@@ -252,25 +252,36 @@ contract World is IWorld, Ownable {
             _accountsById[_id]._isExist == true,
             "World: account is not exist"
         );
-        require(_addressesToIds[_newAddress] == 0, "World: address is exist");
-
         address oldAddress = _accountsById[_id]._address;
         if (oldAddress != _newAddress) {
             _accountsById[_id]._address = _newAddress;
             _addressesToIds[_newAddress] = _id;
             delete _addressesToIds[oldAddress];
+
+            // 循环改变所有合约的账户的地址
+            for (uint256 i = 0; i < _assetAddresses.length; i++) {
+                if (
+                    _assets[_assetAddresses[i]]._type ==
+                    uint8(AssetOperation.ITEM721)
+                ) {
+                    if (IItem721(_assetAddresses[i]).balanceOfItem(_id) == 0) {
+                        continue;
+                    }
+                } else {
+                    if (ICash20(_assetAddresses[i]).balanceOfCash(_id) == 0) {
+                        continue;
+                    }
+                }
+
+                IWorldAsset(_assetAddresses[i]).updateAccountAddress(
+                    _id,
+                    _newAddress,
+                    oldAddress
+                );
+            }
         }
         _accountsById[_id]._isTrustWorld = _isTrustWorld;
-        emit UpdateAccount(_id, msg.sender, _newAddress, _isTrustWorld);
-
-        // 循环改变所有合约的账户的地址
-        for (uint256 i = 0; i < _assetAddresses.length; i++) {
-            IWorldAsset(_assetAddresses[i]).updateAccountAddress(
-                _id,
-                _newAddress,
-                oldAddress
-            );
-        }
+        emit UpdateAccount(_id, _newAddress, _isTrustWorld);
     }
 
     function trustContract(uint256 _id, address _contract) public {

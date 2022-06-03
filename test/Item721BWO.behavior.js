@@ -1403,7 +1403,6 @@ function signTrasferData(chainId, verifyingContract, name, key, version, sender,
 }
 
 function signSafeTrasferData(chainId, verifyingContract, name, key, version, sender, from, to, tokenId, deadline, nonce, payload) {
-  console.log("------>", payload, payload == null)
   let data;
   if (payload == null) {
     data = {

@@ -22,14 +22,14 @@ function shouldBehaveLikeWorld(owner) {
             context('getTotalAccount', function () {
                 it('应该等于avatarMaxId+1', async function () {
                     await this.world.getOrCreateAccountId(owner);
-                    const avatarMaxId = new BN(await this.avatar.totalSupply());
+                    const avatarMaxId = new BN(await this.avatar.maxAvatar());
                     expect(await this.world.getTotalAccount()).to.be.bignumber.equal(avatarMaxId.add(new BN(1)));
                 });
             });
 
             context('getAvatarMaxId', function () {
                 it('与avatar 发行量的地址相等', async function () {
-                    const avatarMaxId = new BN(await this.avatar.totalSupply());
+                    const avatarMaxId = new BN(await this.avatar.maxAvatar());
                     expect(await this.world.getAvatarMaxId()).to.be.bignumber.equal(avatarMaxId);
                 });
             });
@@ -46,13 +46,13 @@ function shouldBehaveLikeWorld(owner) {
                 it('未更新前world 拥有者', async function () {
                     await expectRevert(this.world.changeOwner(owner, {
                         from: owner
-                    }), 'W10');
+                    }), 'only owner');
                 });
                 it('更新为owner', async function () {
                     expectEvent(await this.world.changeOwner(owner), 'ChangeOwner', {
                         owner: owner
                     });
-                    expect(await this.world.getOwner()).to.equal(owner);
+                    expect(await this.world.owner()).to.equal(owner);
                 });
             });
         });
@@ -65,15 +65,15 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
         beforeEach(async function () {});
         describe('addOperator', function () {
             context('add zero address', function () {
-                it('W01', async function () {
-                    await expectRevert(this.world.addOperator(ZERO_ADDRESS), 'W01');
+                it('World: zero address', async function () {
+                    await expectRevert(this.world.addOperator(ZERO_ADDRESS), 'World: zero address');
                 });
             });
 
             context('add address', function () {
                 it('add operator event', async function () {
                     expectEvent(await this.world.addOperator(operator), 'AddOperator', {
-                        _operator: operator
+                        operator: operator
                     });
                 });
             });
@@ -84,7 +84,7 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
                 it('remove operator event', async function () {
                     await this.world.addOperator(operator);
                     expectEvent(await this.world.removeOperator(operator), 'RemoveOperator', {
-                        _operator: operator
+                        operator: operator
                     });
                     expect(await this.world.isOperator(operator)).to.equal(false);
                 });
@@ -107,7 +107,7 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
                     expect(await this.world.isBWO(operator)).to.equal(true);
                 });
                 it('is world', async function () {
-                    expect(await this.world.isBWO(await this.world.getOwner())).to.equal(true);
+                    expect(await this.world.isBWO(await this.world.owner())).to.equal(true);
                 });
                 it('is not owner', async function () {
                     expect(await this.world.isBWO(owner)).to.equal(false);
@@ -123,11 +123,11 @@ function shouldBehaveLikeWorldTrust(contract, account) {
         describe('addContract', function () {
             context('add zero address', function () {
                 it('W01', async function () {
-                    await expectRevert(this.world.addContract(ZERO_ADDRESS), 'W01');
+                    await expectRevert(this.world.addContract(ZERO_ADDRESS), 'World: zero address');
                 });
                 it('event AddSafeContract', async function () {
                     expectEvent(await this.world.addContract(contract), 'AddSafeContract', {
-                        _contract: contract
+                        safeContract: contract
                     });
                 });
             });
@@ -138,7 +138,7 @@ function shouldBehaveLikeWorldTrust(contract, account) {
                 it('event RemoveSafeContract', async function () {
                     await this.world.addContract(contract);
                     expectEvent(await this.world.removeContract(contract), 'RemoveSafeContract', {
-                        _contract: contract
+                        safeContract: contract
                     });
                 });
             });
@@ -167,9 +167,7 @@ function shouldBehaveLikeWorldTrust(contract, account) {
                 it('account is trust World', async function () {
                     await this.world.getOrCreateAccountId(account);
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
-                    await this.world.changeAccountByUser(accountId, account, true, {
-                        from: account
-                    });
+                    await this.world.changeAccount(accountId, account, true);
                     expect(await this.world.isTrustWorld(accountId)).to.equal(true);
                 });
             });
@@ -195,9 +193,7 @@ function shouldBehaveLikeWorldTrust(contract, account) {
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
 
                     await this.world.addContract(contract);
-                    await this.world.changeAccountByUser(accountId, account, true, {
-                        from: account
-                    });
+                    await this.world.changeAccount(accountId, account, true);
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
                 });
                 it('conrtact is safe contract and user not trust world not trust contract ', async function () {
@@ -205,12 +201,8 @@ function shouldBehaveLikeWorldTrust(contract, account) {
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
 
                     await this.world.addContract(contract);
-                    await this.world.changeAccountByUser(accountId, account, true, {
-                        from: account
-                    });
-                    await this.world.changeAccountByUser(accountId, account, false, {
-                        from: account
-                    });
+                    await this.world.changeAccount(accountId, account, true);
+                    await this.world.changeAccount(accountId, account, false);
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user not trust world  trust contract ', async function () {
@@ -218,24 +210,20 @@ function shouldBehaveLikeWorldTrust(contract, account) {
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
 
                     await this.world.addContract(contract);
-                    await this.world.changeAccountByUser(accountId, account, true, {
-                        from: account
-                    });
-                    await this.world.changeAccountByUser(accountId, account, false, {
-                        from: account
-                    });
-                    expectEvent(await this.world.accountTrustContract(accountId, contract, {
+                    await this.world.changeAccount(accountId, account, true);
+                    await this.world.changeAccount(accountId, account, false);
+                    expectEvent(await this.world.trustContract(accountId, contract, {
                         from: account
                     }), 'TrustContract', {
-                        _id: accountId,
-                        _contract: contract
+                        id: accountId,
+                        safeContract: contract
                     });
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
-                    expectEvent(await this.world.accountUntrustContract(accountId, contract, {
+                    expectEvent(await this.world.untrustContract(accountId, contract, {
                         from: account
                     }), 'UntrustContract', {
-                        _id: accountId,
-                        _contract: contract
+                        id: accountId,
+                        safeContract: contract
                     });
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
@@ -250,8 +238,8 @@ function shouldBehaveLikeWorldAccount(account, newAccount, operator) {
             context('create account ', function () {
                 it('carete account event ', async function () {
                     expectEvent(await this.world.getOrCreateAccountId(account), 'CreateAccount', {
-                        _id: new BN(await this.world.getAccountIdByAddress(account)),
-                        _address: account
+                        id: new BN(await this.world.getAccountIdByAddress(account)),
+                        account: account
                     });
                 });
             });
@@ -260,7 +248,7 @@ function shouldBehaveLikeWorldAccount(account, newAccount, operator) {
             context('get account id by address', function () {
                 it('equal 101', async function () {
                     await this.world.getOrCreateAccountId(account)
-                    const avatarMaxId = new BN(await this.avatar.totalSupply());
+                    const avatarMaxId = new BN(await this.avatar.maxAvatar());
                     expect(await this.world.getAccountIdByAddress(account)).to.bignumber.equal(avatarMaxId.add(new BN(1)));
                 });
             });
@@ -281,12 +269,12 @@ function shouldBehaveLikeWorldAccount(account, newAccount, operator) {
 
             context('get account id', function () {
                 it('account id is not exist', async function () {
-                    const avatarMaxId = new BN(await this.avatar.totalSupply());
+                    const avatarMaxId = new BN(await this.avatar.maxAvatar());
                     expect(await this.world.getAddressById(avatarMaxId.add(new BN(1)))).to.equal(ZERO_ADDRESS);
                 });
                 it('account id is exist', async function () {
                     await this.world.getOrCreateAccountId(account)
-                    const avatarMaxId = new BN(await this.avatar.totalSupply());
+                    const avatarMaxId = new BN(await this.avatar.maxAvatar());
                     expect(await this.world.getAddressById(avatarMaxId.add(new BN(1)))).to.equal(account);
                 });
             });
@@ -297,62 +285,34 @@ function shouldBehaveLikeWorldAccount(account, newAccount, operator) {
                 it('zero address', async function () {
                     await expectRevert(this.world.createAccount(ZERO_ADDRESS, {
                         from: account
-                    }), 'W05');
+                    }), 'World: zero address');
 
                 });
                 it('is address exist', async function () {
                     await this.world.createAccount(account)
-                    await expectRevert(this.world.createAccount(account), "W05");
+                    await expectRevert(this.world.createAccount(account), "World: address is exist");
                 });
             });
         });
-        describe('changeAccountByOperator', function () {
-            context('operator change account', function () {
-                it('is not operator', async function () {
-                    await this.world.getOrCreateAccountId(account)
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
-                    await expectRevert(this.world.changeAccountByOperator(accountId, newAccount, true, {
-                        from: operator
-                    }), 'W06');
 
-                });
-                it('is operator', async function () {
-                    await this.world.getOrCreateAccountId(account)
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
-                    await this.world.addOperator(operator)
-                    expectEvent(await this.world.changeAccountByOperator(accountId, newAccount, true, {
-                        from: operator
-                    }), 'ChangeAccount', {
-                        _id: accountId,
-                        _executor: operator,
-                        _newAddress: newAccount,
-                        _isTrust: true
-                    });
-                });
-            });
-
-        });
-        describe('changeAccountByUser', function () {
+        describe('changeAccount', function () {
             context('ueser change account', function () {
-                it('is not user', async function () {
+                it('is not contract owner', async function () {
                     await this.world.getOrCreateAccountId(account)
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
 
-                    await expectRevert(this.world.changeAccountByUser(accountId, newAccount, true, {
+                    await expectRevert(this.world.changeAccount(accountId, newAccount, true, {
                         from: newAccount
-                    }), 'W09');
+                    }), 'only owner');
                 });
 
-                it('is user', async function () {
+                it('is owner', async function () {
                     await this.world.getOrCreateAccountId(account)
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
-                    expectEvent(await this.world.changeAccountByUser(accountId, newAccount, true, {
-                        from: account
-                    }), 'ChangeAccount', {
-                        _id: accountId,
-                        _executor: account,
-                        _newAddress: newAccount,
-                        _isTrust: true
+                    expectEvent(await this.world.changeAccount(accountId, newAccount, true), 'UpdateAccount', {
+                        id: accountId,
+                        newAddress: newAccount,
+                        isTrust: true
                     });
                 });
             });
@@ -366,47 +326,46 @@ function shouldBehaveLikeWorldAsset() {
         describe('registerAsset', function () {
             context('zero addres', function () {
                 it('revert', async function () {
-                    await expectRevert(this.world.registerAsset(ZERO_ADDRESS, 0, "", ""), 'W02');
+                    await expectRevert(this.world.registerAsset(ZERO_ADDRESS, 0, ""), 'World: zero address');
                 });
             });
 
             context('addres is exist', function () {
                 it('revert', async function () {
-                    await this.world.registerAsset(this.cash.address, 0, "", "")
-                    await expectRevert(this.world.registerAsset(this.cash.address, 0, "", ""), 'W02');
+                    await this.world.registerAsset(this.cash.address, 0, "")
+                    await expectRevert(this.world.registerAsset(this.cash.address, 0, ""), 'World: asset is exist');
                 });
             });
 
             context('RegisterAsset event', function () {
                 it('revert', async function () {
-                    expectEvent(await this.world.registerAsset(this.cash.address, 0, "test", "test image"), 'RegisterAsset', {
-                        _type: new BN(0),
-                        _contract: this.cash.address,
-                        _name: "test",
-                        _image: "test image"
+                    expectEvent(await this.world.registerAsset(this.cash.address, 0, "test image"), 'RegisterAsset', {
+                        operation: new BN(0),
+                        asset: this.cash.address,
+                        name: "MTKN",
+                        image: "test image"
                     });
                 });
             });
         });
 
-        describe('changeAsset', function () {
-            context('changeAsset', function () {
+        describe('updateAsset', function () {
+            context('updateAsset', function () {
                 it('zero address', async function () {
-                    await expectRevert(this.world.changeAsset(ZERO_ADDRESS, 0, "", ""), 'W04');
+                    await expectRevert(this.world.updateAsset(ZERO_ADDRESS, 0, ""), 'World: asset is not exist');
                 });
                 it('is not exist', async function () {
-                    await expectRevert(this.world.changeAsset(this.cash.address, 0, "", ""), 'W04');
+                    await expectRevert(this.world.updateAsset(this.cash.address, 0, ""), 'World: asset is not exist');
                 });
                 it('type is not right', async function () {
-                    await this.world.registerAsset(this.cash.address, 0, "test", "test image")
-                    await expectRevert(this.world.changeAsset(this.cash.address, 1, "test", "test image"), 'W04');
+                    await this.world.registerAsset(this.cash.address, 0, "test image")
+                    await expectRevert(this.world.updateAsset(this.cash.address, 1, "test image"), 'World: asset type is not match');
                 });
                 it('ChangeAsset event', async function () {
-                    await this.world.registerAsset(this.cash.address, 0, "test", "test image")
-                    expectEvent(await this.world.changeAsset(this.cash.address, 0, "test", "test image"), 'ChangeAsset', {
-                        _contract: this.cash.address,
-                        _name: "test",
-                        _image: "test image"
+                    await this.world.registerAsset(this.cash.address, 0, "test image")
+                    expectEvent(await this.world.updateAsset(this.cash.address, 0, "test image"), 'UpdateAsset', {
+                        asset: this.cash.address,
+                        image: "test image"
                     });
                 });
             });
@@ -414,8 +373,8 @@ function shouldBehaveLikeWorldAsset() {
         describe('getAsset', function () {
             context('get asset ', function () {
                 it('get asset', async function () {
-                    await this.world.registerAsset(this.cash.address, 0, "test", "test image")
-                    expect(await this.world.getAsset(this.cash.address)).to.deep.equal(['0', true, this.cash.address, "test", "test image"]);
+                    await this.world.registerAsset(this.cash.address, 0, "test image")
+                    expect(await this.world.getAsset(this.cash.address)).to.deep.equal(['0', true, this.cash.address, "MTKN", "test image"]);
                 });
             });
         });
@@ -443,14 +402,14 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
                     await this.cash.transferCash(cashAccountId, this.avatarTokenId, balance, {
                         from: cashAccount
                     });
-                    expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(balance);
+                    expect(await this.cash.balanceOfCash(this.avatarTokenId)).to.bignumber.equal(balance);
 
 
                     await this.cash.transferCash(this.avatarTokenId, cashAccountId, balance, {
                         from: account
                     });
 
-                    expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(new BN(0));
+                    expect(await this.cash.balanceOfCash(this.avatarTokenId)).to.bignumber.equal(new BN(0));
                     expect(await this.cash.balanceOf(cashAccount)).to.bignumber.equal(balance);
                 });
             });
@@ -465,11 +424,11 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
                     await this.item.transferFromItem(itemAccountId, itemAccountId, this.avatarTokenId, itemTokenId, {
                         from: itemAccount
                     });
-                    expect(await this.item.ownerOfId(itemTokenId)).to.bignumber.equal(this.avatarTokenId);
+                    expect(await this.item.ownerOfItem(itemTokenId)).to.bignumber.equal(this.avatarTokenId);
                     await this.item.transferFromItem(this.avatarTokenId, this.avatarTokenId, itemAccountId, itemTokenId, {
                         from: account
                     });
-                    expect(await this.item.ownerOfId(itemTokenId)).to.bignumber.equal(itemAccountId);
+                    expect(await this.item.ownerOfItem(itemTokenId)).to.bignumber.equal(itemAccountId);
                 });
             });
         });
@@ -477,9 +436,7 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
         describe('change avatar owner', function () {
             context('change avatar owner', function () {
                 it('new owner', async function () {
-                    await this.world.changeAccountByUser(this.accountId, newAccount, false, {
-                        from: account
-                    });
+                    await this.world.changeAccount(this.accountId, newAccount, false);
                     expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.accountId);
                 });
                 it('can transfer cash', async function () {
@@ -494,21 +451,15 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
 
 
                     // 修改账户
-                    await this.world.changeAccountByUser(this.accountId, newAccount, false, {
-                        from: account
-                    });
-                    // 通知asset
-                    await this.world.changeAssetAccountAddressByUser([this.cash.address], {
-                        from: newAccount
-                    })
+                    await this.world.changeAccount(this.accountId, newAccount, false);
 
                     expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.accountId);
-                    expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(balance);
+                    expect(await this.cash.balanceOfCash(this.avatarTokenId)).to.bignumber.equal(balance);
 
                     await this.cash.transferCash(this.avatarTokenId, cashAccountId, balance, {
                         from: newAccount
                     });
-                    expect(await this.cash.balanceOfId(this.avatarTokenId)).to.bignumber.equal(new BN(0));
+                    expect(await this.cash.balanceOfCash(this.avatarTokenId)).to.bignumber.equal(new BN(0));
                     expect(await this.cash.balanceOf(cashAccount)).to.bignumber.equal(balance);
 
                 });
@@ -523,22 +474,15 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
                     });
 
                     // 修改账户
-                    await this.world.changeAccountByUser(this.accountId, newAccount, false, {
-                        from: account
-                    });
-                    // 通知asset
-                    await this.world.changeAssetAccountAddressByUser([this.item.address], {
-                        from: newAccount
-                    })
-
+                    await this.world.changeAccount(this.accountId, newAccount, false);
 
                     expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.accountId);
 
-                    expect(await this.item.ownerOfId(itemTokenId)).to.bignumber.equal(this.avatarTokenId);
-                    await this.item.transferFromItem(this.avatarTokenId,this.avatarTokenId, itemAccountId, itemTokenId, {
+                    expect(await this.item.ownerOfItem(itemTokenId)).to.bignumber.equal(this.avatarTokenId);
+                    await this.item.transferFromItem(this.avatarTokenId, this.avatarTokenId, itemAccountId, itemTokenId, {
                         from: newAccount
                     });
-                    expect(await this.item.ownerOfId(itemTokenId)).to.bignumber.equal(itemAccountId);
+                    expect(await this.item.ownerOfItem(itemTokenId)).to.bignumber.equal(itemAccountId);
 
                 });
             });
