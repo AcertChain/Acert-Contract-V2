@@ -11,7 +11,7 @@ contract Cash20Mock is Cash20, Ownable {
         string memory symbol,
         string memory version,
         address world
-    ) payable Cash20(name, symbol, version, world) {
+    )  Cash20(name, symbol, version, world) {
         _owner = msg.sender;
     }
 
