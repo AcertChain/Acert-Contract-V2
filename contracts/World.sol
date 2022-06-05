@@ -18,28 +18,28 @@ contract World is IWorld, Ownable {
     }
     // event 注册Asset
     event RegisterAsset(
-        uint8 operation,
-        address asset,
+        uint8 indexed operation,
+        address indexed asset,
         string name,
         string image
     );
 
     // event 修改Asset
-    event UpdateAsset(address asset, string image);
+    event UpdateAsset(address indexed asset, string image);
     // event 创建Account
-    event CreateAccount(uint256 id, address account);
+    event CreateAccount(uint256 indexed id, address indexed account);
     // event 修改Account
     event UpdateAccount(
-        uint256 id,
-        address newAddress,
+        uint256 indexed id,
+        address indexed newAddress,
         bool isTrust
     );
-    event AddOperator(address operator);
-    event RemoveOperator(address operator);
-    event AddSafeContract(address safeContract);
-    event RemoveSafeContract(address safeContract);
-    event TrustContract(uint256 id, address safeContract);
-    event UntrustContract(uint256 id, address safeContract);
+    event AddOperator(address indexed operator);
+    event RemoveOperator(address indexed operator);
+    event AddSafeContract(address indexed safeContract);
+    event RemoveSafeContract(address indexed safeContract);
+    event TrustContract(uint256 indexed id, address indexed safeContract);
+    event UntrustContract(uint256 indexed id, address indexed safeContract);
 
     // avatar addr
     address private _avatar;
@@ -105,25 +105,15 @@ contract World is IWorld, Ownable {
         return _avatar;
     }
 
-    function registerAvatar(
-        address avatar,
-        string calldata name,
-        string calldata image
-    ) public onlyOwner {
-        require(avatar != address(0), "World: zero address");
+    function registerAvatar(address avatar, string calldata _image)
+        public
+        onlyOwner
+    {
         _avatar = avatar;
-        _assets[_avatar] = Asset(
-            uint8(AssetOperation.ITEM721),
-            true,
-            _avatar,
-            name,
-            image
-        );
-        _assetAddresses.push(_avatar);
         uint256 maxId = AvatarMock(_avatar).maxAvatar();
         _avatarMaxId = maxId;
         _totalAccount = maxId;
-        emit RegisterAsset(uint8(AssetOperation.ITEM721), _avatar, name, image);
+        registerAsset(avatar, AssetOperation.ITEM721, _image);
     }
 
     function getOrCreateAccountId(address _address)
@@ -132,12 +122,8 @@ contract World is IWorld, Ownable {
         override
         returns (uint256 id)
     {
-        if (_addressesToIds[_address] == 0) {
-            _totalAccount++;
-            id = _totalAccount;
-            _accountsById[id] = Account(false, true, id, _address);
-            _addressesToIds[_address] = id;
-            emit CreateAccount(id, _address);
+        if (_addressesToIds[_address] == 0 && _address != address(0)) {
+            id = createAccount(_address);
         } else {
             id = _addressesToIds[_address];
         }
@@ -168,6 +154,8 @@ contract World is IWorld, Ownable {
     function getAccountIdByAddress(address _address)
         public
         view
+        virtual
+        override
         returns (uint256)
     {
         return _addressesToIds[_address];
@@ -232,15 +220,14 @@ contract World is IWorld, Ownable {
         emit UpdateAsset(_contract, _image);
     }
 
-    function createAccount(address _address) public {
+    function createAccount(address _address) public returns (uint256 id) {
         require(_address != address(0), "World: zero address");
         require(_addressesToIds[_address] == 0, "World: address is exist");
-
-        uint256 id = _totalAccount;
+        _totalAccount++;
+        id = _totalAccount;
         _accountsById[id] = Account(false, true, id, _address);
         _addressesToIds[_address] = id;
         emit CreateAccount(id, _address);
-        _totalAccount++;
     }
 
     function changeAccount(
@@ -257,28 +244,6 @@ contract World is IWorld, Ownable {
             _accountsById[_id]._address = _newAddress;
             _addressesToIds[_newAddress] = _id;
             delete _addressesToIds[oldAddress];
-
-            // 循环改变所有合约的账户的地址
-            for (uint256 i = 0; i < _assetAddresses.length; i++) {
-                if (
-                    _assets[_assetAddresses[i]]._type ==
-                    uint8(AssetOperation.ITEM721)
-                ) {
-                    if (IItem721(_assetAddresses[i]).balanceOfItem(_id) == 0) {
-                        continue;
-                    }
-                } else {
-                    if (ICash20(_assetAddresses[i]).balanceOfCash(_id) == 0) {
-                        continue;
-                    }
-                }
-
-                IWorldAsset(_assetAddresses[i]).updateAccountAddress(
-                    _id,
-                    _newAddress,
-                    oldAddress
-                );
-            }
         }
         _accountsById[_id]._isTrustWorld = _isTrustWorld;
         emit UpdateAccount(_id, _newAddress, _isTrustWorld);
@@ -342,12 +307,10 @@ contract World is IWorld, Ownable {
         emit RemoveSafeContract(_contract);
     }
 
-    // is contract
     function isSafeContract(address _contract) public view returns (bool) {
         return _safeContracts[_contract];
     }
 
-    // func 获取Asset
     function getAsset(address _contract) public view returns (Asset memory) {
         return _assets[_contract];
     }

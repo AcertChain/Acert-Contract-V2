@@ -67,8 +67,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
     // Mapping from owner to operator approvals
     mapping(uint256 => mapping(address => bool)) private _operatorApprovalsById;
 
-    mapping(address => uint256) private _AddrToId;
-
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
@@ -111,7 +109,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         returns (uint256)
     {
         require(owner != address(0), "I06");
-        return _balancesById[_AddrToId[owner]];
+        return _balancesById[_getAccountIdByAddress(owner)];
     }
 
     /**
@@ -138,7 +136,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (address)
     {
-        address owner = IWorld(_world).getAddressById(_ownersById[tokenId]);
+        address owner = _getAddressById(_ownersById[tokenId]);
         require(owner != address(0), "I08");
         return owner;
     }
@@ -259,7 +257,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         returns (address)
     {
         require(_exists(tokenId), "I11");
-        return IWorld(_world).getAddressById(_tokenApprovalsById[tokenId]);
+        return _getAddressById(_tokenApprovalsById[tokenId]); 
     }
 
     function getApprovedItem(uint256 tokenId)
@@ -308,7 +306,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
-            _updateAddressById(sender),
+            _getAddressById(sender),
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
@@ -325,8 +323,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
             ),
             signature
         );
-        _nonces[sender] += 1;
         _setApprovalForAllItem(sender, operator, approved, true);
+        _nonces[sender] += 1;
     }
 
     /**
@@ -339,7 +337,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (bool)
     {
-        return _operatorApprovalsById[_AddrToId[owner]][operator];
+        return _operatorApprovalsById[_getAccountIdByAddress(owner)][operator];
     }
 
     function isApprovedForAllItem(uint256 owner, address operator)
@@ -383,7 +381,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         }
 
         require(IWorld(_world).checkAddress(msg.sender, sender), "I22");
-        require(_isApprovedOrOwner(_updateAddressById(sender), tokenId), "I14");
+        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
         _transfer(from, to, tokenId, TypeOperation.ID);
     }
 
@@ -399,7 +397,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
-            _updateAddressById(sender),
+            _getAddressById(sender),
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
@@ -418,9 +416,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        require(_isApprovedOrOwner(_updateAddressById(sender), tokenId), "I14");
-        _nonces[sender] += 1;
+        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
         _transfer(from, to, tokenId, TypeOperation.BWO);
+        _nonces[sender] += 1;
     }
 
     function safeTransferFrom(
@@ -452,7 +450,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
-            _updateAddressById(sender),
+            _getAddressById(sender),
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
@@ -471,10 +469,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        _nonces[sender] += 1;
-
-        require(_isApprovedOrOwner(_updateAddressById(sender), tokenId), "I14");
+        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
         _safeTransfer(from, to, tokenId, "", TypeOperation.BWO);
+        _nonces[sender] += 1;
     }
 
     /**
@@ -505,7 +502,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory _data
     ) public virtual override {
         require(IWorld(_world).checkAddress(msg.sender, sender), "I22");
-        require(_isApprovedOrOwner(_updateAddressById(sender), tokenId), "I14");
+        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
         _safeTransfer(from, to, tokenId, _data, TypeOperation.ID);
     }
 
@@ -522,7 +519,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
-            _updateAddressById(sender),
+            _getAddressById(sender),
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
@@ -542,21 +539,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        _nonces[sender] += 1;
-
-        require(_isApprovedOrOwner(_updateAddressById(sender), tokenId), "I14");
+        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
         _safeTransfer(from, to, tokenId, data, TypeOperation.BWO);
-    }
-
-    function updateAccountAddress(
-        uint256 id,
-        address newAddr,
-        address oldAddr
-    ) public virtual override returns (bool) {
-        require(_world == msg.sender, "I21");
-        _AddrToId[newAddr] = id;
-        delete _AddrToId[oldAddr];
-        return true;
+        _nonces[sender] += 1;
     }
 
     function _safeTransfer(
@@ -567,10 +552,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
         TypeOperation op
     ) internal virtual {
         _transfer(from, to, tokenId, op);
-        address fromAddr = _updateAddressById(from);
-        address toAddr = _updateAddressById(to);
         require(
-            _checkOnERC721Received(fromAddr, toAddr, tokenId, _data),
+            _checkOnERC721Received( _getAddressById(from), _getAddressById(to), tokenId, _data),
             "I15"
         );
     }
@@ -651,7 +634,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         require(!_exists(tokenId), "I18");
 
         uint256 toId = _getIdByAddress(to);
-
         _balancesById[toId] += 1;
         _ownersById[tokenId] = toId;
 
@@ -701,8 +683,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
             emit TransferItem(from, to, tokenId);
         } else {
             emit Transfer(
-                _updateAddressById(from),
-                _updateAddressById(to),
+                _getAddressById(from),
+                _getAddressById(to),
                 tokenId
             );
         }
@@ -721,7 +703,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         } else {
             emit Approval(
                 Item721.ownerOf(tokenId),
-                _updateAddressById(to),
+                _getAddressById(to),
                 tokenId
             );
         }
@@ -733,7 +715,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bool approved,
         bool isBWO
     ) internal virtual {
-        require(owner != _AddrToId[operator], "I12");
+        require(owner != _getAccountIdByAddress(operator), "I12");
         _operatorApprovalsById[owner][operator] = approved;
         if (isBWO) {
             emit ApprovalForAllItemBWO(owner, operator, approved);
@@ -782,16 +764,16 @@ contract Item721 is EIP712, ERC165, IItem721 {
         }
     }
 
-    function _getIdByAddress(address addr) internal returns (uint256) {
-        uint256 id = IWorld(_world).getOrCreateAccountId(addr);
-        _AddrToId[addr] = id;
-        return id;
+    function _getAccountIdByAddress(address addr) internal view returns (uint256) {
+       return IWorld(_world).getAccountIdByAddress(addr);
     }
 
-    function _updateAddressById(uint256 id) internal returns (address) {
-        address addr = IWorld(_world).getAddressById(id);
-        _AddrToId[addr] = id;
-        return addr;
+    function _getIdByAddress(address addr) internal returns (uint256) {
+        return IWorld(_world).getOrCreateAccountId(addr);
+    }
+
+    function _getAddressById(uint256 id) internal view returns (address) {
+        return IWorld(_world).getAddressById(id);
     }
 
     function _recoverSig(

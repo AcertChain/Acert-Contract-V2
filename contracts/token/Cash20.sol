@@ -13,8 +13,6 @@ contract Cash20 is Context, EIP712, ICash20 {
     mapping(uint256 => mapping(address => uint256)) private _allowancesById;
     // nonce
     mapping(uint256 => uint256) private _nonces;
-    // 地址对应accountId
-    mapping(address => uint256) private _AddrToId;
 
     uint256 private _totalSupply;
     string private _name;
@@ -96,7 +94,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        return _balancesById[_AddrToId[account]];
+        return _balancesById[_getAccountIdByAddress(account)];
     }
 
     /**
@@ -237,7 +235,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        return _allowancesById[_AddrToId[owner]][spender];
+        return _allowancesById[_getAccountIdByAddress(owner)][spender];
     }
 
     /**
@@ -269,8 +267,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (bool)
     {
-        address owner = _msgSender();
-        _approve(owner, spender, amount);
+        _approve(_msgSender(), spender, amount);
         return true;
     }
 
@@ -306,7 +303,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
 
         uint256 nonce = _nonces[owner];
-        address ownerAddr = _updateAddressById(owner);
+        address ownerAddr = _getAddressById(owner);
         require(
             ownerAddr ==
                 _recoverSig(
@@ -333,8 +330,8 @@ contract Cash20 is Context, EIP712, ICash20 {
             block.timestamp < deadline,
             "approveItemBWO: signed transaction expired"
         );
-        _nonces[owner] += 1;
         _approveId(owner, spender, amount, true);
+        _nonces[owner] += 1;
         return true;
     }
 
@@ -365,17 +362,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
         _spendAllowance(from, _msgSender(), amount);
         _transfer(from, to, amount);
-        return true;
-    }
-
-    function updateAccountAddress(
-        uint256 id,
-        address newAddr,
-        address oldAddr
-    ) public virtual override returns (bool) {
-        require(_world == _msgSender(), "Cash: must be the world");
-        _AddrToId[newAddr] = id;
-        delete _AddrToId[oldAddr];
         return true;
     }
 
@@ -488,9 +474,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount,
         bool isBWO
     ) internal virtual {
-        _updateAddressById(from);
-        _updateAddressById(to);
-
         uint256 fromBalance = _balancesById[from];
         require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
         unchecked {
@@ -499,7 +482,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         _balancesById[to] += amount;
 
         if (isBWO) {
-            emit TransferCashBWO(from, to, amount, _nonces[from] - 1);
+            emit TransferCashBWO(from, to, amount, _nonces[from]);
         } else {
             emit TransferCash(from, to, amount);
         }
@@ -516,16 +499,13 @@ contract Cash20 is Context, EIP712, ICash20 {
      */
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "Cash: mint to the zero address");
-        uint256 accountId = _getIdByAddress(account);
-
         _totalSupply += amount;
-        _balancesById[accountId] += amount;
+        _balancesById[_getIdByAddress(account)] += amount;
         emit Transfer(address(0), account, amount);
     }
 
     function _mintCash(uint256 accountId, uint256 amount) internal virtual {
         require(accountId != 0, "Cash: mint to the zero Id");
-        _updateAddressById(accountId);
         _totalSupply += amount;
         _balancesById[accountId] += amount;
         emit TransferCash(0, accountId, amount);
@@ -557,7 +537,6 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     function _burnCash(uint256 accountId, uint256 amount) internal virtual {
         require(accountId != 0, "Cash: burn from the zero Id");
-        _updateAddressById(accountId);
         uint256 accountBalance = _balancesById[accountId];
         require(accountBalance >= amount, "Cash: burn amount exceeds balance");
         unchecked {
@@ -613,14 +592,13 @@ contract Cash20 is Context, EIP712, ICash20 {
         bool isBWO
     ) internal virtual {
         require(ownerId != 0, "Cash: approve from the zero Id");
-        _updateAddressById(ownerId);
         _allowancesById[ownerId][spender] = amount;
         if (isBWO) {
             emit ApprovalCashBWO(
                 ownerId,
                 spender,
                 amount,
-                _nonces[ownerId] - 1
+                _nonces[ownerId]
             );
         } else {
             emit ApprovalCash(ownerId, spender, amount);
@@ -649,15 +627,16 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
     }
 
-    function _getIdByAddress(address addr) internal returns (uint256) {
-        _AddrToId[addr] = IWorld(_world).getOrCreateAccountId(addr);
-        return _AddrToId[addr];
+    function _getAccountIdByAddress(address addr) internal view returns (uint256) {
+       return IWorld(_world).getAccountIdByAddress(addr);
     }
 
-    function _updateAddressById(uint256 id) internal returns (address) {
-        address addr = IWorld(_world).getAddressById(id);
-        _AddrToId[addr] = id;
-        return addr;
+    function _getIdByAddress(address addr) internal returns (uint256) {
+       return IWorld(_world).getOrCreateAccountId(addr);
+    }
+
+    function _getAddressById(uint256 id) internal view returns (address) {
+        return IWorld(_world).getAddressById(id);
     }
 
     function _isTrust(address _contract, uint256 _id)

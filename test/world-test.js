@@ -32,7 +32,7 @@ contract('World', function (accounts) {
         this.avatar = await Avatar.new(avataSupply,maxAvatarId, avatarName, avatarSymbol, avatarVersion, this.world.address);
         this.item = await Item721.new(itemName, itemSymbol, itemVersion, this.world.address);
         this.cash = await Cash20.new(cashName, cashSymbol, cashVersion, this.world.address);
-        await this.world.registerAvatar(this.avatar.address, avatarName, "");
+        await this.world.registerAvatar(this.avatar.address,  "");
     });
 
     shouldBehaveLikeWorld(...accounts);

@@ -6,12 +6,19 @@ interface IWorld {
         external
         returns (uint256 id);
 
-    function checkAddress(address _address, uint256 _id) external returns (bool);
+    function checkAddress(address _address, uint256 _id)
+        external
+        returns (bool);
 
     function getAddressById(uint256 _id)
         external
         view
         returns (address _address);
+
+    function getAccountIdByAddress(address _address)
+        external
+        view
+        returns (uint256 _id);
 
     function isBWO(address _contract) external view returns (bool _isBWO);
 
