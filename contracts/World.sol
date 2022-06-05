@@ -294,7 +294,7 @@ contract World is IWorld, Ownable {
         return _isOperatorByAddress[_operator];
     }
 
-    // 添加conttract
+    // 添加contract
     function addContract(address _contract) public onlyOwner {
         require(_contract != address(0), "World: zero address");
         _safeContracts[_contract] = true;
