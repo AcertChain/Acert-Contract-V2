@@ -130,16 +130,12 @@ contract World is IWorld, Ownable {
         public
         virtual
         override
-        returns (uint256 id)
+        returns (uint256)
     {
         if (_addressesToIds[_address] == 0) {
-            _totalAccount++;
-            id = _totalAccount;
-            _accountsById[id] = Account(false, true, id, _address);
-            _addressesToIds[_address] = id;
-            emit CreateAccount(id, _address);
+            return createAccount(_address);
         } else {
-            id = _addressesToIds[_address];
+            return _addressesToIds[_address];
         }
     }
 
@@ -232,15 +228,15 @@ contract World is IWorld, Ownable {
         emit UpdateAsset(_contract, _image);
     }
 
-    function createAccount(address _address) public {
+    function createAccount(address _address) public returns (uint256) {
         require(_address != address(0), "World: zero address");
         require(_addressesToIds[_address] == 0, "World: address is exist");
 
-        uint256 id = _totalAccount;
+        uint256 id = ++_totalAccount;
         _accountsById[id] = Account(false, true, id, _address);
         _addressesToIds[_address] = id;
         emit CreateAccount(id, _address);
-        _totalAccount++;
+        return id;
     }
 
     function changeAccount(
