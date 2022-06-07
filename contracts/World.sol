@@ -8,10 +8,11 @@ import "./interfaces/IItem721.sol";
 import "./interfaces/ICash20.sol";
 import "./mock/AvatarMock.sol";
 import "./common/Ownable.sol";
+import "./common/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-contract World is IWorld, Ownable {
+contract World is IWorld, Ownable, Initializable {
     enum AssetOperation {
         CASH20,
         ITEM721
@@ -108,6 +109,7 @@ contract World is IWorld, Ownable {
     function registerAvatar(address avatar, string calldata _image)
         public
         onlyOwner
+        initializer
     {
         _avatar = avatar;
         uint256 maxId = AvatarMock(_avatar).maxAvatar();
@@ -120,6 +122,7 @@ contract World is IWorld, Ownable {
         public
         virtual
         override
+        onlyInitialized
         returns (uint256 id)
     {
         if (_addressesToIds[_address] == 0 && _address != address(0)) {
@@ -220,7 +223,11 @@ contract World is IWorld, Ownable {
         emit UpdateAsset(_contract, _image);
     }
 
-    function createAccount(address _address) public returns (uint256 id) {
+    function createAccount(address _address)
+        public
+        onlyInitialized
+        returns (uint256 id)
+    {
         require(_address != address(0), "World: zero address");
         require(_addressesToIds[_address] == 0, "World: address is exist");
         _totalAccount++;

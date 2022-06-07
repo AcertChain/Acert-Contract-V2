@@ -1,4 +1,15 @@
 const {
+    BN,
+    constants,
+    expectEvent,
+    expectRevert
+} = require('@openzeppelin/test-helpers');
+
+const {
+    expect
+} = require('chai');
+
+const {
     shouldBehaveLikeWorld,
     shouldBehaveLikeWorldOperator,
     shouldBehaveLikeWorldTrust,
@@ -25,14 +36,37 @@ contract('World', function (accounts) {
     const avatarSymbol = 'MAVT';
     const avatarVersion = '1.0.0';
     const avataSupply = 100;
-    const maxAvatarId =100;
-    
+    const maxAvatarId = 100;
+
     beforeEach(async function () {
+        this.worldTest = await World.new();
         this.world = await World.new();
-        this.avatar = await Avatar.new(avataSupply,maxAvatarId, avatarName, avatarSymbol, avatarVersion, this.world.address);
+        this.avatar = await Avatar.new(avataSupply, maxAvatarId, avatarName, avatarSymbol, avatarVersion, this.world.address);
         this.item = await Item721.new(itemName, itemSymbol, itemVersion, this.world.address);
         this.cash = await Cash20.new(cashName, cashSymbol, cashVersion, this.world.address);
-        await this.world.registerAvatar(this.avatar.address,  "");
+        await this.world.registerAvatar(this.avatar.address, "");
+    });
+
+    context('检查World的没有注册Avatar的情况 ', function () {
+        describe('when no avatar is registered', function () {
+            it('should return 0', async function () {
+                expect(await this.worldTest.getTotalAccount()).to.be.bignumber.equal(new BN(0));
+            });
+
+            it('getOrCreateAccountId return revert ', async function () {
+                const [user] = accounts;
+                await expectRevert(
+                    this.worldTest.getOrCreateAccountId(user), 'Initializable: contract is not initialized',
+                );
+            });
+            it('createAccount return revert ', async function () {
+                const [user] = accounts;
+                await expectRevert(
+                    this.worldTest.createAccount(user), 'Initializable: contract is not initialized',
+                );
+            });
+
+        });
     });
 
     shouldBehaveLikeWorld(...accounts);
