@@ -201,12 +201,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
         address to,
         uint256 tokenId
     ) public virtual override {
-        address owner = Item721.ownerOf(tokenId);
-        address sender = msg.sender;
-        require(to != owner, "I09");
-        require(IWorld(_world).checkAddress(sender, from), "I22");
-        require(sender == owner || isApprovedForAll(owner, sender), "I10");
-        _approve(to, tokenId, TypeOperation.ID);
+        require(IWorld(_world).checkAddress(msg.sender, from), "I22");
+        return approve(to, tokenId);
     }
 
     function approveItemBWO(
