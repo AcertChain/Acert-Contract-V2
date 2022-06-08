@@ -10,7 +10,7 @@ interface IItem721BWO {
 
     event ApprovalItemBWO(
         uint256 indexed owner,
-        uint256 indexed approved,
+        address indexed approved,
         uint256 indexed tokenId
     );
 
@@ -49,8 +49,8 @@ interface IItem721BWO {
     ) external;
 
     function approveItemBWO(
-        address from,
-        uint256 to,
+        uint256 from,
+        address to,
         uint256 tokenId,
         uint256 deadline,
         bytes memory signature

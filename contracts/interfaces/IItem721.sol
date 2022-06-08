@@ -14,7 +14,7 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
 
     event ApprovalItem(
         uint256 indexed owner,
-        uint256 indexed approved,
+        address indexed approved,
         uint256 indexed tokenId
     );
 
@@ -27,11 +27,6 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
     function balanceOfItem(uint256 owner) external view returns (uint256 balance);
 
     function ownerOfItem(uint256 tokenId) external view returns (uint256 owner);
-
-    function getApprovedItem(uint256 tokenId)
-        external
-        view
-        returns (uint256 operator);
 
     function isApprovedForAllItem(uint256 owner, address operator)
         external
@@ -61,8 +56,8 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
     ) external;
 
     function approveItem(
-        uint256 owner,
-        uint256 to,
+        uint256 from,
+        address to,
         uint256 tokenId
     ) external;
 

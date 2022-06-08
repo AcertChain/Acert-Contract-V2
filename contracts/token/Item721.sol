@@ -62,7 +62,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     mapping(uint256 => uint256) private _balancesById;
 
     // Mapping from token ID to approved address
-    mapping(uint256 => uint256) private _tokenApprovalsById;
+    mapping(uint256 => address) private _tokenApprovalsById;
 
     // Mapping from owner to operator approvals
     mapping(uint256 => mapping(address => bool)) private _operatorApprovalsById;
@@ -193,40 +193,40 @@ contract Item721 is EIP712, ERC165, IItem721 {
             msg.sender == owner || isApprovedForAll(owner, msg.sender),
             "I10"
         );
-        _approve(_getIdByAddress(to), tokenId, TypeOperation.ADDRESS);
+        _approve(to, tokenId, TypeOperation.ADDRESS);
     }
 
     function approveItem(
         uint256 from,
-        uint256 to,
+        address to,
         uint256 tokenId
     ) public virtual override {
-        uint256 owner = Item721.ownerOfItem(tokenId);
+        address owner = Item721.ownerOf(tokenId);
         address sender = msg.sender;
         require(to != owner, "I09");
         require(IWorld(_world).checkAddress(sender, from), "I22");
-        require(from == owner || isApprovedForAllItem(owner, sender), "I10");
+        require(sender == owner || isApprovedForAll(owner, sender), "I10");
         _approve(to, tokenId, TypeOperation.ID);
     }
 
     function approveItemBWO(
-        address from,
-        uint256 to,
+        uint256 from,
+        address to,
         uint256 tokenId,
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
-        uint256 fromId = _getIdByAddress(from);
-        uint256 nonce = _nonces[fromId];
+        address fromAddr = _getAddressById(from);
+        uint256 nonce = _nonces[from];
         _recoverSig(
             deadline,
-            from,
+            fromAddr,
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(address from,uint256 to,uint256 tokenId,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 from,address to,uint256 tokenId,uint256 nonce,uint256 deadline)"
                         ),
                         from,
                         to,
@@ -239,10 +239,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        uint256 owner = Item721.ownerOfItem(tokenId);
+        address owner = Item721.ownerOf(tokenId);
         require(to != owner, "I09");
-        require(fromId == owner || isApprovedForAllItem(owner, from), "I10");
-        _nonces[fromId] += 1;
+        require(fromAddr == owner || isApprovedForAll(owner, fromAddr), "I10");
+        _nonces[from] += 1;
         _approve(to, tokenId, TypeOperation.BWO);
     }
 
@@ -255,17 +255,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         virtual
         override
         returns (address)
-    {
-        require(_exists(tokenId), "I11");
-        return _getAddressById(_tokenApprovalsById[tokenId]); 
-    }
-
-    function getApprovedItem(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
     {
         require(_exists(tokenId), "I11");
         return _tokenApprovalsById[tokenId];
@@ -553,7 +542,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) internal virtual {
         _transfer(from, to, tokenId, op);
         require(
-            _checkOnERC721Received( _getAddressById(from), _getAddressById(to), tokenId, _data),
+            _checkOnERC721Received(
+                _getAddressById(from),
+                _getAddressById(to),
+                tokenId,
+                _data
+            ),
             "I15"
         );
     }
@@ -653,7 +647,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     function _burn(uint256 tokenId) internal virtual {
         address owner = Item721.ownerOf(tokenId);
         // Clear approvals
-        _approve(0, tokenId, TypeOperation.ADDRESS);
+        _approve(address(0), tokenId, TypeOperation.ADDRESS);
 
         _balancesById[_getIdByAddress(owner)] -= 1;
         delete _ownersById[tokenId];
@@ -671,7 +665,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         require(to != 0, "I20");
 
         // Clear approvals from the previous owner
-        _approve(0, tokenId, operation);
+        _approve(address(0), tokenId, operation);
 
         _balancesById[from] -= 1;
         _balancesById[to] += 1;
@@ -682,16 +676,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
         } else if (operation == TypeOperation.ID) {
             emit TransferItem(from, to, tokenId);
         } else {
-            emit Transfer(
-                _getAddressById(from),
-                _getAddressById(to),
-                tokenId
-            );
+            emit Transfer(_getAddressById(from), _getAddressById(to), tokenId);
         }
     }
 
     function _approve(
-        uint256 to,
+        address to,
         uint256 tokenId,
         TypeOperation typeOperation
     ) internal virtual {
@@ -701,11 +691,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         } else if (typeOperation == TypeOperation.ID) {
             emit ApprovalItem(Item721.ownerOfItem(tokenId), to, tokenId);
         } else {
-            emit Approval(
-                Item721.ownerOf(tokenId),
-                _getAddressById(to),
-                tokenId
-            );
+            emit Approval(Item721.ownerOf(tokenId), to, tokenId);
         }
     }
 
@@ -764,8 +750,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
         }
     }
 
-    function _getAccountIdByAddress(address addr) internal view returns (uint256) {
-       return IWorld(_world).getAccountIdByAddress(addr);
+    function _getAccountIdByAddress(address addr)
+        internal
+        view
+        returns (uint256)
+    {
+        return IWorld(_world).getAccountIdByAddress(addr);
     }
 
     function _getIdByAddress(address addr) internal returns (uint256) {

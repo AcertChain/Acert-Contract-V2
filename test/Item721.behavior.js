@@ -112,7 +112,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       let logs = null;
 
       beforeEach(async function () {
-        await this.token.approveItem(ownerId, approvedId, tokenId, {
+        await this.token.approveItem(ownerId, approved, tokenId, {
           from: owner
         });
         await this.token.setApprovalForAllItem(ownerId, operator, true, {
@@ -138,13 +138,13 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
         });
 
         it('clears the approval for the token ID', async function () {
-          expect(await this.token.getApprovedItem(tokenId)).to.be.bignumber.equal(ZERO);
+          expect(await this.token.getApproved(tokenId)).to.be.equal(ZERO_ADDRESS);
         });
 
         it('emits an ApprovalItem event', async function () {
           expectEvent.inLogs(logs, 'ApprovalItem', {
             owner: ownerId,
-            approved: ZERO,
+            approved: ZERO_ADDRESS,
             tokenId: tokenId
           });
         });
@@ -210,7 +210,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
         context('when called by the owner without an approved user', function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, ZERO, tokenId, {
+            await this.token.approveItem(ownerId, ZERO_ADDRESS, tokenId, {
               from: owner
             });
             ({
@@ -240,7 +240,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           });
 
           it('clears the approval for the token ID', async function () {
-            expect(await this.token.getApprovedItem(tokenId)).to.be.bignumber.equal(ZERO);
+            expect(await this.token.getApproved(tokenId)).to.be.equal(ZERO_ADDRESS);
           });
 
           it('emits only a transferCash event', async function () {
@@ -553,21 +553,21 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
       const itClearsApproval = function () {
         it('clears approval for the token', async function () {
-          expect(await this.token.getApprovedItem(tokenId)).to.be.bignumber.equal(ZERO);
+          expect(await this.token.getApproved(tokenId)).to.be.equal(ZERO_ADDRESS);
         });
       };
 
-      const itApproves = function (id) {
-        it('sets the approval for the target id', async function () {
-          expect(await this.token.getApprovedItem(tokenId)).to.be.bignumber.equal(id);
+      const itApproves = function (addr) {
+        it('sets the approval for the target addr', async function () {
+          expect(await this.token.getApproved(tokenId)).to.be.equal(web3.utils.toChecksumAddress(addr));
         });
       };
 
-      const itEmitsApprovalEvent = function (id) {
+      const itEmitsApprovalEvent = function (addr) {
         it('emits an approval event', async function () {
           expectEvent.inLogs(logs, 'ApprovalItem', {
             owner: ownerId,
-            approved: id,
+            approved: web3.utils.toChecksumAddress(addr),
             tokenId: tokenId,
           });
         });
@@ -578,29 +578,29 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           beforeEach(async function () {
             ({
               logs
-            } = await this.token.approveItem(ownerId, ZERO, tokenId, {
+            } = await this.token.approveItem(ownerId, ZERO_ADDRESS, tokenId, {
               from: owner
             }));
           });
 
           itClearsApproval();
-          itEmitsApprovalEvent(ZERO);
+          itEmitsApprovalEvent(ZERO_ADDRESS);
         });
 
         context('when there was a prior approval', function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, approvedId, tokenId, {
+            await this.token.approveItem(ownerId, approved, tokenId, {
               from: owner
             });
             ({
               logs
-            } = await this.token.approveItem(ownerId, 0, tokenId, {
+            } = await this.token.approveItem(ownerId, ZERO_ADDRESS, tokenId, {
               from: owner
             }));
           });
 
           itClearsApproval();
-          itEmitsApprovalEvent(ZERO);
+          itEmitsApprovalEvent(ZERO_ADDRESS);
         });
       });
 
@@ -609,52 +609,52 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           beforeEach(async function () {
             ({
               logs
-            } = await this.token.approveItem(ownerId, approvedId, tokenId, {
+            } = await this.token.approveItem(ownerId, approved, tokenId, {
               from: owner
             }));
           });
 
-          itApproves(approvedId);
-          itEmitsApprovalEvent(approvedId);
+          itApproves(approved);
+          itEmitsApprovalEvent(approved);
         });
 
         context('when there was a prior approval to the same id', function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, approvedId, tokenId, {
+            await this.token.approveItem(ownerId, approved, tokenId, {
               from: owner
             });
             ({
               logs
-            } = await this.token.approveItem(ownerId, approvedId, tokenId, {
+            } = await this.token.approveItem(ownerId, approved, tokenId, {
               from: owner
             }));
           });
 
-          itApproves(approvedId);
-          itEmitsApprovalEvent(approvedId);
+          itApproves(approved);
+          itEmitsApprovalEvent(approved);
         });
 
         context('when there was a prior approval to a different id', function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, anotherApprovedId, tokenId, {
+            await this.token.approveItem(ownerId, anotherApproved, tokenId, {
               from: owner
             });
             ({
               logs
-            } = await this.token.approveItem(ownerId, anotherApprovedId, tokenId, {
+            } = await this.token.approveItem(ownerId, anotherApproved, tokenId, {
               from: owner
             }));
           });
 
-          itApproves(anotherApprovedId);
-          itEmitsApprovalEvent(anotherApprovedId);
+          itApproves(anotherApproved);
+          itEmitsApprovalEvent(anotherApproved);
         });
       });
 
       context('when the id that receives the approval is the owner', function () {
         it('reverts', async function () {
           await expectRevert(
-            this.token.approveItem(ownerId, ownerId, tokenId, {
+            this.token.approveItem(ownerId, owner, tokenId, {
               from: owner
             }), 'I09',
           );
@@ -663,7 +663,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
       context('when the sender does not own the given token ID', function () {
         it('reverts', async function () {
-          await expectRevert(this.token.approveItem(otherId, approvedId, tokenId, {
+          await expectRevert(this.token.approveItem(otherId, approved, tokenId, {
               from: other
             }),
             'I10');
@@ -672,10 +672,10 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
       context('when the sender is approved for the given token ID', function () {
         it('reverts', async function () {
-          await this.token.approveItem(ownerId, approvedId, tokenId, {
+          await this.token.approveItem(ownerId, approved, tokenId, {
             from: owner
           });
-          await expectRevert(this.token.approveItem(approvedId, anotherApprovedId, tokenId, {
+          await expectRevert(this.token.approveItem(approvedId, anotherApproved, tokenId, {
               from: approved
             }),
             'I10');
@@ -689,18 +689,18 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           });
           ({
             logs
-          } = await this.token.approveItem(operatorId, approvedId, tokenId, {
+          } = await this.token.approveItem(operatorId, approved, tokenId, {
             from: operator
           }));
         });
 
-        itApproves(approvedId);
-        itEmitsApprovalEvent(approvedId);
+        itApproves(approved);
+        itEmitsApprovalEvent(approved);
       });
 
       context('when the given token ID does not exist', function () {
         it('reverts', async function () {
-          await expectRevert(this.token.approveItem(operatorId, approvedId, nonExistentTokenId, {
+          await expectRevert(this.token.approveItem(operatorId, approved, nonExistentTokenId, {
               from: operator
             }),
             'I08');
@@ -817,7 +817,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       context('when token is not minted', async function () {
         it('reverts', async function () {
           await expectRevert(
-            this.token.getApprovedItem(nonExistentTokenId),
+            this.token.getApproved(nonExistentTokenId),
             'I11',
           );
         });
@@ -825,20 +825,20 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
       context('when token has been minted ', async function () {
         it('should return the zero id', async function () {
-          expect(await this.token.getApprovedItem(firstTokenId)).to.be.bignumber.equal(
-            ZERO,
+          expect(await this.token.getApproved(firstTokenId)).to.be.equal(
+            ZERO_ADDRESS,
           );
         });
 
         context('when account has been approved', async function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, approvedId, firstTokenId, {
+            await this.token.approveItem(ownerId, approved, firstTokenId, {
               from: owner
             });
           });
 
           it('returns approved account', async function () {
-            expect(await this.token.getApprovedItem(firstTokenId)).to.be.bignumber.equal(approvedId);
+            expect(await this.token.getApproved(firstTokenId)).to.be.equal(web3.utils.toChecksumAddress(approved));
           });
         });
       });

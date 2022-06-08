@@ -151,10 +151,10 @@ function shouldBehaveLikeItem721BWO() {
       beforeEach(async function () {
         const nonce = await this.token.getNonce(ownerId);
         const signature = signData(this.chainId, this.token.address, this.tokenName,
-          ownerW.getPrivateKey(), this.tokenVersion, owner, approvedId, tokenId,
+          ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId,
           deadline, nonce);
 
-        await this.token.approveItemBWO(owner, approvedId, tokenId, deadline, signature, {
+        await this.token.approveItemBWO(ownerId, approved, tokenId, deadline, signature, {
           from: this.operator
         });
 
@@ -187,13 +187,13 @@ function shouldBehaveLikeItem721BWO() {
         });
 
         it('clears the approval for the token ID', async function () {
-          expect(await this.token.getApprovedItem(tokenId)).to.be.bignumber.equal(ZERO);
+          expect(await this.token.getApproved(tokenId)).to.be.equal(ZERO_ADDRESS);
         });
 
         it('emits an ApprovalItemBWO event', async function () {
           expectEvent.inLogs(logs, 'ApprovalItemBWO', {
             owner: ownerId,
-            approved: ZERO,
+            approved: ZERO_ADDRESS,
             tokenId: tokenId
           });
         });
@@ -301,10 +301,10 @@ function shouldBehaveLikeItem721BWO() {
             const nonce = await this.token.getNonce(ownerId);
 
             const signature = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, ZERO, tokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, ZERO_ADDRESS, tokenId,
               deadline, nonce);
 
-            await this.token.approveItemBWO(owner, ZERO, tokenId, deadline, signature, {
+            await this.token.approveItemBWO(ownerId, ZERO_ADDRESS, tokenId, deadline, signature, {
               from: this.operator
             });
 
@@ -358,7 +358,7 @@ function shouldBehaveLikeItem721BWO() {
           });
 
           it('clears the approval for the token ID', async function () {
-            expect(await this.token.getApprovedItem(tokenId)).to.be.bignumber.equal(ZERO);
+            expect(await this.token.getApproved(tokenId)).to.be.equal(ZERO_ADDRESS);
           });
 
           it('emits only a transferCash event', async function () {
@@ -760,21 +760,21 @@ function shouldBehaveLikeItem721BWO() {
 
       const itClearsApproval = function () {
         it('clears approval for the token', async function () {
-          expect(await this.token.getApprovedItem(tokenId)).to.be.bignumber.equal(ZERO);
+          expect(await this.token.getApproved(tokenId)).to.be.equal(ZERO_ADDRESS);
         });
       };
 
-      const itApproves = function (id) {
-        it('sets the approval for the target id', async function () {
-          expect(await this.token.getApprovedItem(tokenId)).to.be.bignumber.equal(id);
+      const itApproves = function (addr) {
+        it('sets the approval for the target address', async function () {
+          expect(await this.token.getApproved(tokenId)).to.be.equal(web3.utils.toChecksumAddress(addr));
         });
       };
 
-      const itEmitsApprovalEvent = function (id) {
+      const itEmitsApprovalEvent = function (addr) {
         it('emits an approval event', async function () {
           expectEvent.inLogs(logs, 'ApprovalItemBWO', {
             owner: ownerId,
-            approved: id,
+            approved: web3.utils.toChecksumAddress(addr),
             tokenId: tokenId,
           });
         });
@@ -785,43 +785,43 @@ function shouldBehaveLikeItem721BWO() {
           beforeEach(async function () {
             const nonce = await this.token.getNonce(ownerId);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, ZERO, tokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, ZERO_ADDRESS, tokenId,
               deadline, nonce);
             ({
               logs
-            } = await this.token.approveItemBWO(owner, ZERO, tokenId, deadline, signature, {
+            } = await this.token.approveItemBWO(ownerId, ZERO_ADDRESS, tokenId, deadline, signature, {
               from: this.operator
             }));
           });
 
           itClearsApproval();
-          itEmitsApprovalEvent(ZERO);
+          itEmitsApprovalEvent(ZERO_ADDRESS);
         });
 
         context('when there was a prior approval', function () {
           beforeEach(async function () {
             const nonce = await this.token.getNonce(ownerId);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, approvedId, tokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId,
               deadline, nonce);
 
-            await this.token.approveItemBWO(owner, approvedId, tokenId, deadline, signature, {
+            await this.token.approveItemBWO(ownerId, approved, tokenId, deadline, signature, {
               from: this.operator
             });
 
             const nonce2 = await this.token.getNonce(ownerId);
             const signature2 = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, ZERO, tokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, ZERO_ADDRESS, tokenId,
               deadline, nonce2);
             ({
               logs
-            } = await this.token.approveItemBWO(owner, 0, tokenId, deadline, signature2, {
+            } = await this.token.approveItemBWO(ownerId, ZERO_ADDRESS, tokenId, deadline, signature2, {
               from: this.operator
             }));
           });
 
           itClearsApproval();
-          itEmitsApprovalEvent(ZERO);
+          itEmitsApprovalEvent(ZERO_ADDRESS);
         });
       });
 
@@ -830,67 +830,67 @@ function shouldBehaveLikeItem721BWO() {
           beforeEach(async function () {
             const nonce = await this.token.getNonce(ownerId);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, approvedId, tokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId,
               deadline, nonce);
             ({
               logs
-            } = await this.token.approveItemBWO(owner, approvedId, tokenId, deadline, signature, {
+            } = await this.token.approveItemBWO(ownerId, approved, tokenId, deadline, signature, {
               from: this.operator
             }));
           });
 
-          itApproves(approvedId);
-          itEmitsApprovalEvent(approvedId);
+          itApproves(approved);
+          itEmitsApprovalEvent(approved);
         });
 
         context('when there was a prior approval to the same id', function () {
           beforeEach(async function () {
             const nonce = await this.token.getNonce(ownerId);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, approvedId, tokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId,
               deadline, nonce);
 
-            await this.token.approveItemBWO(owner, approvedId, tokenId, deadline, signature, {
+            await this.token.approveItemBWO(ownerId, approved, tokenId, deadline, signature, {
               from: this.operator
             });
             const nonce2 = await this.token.getNonce(ownerId);
             const signature2 = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, approvedId, tokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId,
               deadline, nonce2);
 
             ({
               logs
-            } = await this.token.approveItemBWO(owner, approvedId, tokenId, deadline, signature2, {
+            } = await this.token.approveItemBWO(ownerId, approved, tokenId, deadline, signature2, {
               from: this.operator
             }));
           });
 
-          itApproves(approvedId);
-          itEmitsApprovalEvent(approvedId);
+          itApproves(approved);
+          itEmitsApprovalEvent(approved);
         });
 
         context('when there was a prior approval to a different id', function () {
           beforeEach(async function () {
             const nonce = await this.token.getNonce(ownerId);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, anotherApprovedId, tokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, anotherApproved, tokenId,
               deadline, nonce);
-            await this.token.approveItemBWO(owner, anotherApprovedId, tokenId, deadline, signature, {
+            await this.token.approveItemBWO(ownerId, anotherApproved, tokenId, deadline, signature, {
               from: this.operator
             });
             const nonce2 = await this.token.getNonce(ownerId);
             const signature2 = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, anotherApprovedId, tokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, anotherApproved, tokenId,
               deadline, nonce2);
             ({
               logs
-            } = await this.token.approveItemBWO(owner, anotherApprovedId, tokenId, deadline, signature2, {
+            } = await this.token.approveItemBWO(ownerId, anotherApproved, tokenId, deadline, signature2, {
               from: this.operator
             }));
           });
 
-          itApproves(anotherApprovedId);
-          itEmitsApprovalEvent(anotherApprovedId);
+          itApproves(anotherApproved);
+          itEmitsApprovalEvent(anotherApproved);
         });
       });
 
@@ -898,10 +898,10 @@ function shouldBehaveLikeItem721BWO() {
         it('reverts', async function () {
           const nonce = await this.token.getNonce(ownerId);
           const signature = signData(this.chainId, this.token.address, this.tokenName,
-            ownerW.getPrivateKey(), this.tokenVersion, owner, ownerId, tokenId,
+            ownerW.getPrivateKey(), this.tokenVersion, ownerId, owner, tokenId,
             deadline, nonce);
           await expectRevert(
-            this.token.approveItemBWO(owner, ownerId, tokenId, deadline, signature, {
+            this.token.approveItemBWO(ownerId, owner, tokenId, deadline, signature, {
               from: this.operator
             }), 'I09',
           );
@@ -912,9 +912,9 @@ function shouldBehaveLikeItem721BWO() {
         it('reverts', async function () {
           const nonce = await this.token.getNonce(otherId);
           const signature = signData(this.chainId, this.token.address, this.tokenName,
-            otherW.getPrivateKey(), this.tokenVersion, other, approvedId, tokenId,
+            otherW.getPrivateKey(), this.tokenVersion, otherId, approved, tokenId,
             deadline, nonce);
-          await expectRevert(this.token.approveItemBWO(other, approvedId, tokenId, deadline, signature, {
+          await expectRevert(this.token.approveItemBWO(otherId, approved, tokenId, deadline, signature, {
               from: this.operator
             }),
             'I10');
@@ -925,17 +925,17 @@ function shouldBehaveLikeItem721BWO() {
         it('reverts', async function () {
           const nonce = await this.token.getNonce(ownerId);
           const signature = signData(this.chainId, this.token.address, this.tokenName,
-            ownerW.getPrivateKey(), this.tokenVersion, owner, approvedId, tokenId,
+            ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId,
             deadline, nonce);
 
-          await this.token.approveItemBWO(owner, approvedId, tokenId, deadline, signature, {
+          await this.token.approveItemBWO(ownerId, approved, tokenId, deadline, signature, {
             from: this.operator
           });
           const nonce2 = await this.token.getNonce(approvedId);
           const signature2 = signData(this.chainId, this.token.address, this.tokenName,
-            approvedW.getPrivateKey(), this.tokenVersion, approved, anotherApprovedId, tokenId,
+            approvedW.getPrivateKey(), this.tokenVersion, approvedId, anotherApproved, tokenId,
             deadline, nonce2);
-          await expectRevert(this.token.approveItemBWO(approved, anotherApprovedId, tokenId, deadline, signature2, {
+          await expectRevert(this.token.approveItemBWO(approvedId, anotherApproved, tokenId, deadline, signature2, {
               from: this.operator
             }),
             'I10');
@@ -953,27 +953,27 @@ function shouldBehaveLikeItem721BWO() {
           });
           const nonce2 = await this.token.getNonce(operatorId);
           const signature2 = signData(this.chainId, this.token.address, this.tokenName,
-            operatorW.getPrivateKey(), this.tokenVersion, operator, approvedId, tokenId,
+            operatorW.getPrivateKey(), this.tokenVersion, operatorId, approved, tokenId,
             deadline, nonce2);
           ({
             logs
-          } = await this.token.approveItemBWO(operator, approvedId, tokenId, deadline, signature2, {
+          } = await this.token.approveItemBWO(operatorId, approved, tokenId, deadline, signature2, {
             from: this.operator
           }));
         });
 
-        itApproves(approvedId);
-        itEmitsApprovalEvent(approvedId);
+        itApproves(approved);
+        itEmitsApprovalEvent(approved);
       });
 
       context('when the given token ID does not exist', function () {
         it('reverts', async function () {
           const nonce = await this.token.getNonce(operatorId);
           const signature = signData(this.chainId, this.token.address, this.tokenName,
-            operatorW.getPrivateKey(), this.tokenVersion, operator, approvedId, nonExistentTokenId,
+            operatorW.getPrivateKey(), this.tokenVersion, operatorId, approved, nonExistentTokenId,
             deadline, nonce);
 
-          await expectRevert(this.token.approveItemBWO(operator, approvedId, nonExistentTokenId, deadline, signature, {
+          await expectRevert(this.token.approveItemBWO(operatorId, approved, nonExistentTokenId, deadline, signature, {
               from: this.operator
             }),
             'I08');
@@ -1133,7 +1133,7 @@ function shouldBehaveLikeItem721BWO() {
       context('when token is not minted', async function () {
         it('reverts', async function () {
           await expectRevert(
-            this.token.getApprovedItem(nonExistentTokenId),
+            this.token.getApproved(nonExistentTokenId),
             'I11',
           );
         });
@@ -1141,8 +1141,8 @@ function shouldBehaveLikeItem721BWO() {
 
       context('when token has been minted ', async function () {
         it('should return the zero id', async function () {
-          expect(await this.token.getApprovedItem(firstTokenId)).to.be.bignumber.equal(
-            ZERO,
+          expect(await this.token.getApproved(firstTokenId)).to.be.equal(
+            ZERO_ADDRESS,
           );
         });
 
@@ -1150,16 +1150,16 @@ function shouldBehaveLikeItem721BWO() {
           beforeEach(async function () {
             const nonce = await this.token.getNonce(ownerId);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
-              ownerW.getPrivateKey(), this.tokenVersion, owner, approvedId, firstTokenId,
+              ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, firstTokenId,
               deadline, nonce);
 
-            await this.token.approveItemBWO(owner, approvedId, firstTokenId, deadline, signature, {
+            await this.token.approveItemBWO(ownerId, approved, firstTokenId, deadline, signature, {
               from: this.operator
             });
           });
 
           it('returns approved account', async function () {
-            expect(await this.token.getApprovedItem(firstTokenId)).to.be.bignumber.equal(approvedId);
+            expect(await this.token.getApproved(firstTokenId)).to.be.equal(web3.utils.toChecksumAddress(approved));
           });
         });
       });
@@ -1256,11 +1256,11 @@ function signData(chainId, verifyingContract, name, key, version, from, to, toke
       EIP712Domain,
       BWO: [{
           name: 'from',
-          type: 'address'
+          type: 'uint256'
         },
         {
           name: 'to',
-          type: 'uint256'
+          type: 'address'
         },
         {
           name: 'tokenId',

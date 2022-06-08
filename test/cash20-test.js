@@ -19,6 +19,7 @@ const Wallet = require('ethereumjs-wallet').default;
 
 const Cash20 = artifacts.require('Cash20Mock');
 const World = artifacts.require('World');
+const Avatar = artifacts.require('AvatarMock');
 
 const {
   shouldBehaveLikeERC20,
@@ -72,6 +73,15 @@ contract('Cash20', function (accounts) {
     this.tokenVersion = version;
     this.BWO = initialHolder;
     this.chainId = await this.token.getChainId();
+
+    const avatarName = 'My Avatar';
+    const avatarSymbol = 'MAVT';
+    const avatarVersion = '1.0.0';
+    const avataSupply = 0;
+    const maxAvatarId = 0;
+
+    this.avatar = await Avatar.new(avataSupply, maxAvatarId, avatarName, avatarSymbol, avatarVersion, this.world.address);
+    await this.world.registerAvatar(this.avatar.address, "");
 
     // 注册operater
     await this.world.addOperator(initialHolder);
