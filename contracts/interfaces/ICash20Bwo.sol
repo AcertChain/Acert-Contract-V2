@@ -26,9 +26,10 @@ interface ICash20BWO {
     ) external returns (bool);
 
     function approveCashBWO(
-        uint256 owner,
+        uint256 ownerId,
         address spender,
         uint256 amount,
+        address owner,
         uint256 deadline,
         bytes memory signature
     ) external returns (bool);

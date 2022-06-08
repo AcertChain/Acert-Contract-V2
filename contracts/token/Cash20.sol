@@ -211,7 +211,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount,
         bool isBWO
     ) internal virtual {
-        if (IWorld(_world).checkAddress(spender, from)) {
+        if (_checkAddress(spender, from)) {
             return _transferCash(from, to, amount, isBWO);
         }
 
@@ -281,7 +281,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) public virtual override returns (bool) {
         require(spender != address(0), "Cash: approve to the zero address");
         require(
-            IWorld(_world).checkAddress(_msgSender(), ownerId),
+            _checkAddress(_msgSender(), ownerId),
             "Cash: not owner"
         );
 
@@ -290,9 +290,10 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     function approveCashBWO(
-        uint256 owner,
+        uint256 ownerId,
         address spender,
         uint256 amount,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
@@ -301,21 +302,24 @@ contract Cash20 is Context, EIP712, ICash20 {
             IWorld(_world).isBWO(_msgSender()),
             "Cash: must be the world BWO"
         );
-
-        uint256 nonce = _nonces[owner];
-        address ownerAddr = _getAddressById(owner);
         require(
-            ownerAddr ==
+            _checkAddress(sender, ownerId),
+            "Cash: not owner"
+        );
+        uint256 nonce = _nonces[ownerId];
+        require(
+            sender ==
                 _recoverSig(
                     _hashTypedDataV4(
                         keccak256(
                             abi.encode(
                                 keccak256(
-                                    "BWO(uint256 from,address to,uint256 value,uint256 nonce,uint256 deadline)"
+                                    "BWO(uint256 ownerId,address spender,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
                                 ),
-                                owner,
+                                ownerId,
                                 spender,
                                 amount,
+                                sender,
                                 nonce,
                                 deadline
                             )
@@ -330,8 +334,8 @@ contract Cash20 is Context, EIP712, ICash20 {
             block.timestamp < deadline,
             "approveItemBWO: signed transaction expired"
         );
-        _approveId(owner, spender, amount, true);
-        _nonces[owner] += 1;
+        _approveId(ownerId, spender, amount, true);
+        _nonces[ownerId] += 1;
         return true;
     }
 
@@ -634,8 +638,12 @@ contract Cash20 is Context, EIP712, ICash20 {
         return IWorld(_world).getOrCreateAccountId(addr);
     }
 
-    function _getAddressById(uint256 id) internal view returns (address) {
-        return IWorld(_world).getAddressById(id);
+    function _checkAddress(address addr, uint256 id)
+        internal
+        view
+        returns (bool)
+    {
+        return IWorld(_world).checkAddress(addr, id);
     }
 
     function _isTrust(address _contract, uint256 _id)
