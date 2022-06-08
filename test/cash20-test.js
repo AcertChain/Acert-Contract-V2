@@ -66,7 +66,16 @@ contract('Cash20', function (accounts) {
   const BWOReceiptkey = receiptWallet.getPrivateKey();
 
   beforeEach(async function () {
+    const avatarName = 'My Avatar';
+    const avatarSymbol = 'MAVT';
+    const avatarVersion = '1.0.0';
+    const avataSupply = 0;
+    const maxAvatarId = 0;
     this.world = await World.new();
+
+    this.avatar = await Avatar.new(avataSupply, maxAvatarId, avatarName, avatarSymbol, avatarVersion, this.world.address);
+    await this.world.registerAvatar(this.avatar.address, "");
+
     this.token = await Cash20.new(name, symbol, version, this.world.address);
     this.receipt = await this.token.mint(initialHolder, initialSupply);
     this.tokenName = name;
@@ -74,14 +83,7 @@ contract('Cash20', function (accounts) {
     this.BWO = initialHolder;
     this.chainId = await this.token.getChainId();
 
-    const avatarName = 'My Avatar';
-    const avatarSymbol = 'MAVT';
-    const avatarVersion = '1.0.0';
-    const avataSupply = 0;
-    const maxAvatarId = 0;
 
-    this.avatar = await Avatar.new(avataSupply, maxAvatarId, avatarName, avatarSymbol, avatarVersion, this.world.address);
-    await this.world.registerAvatar(this.avatar.address, "");
 
     // 注册operater
     await this.world.addOperator(initialHolder);

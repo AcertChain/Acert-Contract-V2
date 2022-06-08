@@ -134,6 +134,7 @@ contract World is IWorld, Ownable, Initializable {
 
     function checkAddress(address _address, uint256 _id)
         public
+        view
         virtual
         override
         returns (bool)

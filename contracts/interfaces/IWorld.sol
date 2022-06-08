@@ -8,6 +8,7 @@ interface IWorld {
 
     function checkAddress(address _address, uint256 _id)
         external
+        view
         returns (bool);
 
     function getAddressById(uint256 _id)

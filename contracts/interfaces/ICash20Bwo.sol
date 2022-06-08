@@ -17,10 +17,10 @@ interface ICash20BWO {
     );
 
     function transferCashBWO(
-        address spender,
         uint256 from,
         uint256 to,
         uint256 amount,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) external returns (bool);
