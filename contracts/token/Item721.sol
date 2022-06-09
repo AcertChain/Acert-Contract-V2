@@ -223,7 +223,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         );
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndApprove(sender, to, tokenId);
-        emit ApprovalItemBWO(to, tokenId, sender, deadline, _nonces[sender]);
+        emit ApprovalBWO(to, tokenId, sender, deadline, _nonces[sender]);
         _nonces[sender] += 1;
     }
 
