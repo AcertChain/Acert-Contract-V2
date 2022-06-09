@@ -442,13 +442,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 fromId = _getIdByAddress(from);
         uint256 toId = _getIdByAddress(to);
 
-        uint256 fromBalance = _balancesById[fromId];
-        require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
-        unchecked {
-            _balancesById[fromId] = fromBalance - amount;
-        }
-        _balancesById[toId] += amount;
-
+        _transferCash(from, to, amount);
         emit Transfer(from, to, amount);
     }
 
@@ -546,7 +540,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(owner != address(0), "Cash: approve from the zero address");
         require(spender != address(0), "Cash: approve to the zero address");
 
-        _allowancesById[_getIdByAddress(owner)][spender] = amount;
+        _approveId(_getIdByAddress(owner), spender, amount);
         emit Approval(owner, spender, amount);
     }
 
