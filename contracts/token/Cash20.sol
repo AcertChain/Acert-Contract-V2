@@ -168,11 +168,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(sender != address(0), "Cash: sender is the zero address");
         require(from != 0, "Cash: from is the zero Id");
         require(to != 0, "Cash: transfer to the zero Id");
-        require(
-            IWorld(_world).isBWO(_msgSender()),
-            "Cash: must be the world BWO"
-        );
-
+        
+        require(IWorld(_world).isBWO(_msgSender()), "Cash: must be the world BWO");
         uint256 nonce = _nonces[sender];
         require(
             sender ==
@@ -439,10 +436,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(from != address(0), "Cash: transfer from the zero address");
         require(to != address(0), "Cash: transfer to the zero address");
 
-        uint256 fromId = _getIdByAddress(from);
-        uint256 toId = _getIdByAddress(to);
-
-        _transferCash(from, to, amount);
+        _transferCash(_getIdByAddress(from), _getIdByAddress(to), amount);
         emit Transfer(from, to, amount);
     }
 
@@ -471,8 +465,7 @@ contract Cash20 is Context, EIP712, ICash20 {
      */
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "Cash: mint to the zero address");
-        _totalSupply += amount;
-        _balancesById[_getIdByAddress(account)] += amount;
+        _mintCash(_getIdByAddress(account), amount);
         emit Transfer(address(0), account, amount);
     }
 
@@ -496,13 +489,7 @@ contract Cash20 is Context, EIP712, ICash20 {
      */
     function _burn(address account, uint256 amount) internal virtual {
         require(account != address(0), "Cash: burn from the zero address");
-        uint256 accountId = _getIdByAddress(account);
-        uint256 accountBalance = _balancesById[accountId];
-        require(accountBalance >= amount, "Cash: burn amount exceeds balance");
-        unchecked {
-            _balancesById[accountId] = accountBalance - amount;
-        }
-        _totalSupply -= amount;
+        _burnCash(_getIdByAddress(account), amount);
 
         emit Transfer(account, address(0), amount);
     }
@@ -538,9 +525,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount
     ) internal virtual {
         require(owner != address(0), "Cash: approve from the zero address");
-        require(spender != address(0), "Cash: approve to the zero address");
-
         _approveId(_getIdByAddress(owner), spender, amount);
+
         emit Approval(owner, spender, amount);
     }
 
@@ -563,6 +549,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount
     ) internal virtual {
         require(ownerId != 0, "Cash: approve from the zero Id");
+        require(spender != address(0), "Cash: approve to the zero address");
         _allowancesById[ownerId][spender] = amount;
         emit ApprovalCash(ownerId, spender, amount);
     }
