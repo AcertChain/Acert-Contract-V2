@@ -11,7 +11,7 @@ interface IItem721BWO {
         uint256 indexed deadline
     );
 
-    event ApprovalItemBWO(
+    event ApprovalBWO(
         address indexed to,
         uint256 indexed tokenId,
         address indexed sender,
@@ -29,48 +29,49 @@ interface IItem721BWO {
     );
 
     function safeTransferFromItemBWO(
-        uint256 indexed from,
-        uint256 indexed to,
-        uint256 indexed tokenId,
+        uint256 spender,
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
         bytes memory data,
-        address indexed sender,
-        uint256 indexed nonce,
-        uint256 indexed deadline
+        address sender,
+        uint256 deadline,
+        bytes memory signature
     ) external;
 
     function safeTransferFromItemBWO(
-        uint256 indexed from,
-        uint256 indexed to,
-        uint256 indexed tokenId,
-        address indexed sender,
-        uint256 indexed nonce,
-        uint256 indexed deadline
+        uint256 spender,
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
     ) external;
 
     function transferFromItemBWO(
-        uint256 indexed from,
-        uint256 indexed to,
-        uint256 indexed tokenId,
-        address indexed sender,
-        uint256 indexed nonce,
-        uint256 indexed deadline
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
     ) external;
 
-    function approveItemBWO(
-        uint256 indexed from,
-        address indexed to,
-        uint256 indexed tokenId,
-        address indexed sender,
-        uint256 indexed nonce,
-        uint256 indexed deadline
+    function approveBWO(
+        address to,
+        uint256 tokenId,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
     ) external;
 
     function setApprovalForAllItemBWO(
-        uint256 indexed from,
-        address indexed to,
+        uint256 from,
+        address to,
         bool approved,
-        address indexed sender,
-        uint256 indexed nonce,
-        uint256 indexed deadline
+        address sender,
+        uint256 deadline,
+        bytes memory signature
     ) external;
 }
