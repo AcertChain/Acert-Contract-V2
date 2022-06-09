@@ -34,14 +34,14 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
         returns (bool);
 
     function safeTransferFromItem(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId
     ) external;
 
     function safeTransferFromItem(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
@@ -49,7 +49,7 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
     ) external;
 
     function transferFromItem(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId
@@ -62,8 +62,8 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
     ) external;
 
     function setApprovalForAllItem(
-        uint256 owner,
-        address operator,
-        bool _approved
+        uint256 from,
+        address to,
+        bool approved
     ) external;
 }

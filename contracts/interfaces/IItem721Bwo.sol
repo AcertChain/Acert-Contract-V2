@@ -21,29 +21,32 @@ interface IItem721BWO {
     );
 
     function safeTransferFromItemBWO(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
+        address sender,
         uint256 deadline,
         bytes memory data,
         bytes memory signature
     ) external;
 
     function safeTransferFromItemBWO(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) external;
 
     function transferFromItemBWO(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) external;
@@ -52,14 +55,16 @@ interface IItem721BWO {
         uint256 from,
         address to,
         uint256 tokenId,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) external;
 
     function setApprovalForAllItemBWO(
-        uint256 sender,
-        address operator,
-        bool _approved,
+        uint256 from,
+        address to,
+        bool approved,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) external;

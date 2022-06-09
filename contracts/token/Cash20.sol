@@ -327,12 +327,12 @@ contract Cash20 is Context, EIP712, ICash20 {
                     ),
                     signature
                 ),
-            "approveItemBWO : recoverSig failed"
+            "approveCashBWO : recoverSig failed"
         );
 
         require(
             block.timestamp < deadline,
-            "approveItemBWO: signed transaction expired"
+            "approveCashBWO: signed transaction expired"
         );
         _approveId(ownerId, spender, amount, true);
         _nonces[ownerId] += 1;

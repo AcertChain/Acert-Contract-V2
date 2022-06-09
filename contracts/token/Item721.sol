@@ -204,7 +204,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         address owner = Item721.ownerOf(tokenId);
         address sender = msg.sender;
         require(to != owner, "I09");
-        require(IWorld(_world).checkAddress(sender, from), "I22");
+        require(_checkAddress(sender, from), "I22");
         require(sender == owner || isApprovedForAll(owner, sender), "I10");
         _approve(to, tokenId, TypeOperation.ID);
     }
@@ -213,24 +213,26 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 from,
         address to,
         uint256 tokenId,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
-        address fromAddr = _getAddressById(from);
+        require(_checkAddress(sender, from), "I22");
         uint256 nonce = _nonces[from];
         _recoverSig(
             deadline,
-            fromAddr,
+            sender,
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 from,address to,uint256 tokenId,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 from,address to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         from,
                         to,
                         tokenId,
+                        sender,
                         nonce,
                         deadline
                     )
@@ -241,7 +243,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         address owner = Item721.ownerOf(tokenId);
         require(to != owner, "I09");
-        require(fromAddr == owner || isApprovedForAll(owner, fromAddr), "I10");
+        require(sender == owner || isApprovedForAll(owner, sender), "I10");
         _nonces[from] += 1;
         _approve(to, tokenId, TypeOperation.BWO);
     }
@@ -276,44 +278,48 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function setApprovalForAllItem(
-        uint256 sender,
-        address operator,
+        uint256 from,
+        address to,
         bool approved
     ) public virtual override {
-        require(IWorld(_world).checkAddress(msg.sender, sender), "I22");
-        _setApprovalForAllItem(sender, operator, approved, false);
+        require(_checkAddress(msg.sender, from), "I22");
+        _setApprovalForAllItem(from, to, approved, false);
     }
 
     function setApprovalForAllItemBWO(
-        uint256 sender,
-        address operator,
+        uint256 from,
+        address to,
         bool approved,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
-        uint256 nonce = _nonces[sender];
+        require(_checkAddress(sender, from), "I22");
+
+        uint256 nonce = _nonces[from];
         _recoverSig(
             deadline,
-            _getAddressById(sender),
+            sender,
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 sender,address operator,uint256 nonce,uint256 deadline,bool approved)"
+                            "BWO(uint256 from,address to,bool approved,address sender,uint256 nonce,uint256 deadline)"
                         ),
+                        from,
+                        to,
+                        approved,
                         sender,
-                        operator,
                         nonce,
-                        deadline,
-                        approved
+                        deadline
                     )
                 )
             ),
             signature
         );
-        _setApprovalForAllItem(sender, operator, approved, true);
-        _nonces[sender] += 1;
+        _setApprovalForAllItem(from, to, approved, true);
+        _nonces[from] += 1;
     }
 
     /**
@@ -360,7 +366,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function transferFromItem(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId
@@ -369,34 +375,37 @@ contract Item721 is EIP712, ERC165, IItem721 {
             _transfer(from, to, tokenId, TypeOperation.ID);
         }
 
-        require(IWorld(_world).checkAddress(msg.sender, sender), "I22");
-        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
+        require(_checkAddress(msg.sender, spender), "I22");
+        require(_isApprovedOrOwner(msg.sender, tokenId), "I14");
         _transfer(from, to, tokenId, TypeOperation.ID);
     }
 
     function transferFromItemBWO(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
-        uint256 nonce = _nonces[sender];
+        require(_checkAddress(sender, spender), "I22");
+        uint256 nonce = _nonces[spender];
         _recoverSig(
             deadline,
-            _getAddressById(sender),
+            sender,
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 sender,uint256 from,uint256 to,uint256 tokenId,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 spender,uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
                         ),
-                        sender,
+                        spender,
                         from,
                         to,
                         tokenId,
+                        sender,
                         nonce,
                         deadline
                     )
@@ -405,9 +414,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
+        require(_isApprovedOrOwner(sender, tokenId), "I14");
         _transfer(from, to, tokenId, TypeOperation.BWO);
-        _nonces[sender] += 1;
+        _nonces[spender] += 1;
     }
 
     function safeTransferFrom(
@@ -428,28 +437,31 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function safeTransferFromItemBWO(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
+        address sender,
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
-        uint256 nonce = _nonces[sender];
+        require(_checkAddress(sender, spender), "I22");
+        uint256 nonce = _nonces[spender];
         _recoverSig(
             deadline,
-            _getAddressById(sender),
+            sender,
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 sender,uint256 from,uint256 to,uint256 tokenId,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 spender,uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
                         ),
-                        sender,
+                        spender,
                         from,
                         to,
                         tokenId,
+                        sender,
                         nonce,
                         deadline
                     )
@@ -458,9 +470,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
+        require(_isApprovedOrOwner(sender, tokenId), "I14");
         _safeTransfer(from, to, tokenId, "", TypeOperation.BWO);
-        _nonces[sender] += 1;
+        _nonces[spender] += 1;
     }
 
     /**
@@ -490,35 +502,38 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 tokenId,
         bytes memory _data
     ) public virtual override {
-        require(IWorld(_world).checkAddress(msg.sender, sender), "I22");
-        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
+        require(_checkAddress(msg.sender, sender), "I22");
+        require(_isApprovedOrOwner(msg.sender, tokenId), "I14");
         _safeTransfer(from, to, tokenId, _data, TypeOperation.ID);
     }
 
     function safeTransferFromItemBWO(
-        uint256 sender,
+        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
+        address sender,
         uint256 deadline,
         bytes memory data,
         bytes memory signature
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
-        uint256 nonce = _nonces[sender];
+        require(_checkAddress(sender, spender), "I22");
+        uint256 nonce = _nonces[spender];
         _recoverSig(
             deadline,
-            _getAddressById(sender),
+            sender,
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 sender,uint256 from,uint256 to,uint256 tokenId,uint256 nonce,uint256 deadline,bytes data)"
+                            "BWO(uint256 spender,uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline,bytes data)"
                         ),
-                        sender,
+                        spender,
                         from,
                         to,
                         tokenId,
+                        sender,
                         nonce,
                         deadline,
                         keccak256(data)
@@ -528,9 +543,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        require(_isApprovedOrOwner(_getAddressById(sender), tokenId), "I14");
+        require(_isApprovedOrOwner(sender, tokenId), "I14");
         _safeTransfer(from, to, tokenId, data, TypeOperation.BWO);
-        _nonces[sender] += 1;
+        _nonces[spender] += 1;
     }
 
     function _safeTransfer(
@@ -764,6 +779,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
     function _getAddressById(uint256 id) internal view returns (address) {
         return IWorld(_world).getAddressById(id);
+    }
+
+    function _checkAddress(address addr, uint256 id)
+        internal
+        view
+        returns (bool)
+    {
+        return IWorld(_world).checkAddress(addr, id);
     }
 
     function _recoverSig(
