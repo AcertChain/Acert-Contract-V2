@@ -5,19 +5,22 @@ interface IItem721BWO {
     event TransferItemBWO(
         uint256 indexed from,
         uint256 indexed to,
-        uint256 indexed tokenId
+        uint256 indexed tokenId,
+        uint256 nonce
     );
 
     event ApprovalItemBWO(
         uint256 indexed owner,
         address indexed approved,
-        uint256 indexed tokenId
+        uint256 indexed tokenId,
+        uint256 nonce
     );
 
     event ApprovalForAllItemBWO(
         uint256 indexed owner,
         address indexed operator,
-        bool approved
+        bool approved,
+        uint256 nonce
     );
 
     function safeTransferFromItemBWO(

@@ -149,7 +149,7 @@ function shouldBehaveLikeItem721BWO() {
       let logs = null;
 
       beforeEach(async function () {
-        const nonce = await this.token.getNonce(ownerId);
+        const nonce = await this.token.getNonce(owner);
         const signature = signData(this.chainId, this.token.address, this.tokenName,
           ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId, owner,
           deadline, nonce);
@@ -158,7 +158,7 @@ function shouldBehaveLikeItem721BWO() {
           from: this.operator
         });
 
-        const nonceAll = await this.token.getNonce(ownerId);
+        const nonceAll = await this.token.getNonce(owner);
 
         const signatureAll = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
           ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, true,owner,
@@ -214,7 +214,7 @@ function shouldBehaveLikeItem721BWO() {
       const shouldTransferTokensByUsers = function (transferFunction, data) {
         context('when called by the owner', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             let signature;
             if (data == null) {
               signature = signTrasferData(this.chainId, this.token.address, this.tokenName,
@@ -242,7 +242,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when called by the approved individual', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(approvedId);
+            const nonce = await this.token.getNonce(approved);
             let signature;
             if (data == null) {
 
@@ -270,7 +270,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when called by the operator', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(operatorId);
+            const nonce = await this.token.getNonce(operator);
             let signature;
             if (data == null) {
 
@@ -298,7 +298,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when called by the owner without an approved user', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
 
             const signature = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, ZERO_ADDRESS, tokenId, owner,
@@ -308,7 +308,7 @@ function shouldBehaveLikeItem721BWO() {
               from: this.operator
             });
 
-            const nonceCall = await this.token.getNonce(operatorId);
+            const nonceCall = await this.token.getNonce(operator);
             let signatureCall;
             if (data == null) {
               signatureCall = signTrasferData(this.chainId, this.token.address, this.tokenName,
@@ -335,7 +335,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when sent to the owner', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             let signature;
             if (data == null) {
               signature = signTrasferData(this.chainId, this.token.address, this.tokenName,
@@ -386,7 +386,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when the address of the previous owner is incorrect', function () {
           it('reverts', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             let signature;
             if (data == null) {
 
@@ -411,7 +411,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when the sender is not authorized for the token id', function () {
           it('reverts', async function () {
-            const nonce = await this.token.getNonce(otherId);
+            const nonce = await this.token.getNonce(other);
             let signature;
             if (data == null) {
 
@@ -434,7 +434,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when the given token ID does not exist', function () {
           it('reverts', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             let signature;
             if (data == null) {
               signature = signTrasferData(this.chainId, this.token.address, this.tokenName,
@@ -457,7 +457,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when the address to transfer the token to is the zero id', function () {
           it('reverts', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             let signature;
             if (data == null) {
               signature = signTrasferData(this.chainId, this.token.address, this.tokenName,
@@ -510,7 +510,7 @@ function shouldBehaveLikeItem721BWO() {
             shouldTransferTokensByUsers(transferFun, data);
 
             it('calls onERC721Received', async function () {
-              const nonce = await this.token.getNonce(ownerId);
+              const nonce = await this.token.getNonce(owner);
 
               const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
                 ownerW.getPrivateKey(), this.tokenVersion, ownerId, ownerId, this.receiverId, tokenId, owner,
@@ -529,7 +529,7 @@ function shouldBehaveLikeItem721BWO() {
             });
 
             it('calls onERC721Received from approved', async function () {
-              const nonce = await this.token.getNonce(approvedId);
+              const nonce = await this.token.getNonce(approved);
               const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
                 approvedW.getPrivateKey(), this.tokenVersion, approvedId, ownerId, this.receiverId, tokenId,approved,
                 deadline, nonce, data);
@@ -548,7 +548,7 @@ function shouldBehaveLikeItem721BWO() {
 
             describe('with an invalid token id', function () {
               it('reverts', async function () {
-                const nonce = await this.token.getNonce(ownerId);
+                const nonce = await this.token.getNonce(owner);
                 const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
                   ownerW.getPrivateKey(), this.tokenVersion, ownerId, ownerId, this.receiverId, nonExistentTokenId,owner,
                   deadline, nonce, data);
@@ -584,7 +584,7 @@ function shouldBehaveLikeItem721BWO() {
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
             await this.world.getOrCreateAccountId(invalidReceiver.address);
             const invalidReceiverId = new BN(await this.world.getAccountIdByAddress(invalidReceiver.address));
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, ownerId, invalidReceiverId, tokenId,owner,
               deadline, nonce);
@@ -604,7 +604,7 @@ function shouldBehaveLikeItem721BWO() {
             await this.world.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, ownerId, revertingReceiverId, tokenId,owner,
               deadline, nonce, null);
@@ -623,7 +623,7 @@ function shouldBehaveLikeItem721BWO() {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
             await this.world.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, ownerId, revertingReceiverId, tokenId,owner,
               deadline, nonce, null);
@@ -643,7 +643,7 @@ function shouldBehaveLikeItem721BWO() {
             await this.world.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, ownerId, revertingReceiverId, tokenId,owner,
               deadline, nonce, null);
@@ -661,7 +661,7 @@ function shouldBehaveLikeItem721BWO() {
             const nonReceiver = this.token;
             await this.world.getOrCreateAccountId(nonReceiver.address);
             const nonReceiverId = new BN(await this.world.getAccountIdByAddress(nonReceiver.address));
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, ownerId, nonReceiverId, tokenId,owner,
               deadline, nonce, null);
@@ -784,7 +784,7 @@ function shouldBehaveLikeItem721BWO() {
       context('when clearing approval', function () {
         context('when there was no prior approval', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, ZERO_ADDRESS, tokenId, owner,
               deadline, nonce);
@@ -801,7 +801,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when there was a prior approval', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId, owner,
               deadline, nonce);
@@ -810,7 +810,7 @@ function shouldBehaveLikeItem721BWO() {
               from: this.operator
             });
 
-            const nonce2 = await this.token.getNonce(ownerId);
+            const nonce2 = await this.token.getNonce(owner);
             const signature2 = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, ZERO_ADDRESS, tokenId, owner,
               deadline, nonce2);
@@ -829,7 +829,7 @@ function shouldBehaveLikeItem721BWO() {
       context('when approving a non-zero id', function () {
         context('when there was no prior approval', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId, owner,
               deadline, nonce);
@@ -846,7 +846,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when there was a prior approval to the same id', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId, owner,
               deadline, nonce);
@@ -854,7 +854,7 @@ function shouldBehaveLikeItem721BWO() {
             await this.token.approveItemBWO(ownerId, approved, tokenId, owner, deadline, signature, {
               from: this.operator
             });
-            const nonce2 = await this.token.getNonce(ownerId);
+            const nonce2 = await this.token.getNonce(owner);
             const signature2 = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId, owner,
               deadline, nonce2);
@@ -872,14 +872,14 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when there was a prior approval to a different id', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, anotherApproved, tokenId, owner,
               deadline, nonce);
             await this.token.approveItemBWO(ownerId, anotherApproved, tokenId, owner, deadline, signature, {
               from: this.operator
             });
-            const nonce2 = await this.token.getNonce(ownerId);
+            const nonce2 = await this.token.getNonce(owner);
             const signature2 = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, anotherApproved, tokenId, owner,
               deadline, nonce2);
@@ -897,7 +897,7 @@ function shouldBehaveLikeItem721BWO() {
 
       context('when the id that receives the approval is the owner', function () {
         it('reverts', async function () {
-          const nonce = await this.token.getNonce(ownerId);
+          const nonce = await this.token.getNonce(owner);
           const signature = signData(this.chainId, this.token.address, this.tokenName,
             ownerW.getPrivateKey(), this.tokenVersion, ownerId, owner, tokenId, owner,
             deadline, nonce);
@@ -911,7 +911,7 @@ function shouldBehaveLikeItem721BWO() {
 
       context('when the sender does not own the given token ID', function () {
         it('reverts', async function () {
-          const nonce = await this.token.getNonce(otherId);
+          const nonce = await this.token.getNonce(other);
           const signature = signData(this.chainId, this.token.address, this.tokenName,
             otherW.getPrivateKey(), this.tokenVersion, otherId, approved, tokenId, other,
             deadline, nonce);
@@ -924,7 +924,7 @@ function shouldBehaveLikeItem721BWO() {
 
       context('when the sender is approved for the given token ID', function () {
         it('reverts', async function () {
-          const nonce = await this.token.getNonce(ownerId);
+          const nonce = await this.token.getNonce(owner);
           const signature = signData(this.chainId, this.token.address, this.tokenName,
             ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, tokenId, owner,
             deadline, nonce);
@@ -932,7 +932,7 @@ function shouldBehaveLikeItem721BWO() {
           await this.token.approveItemBWO(ownerId, approved, tokenId, owner, deadline, signature, {
             from: this.operator
           });
-          const nonce2 = await this.token.getNonce(approvedId);
+          const nonce2 = await this.token.getNonce(approved);
           const signature2 = signData(this.chainId, this.token.address, this.tokenName,
             approvedW.getPrivateKey(), this.tokenVersion, approvedId, anotherApproved, tokenId, approved,
             deadline, nonce2);
@@ -945,14 +945,14 @@ function shouldBehaveLikeItem721BWO() {
 
       context('when the sender is an operator', function () {
         beforeEach(async function () {
-          const nonce = await this.token.getNonce(ownerId);
+          const nonce = await this.token.getNonce(owner);
           const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
             ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, true,owner,
             deadline, nonce);
           await this.token.setApprovalForAllItemBWO(ownerId, operator, true, owner,deadline, signature, {
             from: this.operator
           });
-          const nonce2 = await this.token.getNonce(operatorId);
+          const nonce2 = await this.token.getNonce(operator);
           const signature2 = signData(this.chainId, this.token.address, this.tokenName,
             operatorW.getPrivateKey(), this.tokenVersion, operatorId, approved, tokenId, operator,
             deadline, nonce2);
@@ -969,7 +969,7 @@ function shouldBehaveLikeItem721BWO() {
 
       context('when the given token ID does not exist', function () {
         it('reverts', async function () {
-          const nonce = await this.token.getNonce(operatorId);
+          const nonce = await this.token.getNonce(operator);
           const signature = signData(this.chainId, this.token.address, this.tokenName,
             operatorW.getPrivateKey(), this.tokenVersion, operatorId, approved, nonExistentTokenId, operator,
             deadline, nonce);
@@ -986,7 +986,7 @@ function shouldBehaveLikeItem721BWO() {
       context('when the operator willing to approve is not the owner', function () {
         context('when there is no operator approval set by the sender', function () {
           it('approves the operator', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, true,owner,
               deadline, nonce);
@@ -998,7 +998,7 @@ function shouldBehaveLikeItem721BWO() {
           });
 
           it('emits an approvalById event', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, true,owner,
               deadline, nonce);
@@ -1019,7 +1019,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when the operator was set as not approved', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, false,owner,
               deadline, nonce);
@@ -1030,7 +1030,7 @@ function shouldBehaveLikeItem721BWO() {
           });
 
           it('approves the operator', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, true,owner,
               deadline, nonce);
@@ -1042,7 +1042,7 @@ function shouldBehaveLikeItem721BWO() {
           });
 
           it('emits an approvalById event', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, true,owner,
               deadline, nonce);
@@ -1060,7 +1060,7 @@ function shouldBehaveLikeItem721BWO() {
           });
 
           it('can unset the operator approval', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, false,owner,
               deadline, nonce);
@@ -1074,7 +1074,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when the operator was already approved', function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, true,owner,
               deadline, nonce);
@@ -1084,7 +1084,7 @@ function shouldBehaveLikeItem721BWO() {
           });
 
           it('keeps the approval to the given address', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, true,owner,
               deadline, nonce);
@@ -1097,7 +1097,7 @@ function shouldBehaveLikeItem721BWO() {
           });
 
           it('emits an approvalById event', async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, operator, true,owner,
               deadline, nonce);
@@ -1118,7 +1118,7 @@ function shouldBehaveLikeItem721BWO() {
 
       context('when the operator is the owner', function () {
         it('reverts', async function () {
-          const nonce = await this.token.getNonce(ownerId);
+          const nonce = await this.token.getNonce(owner);
           const signature = signApprovedAllData(this.chainId, this.token.address, this.tokenName,
             ownerW.getPrivateKey(), this.tokenVersion, ownerId, owner, true,owner,
             deadline, nonce);
@@ -1149,7 +1149,7 @@ function shouldBehaveLikeItem721BWO() {
 
         context('when account has been approved', async function () {
           beforeEach(async function () {
-            const nonce = await this.token.getNonce(ownerId);
+            const nonce = await this.token.getNonce(owner);
             const signature = signData(this.chainId, this.token.address, this.tokenName,
               ownerW.getPrivateKey(), this.tokenVersion, ownerId, approved, firstTokenId, owner,
               deadline, nonce);

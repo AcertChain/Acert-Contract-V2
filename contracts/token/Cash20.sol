@@ -12,7 +12,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     mapping(uint256 => uint256) private _balancesById;
     mapping(uint256 => mapping(address => uint256)) private _allowancesById;
     // nonce
-    mapping(uint256 => uint256) private _nonces;
+    mapping(address => uint256) private _nonces;
 
     uint256 private _totalSupply;
     string private _name;
@@ -110,14 +110,14 @@ contract Cash20 is Context, EIP712, ICash20 {
         return _balancesById[account];
     }
 
-    function getNonce(uint256 id)
+    function getNonce(address account)
         public
         view
         virtual
         override
         returns (uint256)
     {
-        return _nonces[id];
+        return _nonces[account];
     }
 
     /**
@@ -173,8 +173,7 @@ contract Cash20 is Context, EIP712, ICash20 {
             "Cash: must be the world BWO"
         );
 
-        uint256 spenderId = _getIdByAddress(sender);
-        uint256 nonce = _nonces[spenderId];
+        uint256 nonce = _nonces[sender];
         require(
             sender ==
                 _recoverSig(
@@ -200,7 +199,7 @@ contract Cash20 is Context, EIP712, ICash20 {
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndTransferCash(sender, from, to, amount, true);
-        _nonces[spenderId] += 1;
+        _nonces[sender] += 1;
         return true;
     }
 
@@ -280,10 +279,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount
     ) public virtual override returns (bool) {
         require(spender != address(0), "Cash: approve to the zero address");
-        require(
-            _checkAddress(_msgSender(), ownerId),
-            "Cash: not owner"
-        );
+        require(_checkAddress(_msgSender(), ownerId), "Cash: not owner");
 
         _approveId(ownerId, spender, amount, false);
         return true;
@@ -302,11 +298,8 @@ contract Cash20 is Context, EIP712, ICash20 {
             IWorld(_world).isBWO(_msgSender()),
             "Cash: must be the world BWO"
         );
-        require(
-            _checkAddress(sender, ownerId),
-            "Cash: not owner"
-        );
-        uint256 nonce = _nonces[ownerId];
+        require(_checkAddress(sender, ownerId), "Cash: not owner");
+        uint256 nonce = _nonces[sender];
         require(
             sender ==
                 _recoverSig(
@@ -335,7 +328,7 @@ contract Cash20 is Context, EIP712, ICash20 {
             "approveCashBWO: signed transaction expired"
         );
         _approveId(ownerId, spender, amount, true);
-        _nonces[ownerId] += 1;
+        _nonces[sender] += 1;
         return true;
     }
 
@@ -458,20 +451,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         emit Transfer(from, to, amount);
     }
 
-    /**
-     * @dev Moves `amount` of tokens from `sender` to `recipient`.
-     *
-     * This internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {TransferCash} event.
-     *
-     * Requirements:
-     *
-     * - `from` cannot be the zero .
-     * - `to` cannot be the zero .
-     * - `from` must have a balance of at least `amount`.
-     */
     function _transferCash(
         uint256 from,
         uint256 to,
@@ -486,7 +465,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         _balancesById[to] += amount;
 
         if (isBWO) {
-            emit TransferCashBWO(from, to, amount, _nonces[from]);
+            emit TransferCashBWO(from, to, amount, _nonces[_getAddressById(from)]);
         } else {
             emit TransferCash(from, to, amount);
         }
@@ -598,7 +577,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(ownerId != 0, "Cash: approve from the zero Id");
         _allowancesById[ownerId][spender] = amount;
         if (isBWO) {
-            emit ApprovalCashBWO(ownerId, spender, amount, _nonces[ownerId]);
+            emit ApprovalCashBWO(ownerId, spender, amount, _nonces[_getAddressById(ownerId)]);
         } else {
             emit ApprovalCash(ownerId, spender, amount);
         }
@@ -636,6 +615,10 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     function _getIdByAddress(address addr) internal returns (uint256) {
         return IWorld(_world).getOrCreateAccountId(addr);
+    }
+
+    function _getAddressById(uint256 id) internal view returns (address) {
+        return IWorld(_world).getAddressById(id);
     }
 
     function _checkAddress(address addr, uint256 id)

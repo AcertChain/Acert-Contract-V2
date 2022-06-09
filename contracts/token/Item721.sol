@@ -53,7 +53,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     address private _owner;
 
     // nonce
-    mapping(uint256 => uint256) private _nonces;
+    mapping(address => uint256) private _nonces;
 
     // Mapping from token ID to owner address
     mapping(uint256 => uint256) private _ownersById;
@@ -156,14 +156,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return owner;
     }
 
-    function getNonce(uint256 id)
+    function getNonce(address account)
         public
         view
         virtual
         override
         returns (uint256)
     {
-        return _nonces[id];
+        return _nonces[account];
     }
 
     function name() public view virtual override returns (string memory) {
@@ -219,7 +219,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
         require(_checkAddress(sender, from), "I22");
-        uint256 nonce = _nonces[from];
+        uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
             sender,
@@ -244,7 +244,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         address owner = Item721.ownerOf(tokenId);
         require(to != owner, "I09");
         require(sender == owner || isApprovedForAll(owner, sender), "I10");
-        _nonces[from] += 1;
+        _nonces[sender] += 1;
         _approve(to, tokenId, TypeOperation.BWO);
     }
 
@@ -297,7 +297,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         require(IWorld(_world).isBWO(msg.sender), "I01");
         require(_checkAddress(sender, from), "I22");
 
-        uint256 nonce = _nonces[from];
+        uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
             sender,
@@ -319,7 +319,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
         _setApprovalForAllItem(from, to, approved, true);
-        _nonces[from] += 1;
+        _nonces[sender] += 1;
     }
 
     /**
@@ -391,7 +391,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
         require(_checkAddress(sender, spender), "I22");
-        uint256 nonce = _nonces[spender];
+        uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
             sender,
@@ -416,7 +416,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         require(_isApprovedOrOwner(sender, tokenId), "I14");
         _transfer(from, to, tokenId, TypeOperation.BWO);
-        _nonces[spender] += 1;
+        _nonces[sender] += 1;
     }
 
     function safeTransferFrom(
@@ -447,7 +447,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
         require(_checkAddress(sender, spender), "I22");
-        uint256 nonce = _nonces[spender];
+        uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
             sender,
@@ -472,7 +472,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         require(_isApprovedOrOwner(sender, tokenId), "I14");
         _safeTransfer(from, to, tokenId, "", TypeOperation.BWO);
-        _nonces[spender] += 1;
+        _nonces[sender] += 1;
     }
 
     /**
@@ -519,7 +519,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) public virtual override {
         require(IWorld(_world).isBWO(msg.sender), "I01");
         require(_checkAddress(sender, spender), "I22");
-        uint256 nonce = _nonces[spender];
+        uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
             sender,
@@ -545,7 +545,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         require(_isApprovedOrOwner(sender, tokenId), "I14");
         _safeTransfer(from, to, tokenId, data, TypeOperation.BWO);
-        _nonces[spender] += 1;
+        _nonces[sender] += 1;
     }
 
     function _safeTransfer(
@@ -687,7 +687,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _ownersById[tokenId] = to;
 
         if (operation == TypeOperation.BWO) {
-            emit TransferItemBWO(from, to, tokenId);
+            emit TransferItemBWO(
+                from,
+                to,
+                tokenId,
+                _nonces[_getAddressById(from)]
+            );
         } else if (operation == TypeOperation.ID) {
             emit TransferItem(from, to, tokenId);
         } else {
@@ -702,7 +707,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) internal virtual {
         _tokenApprovalsById[tokenId] = to;
         if (typeOperation == TypeOperation.BWO) {
-            emit ApprovalItemBWO(Item721.ownerOfItem(tokenId), to, tokenId);
+            emit ApprovalItemBWO(
+                Item721.ownerOfItem(tokenId),
+                to,
+                tokenId,
+                _nonces[Item721.ownerOf(tokenId)]
+            );
         } else if (typeOperation == TypeOperation.ID) {
             emit ApprovalItem(Item721.ownerOfItem(tokenId), to, tokenId);
         } else {
@@ -719,7 +729,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
         require(owner != _getAccountIdByAddress(operator), "I12");
         _operatorApprovalsById[owner][operator] = approved;
         if (isBWO) {
-            emit ApprovalForAllItemBWO(owner, operator, approved);
+            emit ApprovalForAllItemBWO(
+                owner,
+                operator,
+                approved,
+                _nonces[_getAddressById(owner)]
+            );
         } else {
             emit ApprovalForAllItem(owner, operator, approved);
         }
