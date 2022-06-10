@@ -4,32 +4,31 @@ pragma solidity ^0.8.0;
 interface IItem721BWO {
     event TransferItemBWO(
         uint256 indexed from,
-        uint256 indexed to,
+        uint256 to,
         uint256 indexed tokenId,
         address indexed sender,
-        uint256 indexed nonce,
-        uint256 indexed deadline
+        uint256 nonce,
+        uint256 deadline
     );
 
     event ApprovalBWO(
-        address indexed to,
+        address to,
         uint256 indexed tokenId,
         address indexed sender,
-        uint256 indexed nonce,
-        uint256 indexed deadline
+        uint256 nonce,
+        uint256 deadline
     );
 
     event ApprovalForAllItemBWO(
         uint256 indexed from,
-        address indexed to,
+        address to,
         bool approved,
         address indexed sender,
-        uint256 indexed nonce,
-        uint256 indexed deadline
+        uint256 nonce,
+        uint256 deadline
     );
 
     function safeTransferFromItemBWO(
-        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
@@ -40,7 +39,6 @@ interface IItem721BWO {
     ) external;
 
     function safeTransferFromItemBWO(
-        uint256 spender,
         uint256 from,
         uint256 to,
         uint256 tokenId,
