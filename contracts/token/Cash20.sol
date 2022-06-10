@@ -20,15 +20,6 @@ contract Cash20 is Context, EIP712, ICash20 {
     address private _world;
     address private _owner;
 
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The default value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
     constructor(
         string memory name_,
         string memory symbol_,
@@ -168,8 +159,10 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(sender != address(0), "Cash: sender is the zero address");
         require(from != 0, "Cash: from is the zero Id");
         require(to != 0, "Cash: transfer to the zero Id");
-        
-        require(IWorld(_world).isBWO(_msgSender()), "Cash: must be the world BWO");
+        require(
+            IWorld(_world).isBWO(_msgSender()),
+            "Cash: must be the world BWO"
+        );
         uint256 nonce = _nonces[sender];
         require(
             sender ==
@@ -193,10 +186,9 @@ contract Cash20 is Context, EIP712, ICash20 {
                 ),
             "Cash: recoverSig failed"
         );
-
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndTransferCash(sender, from, to, amount);
-        emit TransferCashBWO(from, to, amount, _nonces[sender]);
+        emit TransferCashBWO(from, to, amount, sender, nonce, deadline);
         _nonces[sender] += 1;
         return true;
     }
@@ -325,7 +317,7 @@ contract Cash20 is Context, EIP712, ICash20 {
             "approveCashBWO: signed transaction expired"
         );
         _approveId(ownerId, spender, amount);
-        emit ApprovalCashBWO(ownerId, spender, amount, _nonces[sender]);
+        emit ApprovalCashBWO(ownerId, spender, amount,sender, nonce, deadline);
         _nonces[sender] += 1;
         return true;
     }
@@ -490,7 +482,6 @@ contract Cash20 is Context, EIP712, ICash20 {
     function _burn(address account, uint256 amount) internal virtual {
         require(account != address(0), "Cash: burn from the zero address");
         _burnCash(_getIdByAddress(account), amount);
-
         emit Transfer(account, address(0), amount);
     }
 
@@ -526,7 +517,6 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) internal virtual {
         require(owner != address(0), "Cash: approve from the zero address");
         _approveId(_getIdByAddress(owner), spender, amount);
-
         emit Approval(owner, spender, amount);
     }
 

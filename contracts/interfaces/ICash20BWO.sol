@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 interface ICash20BWO {
     event TransferCashBWO(
         uint256 indexed from,
-        uint256 to,
+        uint256 indexed to,
         uint256 amount,
         address indexed sender,
         uint256 nonce,
@@ -13,7 +13,7 @@ interface ICash20BWO {
 
     event ApprovalCashBWO(
         uint256 indexed owner,
-        address spender,
+        address indexed spender,
         uint256 amount,
         address indexed sender,
         uint256 nonce,
