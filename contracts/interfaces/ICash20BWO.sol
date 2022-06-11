@@ -14,7 +14,7 @@ interface ICash20BWO {
     event ApprovalCashBWO(
         uint256 indexed owner,
         address indexed spender,
-        uint256 amount,
+        uint256 value,
         address indexed sender,
         uint256 nonce,
         uint256 deadline

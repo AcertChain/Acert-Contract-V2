@@ -14,6 +14,9 @@ const {
   MAX_UINT256
 } = constants;
 const ethSigUtil = require('eth-sig-util');
+const {
+  web3
+} = require('hardhat');
 
 
 const deadline = new BN(parseInt(new Date().getTime() / 1000) + 3600);
@@ -137,7 +140,10 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
                 'TransferCashBWO', {
                   from: tokenOwner,
                   to: to,
-                  value: amount
+                  amount: amount,
+                  sender: web3.utils.toChecksumAddress(spenderAddr),
+                  nonce: nonce,
+                  deadline: deadline,
                 },
               );
             });
@@ -152,10 +158,10 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
                 await this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
                   from: this.BWO
                 }),
-                'ApprovalCashBWO', {
+                'ApprovalCash', {
                   owner: tokenOwner,
                   spender: web3.utils.toChecksumAddress(spenderAddr),
-                  value: await this.token.allowanceCash(tokenOwner, spenderAddr)
+                  value: await this.token.allowanceCash(tokenOwner, spenderAddr),
                 },
               );
             });
@@ -395,7 +401,10 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balan
           'TransferCashBWO', {
             from,
             to,
-            value: amount
+            amount: amount,
+            sender: web3.utils.toChecksumAddress(spender),
+            nonce: nonce,
+            deadline: deadline,
           },
         );
       });
@@ -422,7 +431,10 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balan
           'TransferCashBWO', {
             from,
             to,
-            value: amount
+            amount: amount,
+            sender: web3.utils.toChecksumAddress(spender),
+            nonce: nonce,
+            deadline: deadline,
           },
         );
       });
@@ -451,7 +463,10 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
           'ApprovalCashBWO', {
             owner: owner,
             spender: web3.utils.toChecksumAddress(spenderAddr),
-            value: amount
+            value: amount,
+            sender:web3.utils.toChecksumAddress(ownerAddr),
+            nonce:nonce,
+            deadline:deadline,
           },
         );
       });
@@ -493,7 +508,10 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
           'ApprovalCashBWO', {
             owner: owner,
             spender: web3.utils.toChecksumAddress(spenderAddr),
-            value: amount
+            value: amount,
+            sender:web3.utils.toChecksumAddress(ownerAddr),
+            nonce:nonce,
+            deadline:deadline,
           },
         );
       });

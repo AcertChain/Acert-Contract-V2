@@ -38,7 +38,6 @@ I22:Item: not owner
 contract Item721 is EIP712, ERC165, IItem721 {
     using Address for address;
 
-
     // Token name
     string private _name;
     // Token symbol
@@ -186,14 +185,18 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _checkAndApprove(msg.sender, to, tokenId);
     }
 
-    function _checkAndApprove(address sender, address to, uint256 tokenId) internal virtual {
-        uint256 owner = Item721.ownerOf(tokenId);
+    function _checkAndApprove(
+        address sender,
+        address to,
+        uint256 tokenId
+    ) internal virtual {
+        address owner = Item721.ownerOf(tokenId);
         require(to != owner, "I09");
         require(sender == owner || isApprovedForAll(owner, sender), "I10");
         _approve(to, tokenId);
     }
 
-    function approveBWO(
+    function approveItemBWO(
         address to,
         uint256 tokenId,
         address sender,
@@ -209,7 +212,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 from,address to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
+                            "BWO(address to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         to,
                         tokenId,
@@ -223,7 +226,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         );
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndApprove(sender, to, tokenId);
-        emit ApprovalBWO(to, tokenId, sender, deadline, _nonces[sender]);
+        emit ApprovalItemBWO(to, tokenId, sender, nonce,deadline);
         _nonces[sender] += 1;
     }
 
@@ -260,7 +263,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) public virtual override {
         _checkAndSetApprovalForAllItem(msg.sender, from, to, approved);
     }
-    
+
     function _checkAndSetApprovalForAllItem(
         address sender,
         uint256 from,
@@ -303,7 +306,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
         );
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndSetApprovalForAllItem(sender, from, to, approved);
-        emit ApprovalForAllItemBWO(from, to, approved, sender, deadline, _nonces[sender]);
+        emit ApprovalForAllItemBWO(
+            from,
+            to,
+            approved,
+            sender,
+            nonce,
+            deadline
+        );
         _nonces[sender] += 1;
     }
 
@@ -339,7 +349,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 tokenId
     ) public virtual override {
         require(to != address(0), "I13");
-        transferFromItem(_getIdByAddress(from),  _getIdByAddress(to), tokenId);
+        transferFromItem(_getIdByAddress(from), _getIdByAddress(to), tokenId);
         emit Transfer(from, to, tokenId);
     }
 
@@ -378,9 +388,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 spender,uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
                         ),
-                        spender,
                         from,
                         to,
                         tokenId,
@@ -395,7 +404,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndTransfer(sender, from, to, tokenId);
-        emit TransferItemBWO(from, to, tokenId, sender, deadline, _nonces[sender]);
+        emit TransferItemBWO(
+            from,
+            to,
+            tokenId,
+            sender,
+            nonce,
+            deadline
+        );
         _nonces[sender] += 1;
     }
 
@@ -404,8 +420,11 @@ contract Item721 is EIP712, ERC165, IItem721 {
         address to,
         uint256 tokenId
     ) public virtual override {
-        _checkAndSafeTransfer(msg.sender, from, to, tokenId, "");
-        emit TransferItem(from, to, tokenId);
+        require(to != address(0), "I13");
+        uint256 fromId = _getIdByAddress(from);
+        uint256 toId = _getIdByAddress(to);
+        _checkAndSafeTransfer(msg.sender, fromId, toId, tokenId, "");
+        emit Transfer(from, to, tokenId);
     }
 
     function safeTransferFromItem(
@@ -433,7 +452,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 spender,uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         from,
                         to,
@@ -449,7 +468,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndSafeTransfer(sender, from, to, tokenId, "");
-        emit TransferItemBWO(from, to, tokenId, sender, deadline, _nonces[sender]);
+        emit TransferItemBWO(
+            from,
+            to,
+            tokenId,
+            sender,
+            nonce,
+            deadline
+        );
         _nonces[sender] += 1;
     }
 
@@ -463,14 +489,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory _data
     ) public virtual override {
         require(to != address(0), "I13");
-        _checkAndSafeTransfer(
-            msg.sender,
-            _getIdByAddress(from),
-            _getIdByAddress(to),
-            tokenId,
-            _data
-        );
-        emit TransferItem(from, to, tokenId);
+        uint256 fromId = _getIdByAddress(from);
+        uint256 toId = _getIdByAddress(to);
+        _checkAndSafeTransfer(msg.sender, fromId, toId, tokenId, _data);
+        emit Transfer(from, to, tokenId);
     }
 
     function safeTransferFromItem(
@@ -511,15 +533,15 @@ contract Item721 is EIP712, ERC165, IItem721 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 spender,uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline,bytes data)"
+                            "BWO(uint256 from,uint256 to,uint256 tokenId,bytes data,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         from,
                         to,
                         tokenId,
-                        keccak256(data)
+                        keccak256(data),
                         sender,
                         nonce,
-                        deadline,
+                        deadline
                     )
                 )
             ),
@@ -527,8 +549,15 @@ contract Item721 is EIP712, ERC165, IItem721 {
         );
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
-        _checkAndSafeTransfer(sender, from, to, tokenId, _data);
-        emit TransferItemBWO(from, to, tokenId, sender, deadline, _nonces[sender]);
+        _checkAndSafeTransfer(sender, from, to, tokenId, data);
+        emit TransferItemBWO(
+            from,
+            to,
+            tokenId,
+            sender,
+            nonce,
+            deadline
+        );
         _nonces[sender] += 1;
     }
 
@@ -538,7 +567,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 tokenId,
         bytes memory _data
     ) internal virtual {
-        _transfer(from, to, tokenId, op);
+        _transfer(from, to, tokenId);
         require(
             _checkOnERC721Received(
                 _getAddressById(from),
@@ -627,7 +656,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
     function _mint(address to, uint256 tokenId) internal virtual {
         require(to != address(0), "I17");
         _mintItem(_getIdByAddress(to), tokenId);
-        
         emit Transfer(address(0), to, tokenId);
     }
 
@@ -636,8 +664,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         require(!_exists(tokenId), "I18");
 
         _balancesById[to] += 1;
-        _ownersById[tokenId] = toId;
-
+        _ownersById[tokenId] = to;
         emit TransferItem(0, to, tokenId);
     }
 
@@ -660,7 +687,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         delete _ownersById[tokenId];
 
         emit Transfer(owner, address(0), tokenId);
-        emit TransferItem(ownerId, address(0), tokenId);
+        emit TransferItem(ownerId, 0, tokenId);
     }
 
     function _transfer(
@@ -672,7 +699,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         require(to != 0, "I20");
 
         // Clear approvals from the previous owner
-        _approve(address(0), tokenId, operation);
+        _approve(address(0), tokenId);
 
         _balancesById[from] -= 1;
         _balancesById[to] += 1;
@@ -681,10 +708,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         emit TransferItem(from, to, tokenId);
     }
 
-    function _approve(
-        address to,
-        uint256 tokenId
-    ) internal virtual {
+    function _approve(address to, uint256 tokenId) internal virtual {
         _tokenApprovalsById[tokenId] = to;
         emit Approval(Item721.ownerOf(tokenId), to, tokenId);
     }

@@ -317,7 +317,7 @@ contract Cash20 is Context, EIP712, ICash20 {
             "approveCashBWO: signed transaction expired"
         );
         _approveId(ownerId, spender, amount);
-        emit ApprovalCashBWO(ownerId, spender, amount,sender, nonce, deadline);
+        emit ApprovalCashBWO(ownerId, spender, amount, sender, nonce, deadline);
         _nonces[sender] += 1;
         return true;
     }
