@@ -112,7 +112,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       let logs = null;
 
       beforeEach(async function () {
-        await this.token.approveItem(ownerId, approved, tokenId, {
+        await this.token.approve(approved, tokenId, {
           from: owner
         });
         await this.token.setApprovalForAllItem(ownerId, operator, true, {
@@ -142,8 +142,8 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
         });
 
         it('emits an ApprovalItem event', async function () {
-          expectEvent.inLogs(logs, 'ApprovalItem', {
-            owner: ownerId,
+          expectEvent.inLogs(logs, 'Approval', {
+            owner: owner,
             approved: ZERO_ADDRESS,
             tokenId: tokenId
           });
@@ -210,7 +210,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
         context('when called by the owner without an approved user', function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, ZERO_ADDRESS, tokenId, {
+            await this.token.approve(ZERO_ADDRESS, tokenId, {
               from: owner
             });
             ({
@@ -313,17 +313,17 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
       describe('via transferFromItem', function () {
         shouldTransferTokensByUsers(function (senderId, fromId, toId, tokenId, opts) {
-          return this.token.transferFromItem(senderId, fromId, toId, tokenId, opts);
+          return this.token.transferFromItem( fromId, toId, tokenId, opts);
         });
       });
 
       describe('via safeTransferFromItem', function () {
         const safeTransferFromItemWithData = function (senderId, fromId, toId, tokenId, opts) {
-          return this.token.methods['safeTransferFromItem(uint256,uint256,uint256,uint256,bytes)'](senderId, fromId, toId, tokenId, data, opts);
+          return this.token.methods['safeTransferFromItem(uint256,uint256,uint256,bytes)'](fromId, toId, tokenId, data, opts);
         };
 
         const safeTransferFromItemWithoutData = function (senderId, fromId, toId, tokenId, opts) {
-          return this.token.methods['safeTransferFromItem(uint256,uint256,uint256,uint256)'](senderId, fromId, toId, tokenId, opts);
+          return this.token.methods['safeTransferFromItem(uint256,uint256,uint256)'](fromId, toId, tokenId, opts);
         };
 
         const shouldTransferSafely = function (transferFun, data) {
@@ -401,7 +401,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             await this.world.getOrCreateAccountId(invalidReceiver.address);
             const invalidReceiverId = new BN(await this.world.getAccountIdByAddress(invalidReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, ownerId, invalidReceiverId, tokenId, '0x', {
+              this.token.safeTransferFromItem(ownerId, invalidReceiverId, tokenId,  {
                 from: owner
               }),
               'I15',
@@ -416,7 +416,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, ownerId, revertingReceiverId, tokenId, '0x', {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,  {
                 from: owner
               }),
               'ERC721ReceiverMock: reverting',
@@ -430,7 +430,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             await this.world.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, ownerId, revertingReceiverId, tokenId, '0x', {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,  {
                 from: owner
               }),
               'I15',
@@ -445,7 +445,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert.unspecified(
-              this.token.safeTransferFromItem(ownerId, ownerId, revertingReceiverId, tokenId, '0x', {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,  {
                 from: owner
               }),
             );
@@ -459,7 +459,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const nonReceiverId = new BN(await this.world.getAccountIdByAddress(nonReceiver.address));
 
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, ownerId, nonReceiverId, tokenId, '0x', {
+              this.token.safeTransferFromItem(ownerId, nonReceiverId, tokenId,  {
                 from: owner
               }),
               'I15',
@@ -546,7 +546,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       });
     });
 
-    describe('approveItem', function () {
+    describe('approve', function () {
       const tokenId = firstTokenId;
 
       let logs = null;
@@ -565,8 +565,8 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
       const itEmitsApprovalEvent = function (addr) {
         it('emits an approval event', async function () {
-          expectEvent.inLogs(logs, 'ApprovalItem', {
-            owner: ownerId,
+          expectEvent.inLogs(logs, 'Approval', {
+            owner: owner,
             approved: web3.utils.toChecksumAddress(addr),
             tokenId: tokenId,
           });
@@ -578,7 +578,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           beforeEach(async function () {
             ({
               logs
-            } = await this.token.approveItem(ownerId, ZERO_ADDRESS, tokenId, {
+            } = await this.token.approve(ZERO_ADDRESS, tokenId, {
               from: owner
             }));
           });
@@ -589,12 +589,12 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
         context('when there was a prior approval', function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, approved, tokenId, {
+            await this.token.approve(approved, tokenId, {
               from: owner
             });
             ({
               logs
-            } = await this.token.approveItem(ownerId, ZERO_ADDRESS, tokenId, {
+            } = await this.token.approve(ZERO_ADDRESS, tokenId, {
               from: owner
             }));
           });
@@ -609,7 +609,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           beforeEach(async function () {
             ({
               logs
-            } = await this.token.approveItem(ownerId, approved, tokenId, {
+            } = await this.token.approve(approved, tokenId, {
               from: owner
             }));
           });
@@ -620,12 +620,12 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
         context('when there was a prior approval to the same id', function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, approved, tokenId, {
+            await this.token.approve(approved, tokenId, {
               from: owner
             });
             ({
               logs
-            } = await this.token.approveItem(ownerId, approved, tokenId, {
+            } = await this.token.approve(approved, tokenId, {
               from: owner
             }));
           });
@@ -636,12 +636,12 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
         context('when there was a prior approval to a different id', function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, anotherApproved, tokenId, {
+            await this.token.approve(anotherApproved, tokenId, {
               from: owner
             });
             ({
               logs
-            } = await this.token.approveItem(ownerId, anotherApproved, tokenId, {
+            } = await this.token.approve(anotherApproved, tokenId, {
               from: owner
             }));
           });
@@ -654,7 +654,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       context('when the id that receives the approval is the owner', function () {
         it('reverts', async function () {
           await expectRevert(
-            this.token.approveItem(ownerId, owner, tokenId, {
+            this.token.approve(owner, tokenId, {
               from: owner
             }), 'I09',
           );
@@ -663,7 +663,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
       context('when the sender does not own the given token ID', function () {
         it('reverts', async function () {
-          await expectRevert(this.token.approveItem(otherId, approved, tokenId, {
+          await expectRevert(this.token.approve(approved, tokenId, {
               from: other
             }),
             'I10');
@@ -672,10 +672,10 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
       context('when the sender is approved for the given token ID', function () {
         it('reverts', async function () {
-          await this.token.approveItem(ownerId, approved, tokenId, {
+          await this.token.approve(approved, tokenId, {
             from: owner
           });
-          await expectRevert(this.token.approveItem(approvedId, anotherApproved, tokenId, {
+          await expectRevert(this.token.approve(anotherApproved, tokenId, {
               from: approved
             }),
             'I10');
@@ -689,7 +689,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           });
           ({
             logs
-          } = await this.token.approveItem(operatorId, approved, tokenId, {
+          } = await this.token.approve(approved, tokenId, {
             from: operator
           }));
         });
@@ -700,7 +700,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
       context('when the given token ID does not exist', function () {
         it('reverts', async function () {
-          await expectRevert(this.token.approveItem(operatorId, approved, nonExistentTokenId, {
+          await expectRevert(this.token.approve(approved, nonExistentTokenId, {
               from: operator
             }),
             'I08');
@@ -832,7 +832,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
         context('when account has been approved', async function () {
           beforeEach(async function () {
-            await this.token.approveItem(ownerId, approved, firstTokenId, {
+            await this.token.approve(approved, firstTokenId, {
               from: owner
             });
           });

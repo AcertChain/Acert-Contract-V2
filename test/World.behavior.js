@@ -421,11 +421,11 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
                     const itemTokenId = new BN(100)
                     await this.item.mint(itemAccount, itemTokenId);
                     const itemAccountId = new BN(await this.world.getAccountIdByAddress(itemAccount));
-                    await this.item.transferFromItem(itemAccountId, itemAccountId, this.avatarTokenId, itemTokenId, {
+                    await this.item.transferFromItem( itemAccountId, this.avatarTokenId, itemTokenId, {
                         from: itemAccount
                     });
                     expect(await this.item.ownerOfItem(itemTokenId)).to.bignumber.equal(this.avatarTokenId);
-                    await this.item.transferFromItem(this.avatarTokenId, this.avatarTokenId, itemAccountId, itemTokenId, {
+                    await this.item.transferFromItem( this.avatarTokenId, itemAccountId, itemTokenId, {
                         from: account
                     });
                     expect(await this.item.ownerOfItem(itemTokenId)).to.bignumber.equal(itemAccountId);
@@ -469,7 +469,7 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
 
                     await this.item.mint(itemAccount, itemTokenId);
                     const itemAccountId = new BN(await this.world.getAccountIdByAddress(itemAccount));
-                    await this.item.transferFromItem(itemAccountId, itemAccountId, this.avatarTokenId, itemTokenId, {
+                    await this.item.transferFromItem( itemAccountId, this.avatarTokenId, itemTokenId, {
                         from: itemAccount
                     });
 
@@ -479,7 +479,7 @@ function shouldBehaveLikeWorldAvatar(account, newAccount, cashAccount, itemAccou
                     expect(await this.world.getAccountIdByAddress(newAccount)).to.bignumber.equal(this.accountId);
 
                     expect(await this.item.ownerOfItem(itemTokenId)).to.bignumber.equal(this.avatarTokenId);
-                    await this.item.transferFromItem(this.avatarTokenId, this.avatarTokenId, itemAccountId, itemTokenId, {
+                    await this.item.transferFromItem( this.avatarTokenId, itemAccountId, itemTokenId, {
                         from: newAccount
                     });
                     expect(await this.item.ownerOfItem(itemTokenId)).to.bignumber.equal(itemAccountId);
