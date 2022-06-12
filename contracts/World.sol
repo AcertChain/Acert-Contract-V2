@@ -8,11 +8,10 @@ import "./interfaces/IItem721.sol";
 import "./interfaces/ICash20.sol";
 import "./mock/AvatarMock.sol";
 import "./common/Ownable.sol";
-import "./common/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-contract World is IWorld, Ownable, Initializable {
+contract World is IWorld, Ownable {
     enum AssetOperation {
         CASH20,
         ITEM721
@@ -90,8 +89,10 @@ contract World is IWorld, Ownable, Initializable {
     mapping(address => uint256) private _addressesToIds;
 
     // constructor
-    constructor() {
+    constructor(uint256 avatarMaxId) {
         _owner = msg.sender;
+        _avatarMaxId = avatarMaxId;
+        _lastAccountId = avatarMaxId;
     }
 
     function getTotalAccount() public view virtual returns (uint256) {
@@ -109,12 +110,11 @@ contract World is IWorld, Ownable, Initializable {
     function registerAvatar(address avatar, string calldata _image)
         public
         onlyOwner
-        initializer
     {
+        require(_avatar == address(0));
         _avatar = avatar;
         uint256 maxId = AvatarMock(_avatar).maxAvatar();
-        _avatarMaxId = maxId;
-        _lastAccountId = maxId;
+        require(_avatarMaxId >= maxId);
         registerAsset(avatar, AssetOperation.ITEM721, _image);
     }
 
@@ -122,7 +122,6 @@ contract World is IWorld, Ownable, Initializable {
         public
         virtual
         override
-        onlyInitialized
         returns (uint256 id)
     {
         if (_addressesToIds[_address] == 0 && _address != address(0)) {
@@ -208,25 +207,18 @@ contract World is IWorld, Ownable, Initializable {
 
     function updateAsset(
         address _contract,
-        AssetOperation _typeOperation,
         string calldata _image
     ) public onlyOwner {
         require(
             _assets[_contract]._isExist == true,
             "World: asset is not exist"
         );
-        require(
-            _assets[_contract]._type == uint8(_typeOperation),
-            "World: asset type is not match"
-        );
-
         _assets[_contract]._image = _image;
         emit UpdateAsset(_contract, _image);
     }
 
     function createAccount(address _address)
         public
-        onlyInitialized
         returns (uint256 id)
     {
         require(_address != address(0), "World: zero address");
