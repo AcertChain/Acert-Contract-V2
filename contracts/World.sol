@@ -47,7 +47,7 @@ contract World is IWorld, Ownable, Initializable {
     // avatar max id
     uint256 private _avatarMaxId;
     // account Id
-    uint256 private _totalAccount;
+    uint256 private _lastAccountId;
 
     uint256 private constant MAX_ASSET_COUNT = 200;
 
@@ -95,7 +95,7 @@ contract World is IWorld, Ownable, Initializable {
     }
 
     function getTotalAccount() public view virtual returns (uint256) {
-        return _totalAccount;
+        return _lastAccountId - _avatarMaxId;
     }
 
     function getAvatarMaxId() public view virtual returns (uint256) {
@@ -114,7 +114,7 @@ contract World is IWorld, Ownable, Initializable {
         _avatar = avatar;
         uint256 maxId = AvatarMock(_avatar).maxAvatar();
         _avatarMaxId = maxId;
-        _totalAccount = maxId;
+        _lastAccountId = maxId;
         registerAsset(avatar, AssetOperation.ITEM721, _image);
     }
 
@@ -231,8 +231,8 @@ contract World is IWorld, Ownable, Initializable {
     {
         require(_address != address(0), "World: zero address");
         require(_addressesToIds[_address] == 0, "World: address is exist");
-        _totalAccount++;
-        id = _totalAccount;
+        _lastAccountId++;
+        id = _lastAccountId;
         _accountsById[id] = Account(false, true, id, _address);
         _addressesToIds[_address] = id;
         emit CreateAccount(id, _address);
