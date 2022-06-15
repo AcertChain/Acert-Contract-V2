@@ -6,7 +6,7 @@ import "./interfaces/IWorld.sol";
 import "./interfaces/IWorldAsset.sol";
 import "./interfaces/IItem721.sol";
 import "./interfaces/ICash20.sol";
-import "./mock/AvatarMock.sol";
+import "./Metaverse.sol";
 import "./common/Ownable.sol";
 import "./common/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -25,31 +25,13 @@ contract World is IWorld, Ownable, Initializable {
         string image
     );
 
-    // event 修改Asset
     event UpdateAsset(address indexed asset, string image);
-    // event 创建Account
-    event CreateAccount(uint256 indexed id, address indexed account);
-    // event 修改Account
-    event UpdateAccount(
-        uint256 indexed id,
-        address indexed newAddress,
-        bool isTrust
-    );
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
     event AddSafeContract(address indexed safeContract);
     event RemoveSafeContract(address indexed safeContract);
     event TrustContract(uint256 indexed id, address indexed safeContract);
     event UntrustContract(uint256 indexed id, address indexed safeContract);
-
-    // avatar addr
-    address private _avatar;
-    // avatar max id
-    uint256 private _avatarMaxId;
-    // account Id
-    uint256 private _totalAccount;
-
-    uint256 private constant MAX_ASSET_COUNT = 200;
 
     // struct Asset
     struct Asset {
@@ -58,14 +40,6 @@ contract World is IWorld, Ownable, Initializable {
         address _contract;
         string _name;
         string _image;
-    }
-
-    // struct Account
-    struct Account {
-        bool _isTrustWorld;
-        bool _isExist;
-        uint256 _id;
-        address _address;
     }
 
     // Mapping from address to operator
@@ -78,104 +52,19 @@ contract World is IWorld, Ownable, Initializable {
     mapping(uint256 => mapping(address => bool))
         private _isTrustContractByAccountId;
 
+    mapping(uint256 => bool) private _isTrustWorld;
+
     // Mapping from address to Asset
     mapping(address => Asset) private _assets;
 
     address[] private _assetAddresses;
 
-    // Mapping from account ID to Account
-    mapping(uint256 => Account) private _accountsById;
-
-    // Mapping from adress to account ID
-    mapping(address => uint256) private _addressesToIds;
+    address private _metaverse;
 
     // constructor
-    constructor() {
+    constructor(address metaverse) {
         _owner = msg.sender;
-    }
-
-    function getTotalAccount() public view virtual returns (uint256) {
-        return _totalAccount;
-    }
-
-    function getAvatarMaxId() public view virtual returns (uint256) {
-        return _avatarMaxId;
-    }
-
-    function getAvatar() public view virtual returns (address) {
-        return _avatar;
-    }
-
-    function registerAvatar(address avatar, string calldata _image)
-        public
-        onlyOwner
-        initializer
-    {
-        _avatar = avatar;
-        uint256 maxId = AvatarMock(_avatar).maxAvatar();
-        _avatarMaxId = maxId;
-        _totalAccount = maxId;
-        registerAsset(avatar, AssetOperation.ITEM721, _image);
-    }
-
-    function getOrCreateAccountId(address _address)
-        public
-        virtual
-        override
-        onlyInitialized
-        returns (uint256 id)
-    {
-        if (_addressesToIds[_address] == 0 && _address != address(0)) {
-            id = createAccount(_address);
-        } else {
-            id = _addressesToIds[_address];
-        }
-    }
-
-    function checkAddress(address _address, uint256 _id)
-        public
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        // 检查address 和 id是否匹配 ，如果匹配，返回true ，否则返回false
-        if (_id > _avatarMaxId) {
-            if (_accountsById[_id]._address == _address) {
-                return true;
-            }
-        } else {
-            if (
-                _address ==
-                _accountsById[IItem721(_avatar).ownerOfItem(_id)]._address
-            ) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function getAccountIdByAddress(address _address)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return _addressesToIds[_address];
-    }
-
-    function getAddressById(uint256 _id)
-        public
-        view
-        virtual
-        override
-        returns (address)
-    {
-        return
-            (_id > _avatarMaxId || _id == 0)
-                ? _accountsById[_id]._address
-                : _accountsById[IItem721(_avatar).ownerOfItem(_id)]._address;
+        _metaverse = metaverse;
     }
 
     function registerAsset(
@@ -183,10 +72,6 @@ contract World is IWorld, Ownable, Initializable {
         AssetOperation _operation,
         string calldata _image
     ) public onlyOwner {
-        require(
-            _assetAddresses.length < MAX_ASSET_COUNT,
-            "World: max asset count"
-        );
         require(_contract != address(0), "World: zero address");
         require(_assets[_contract]._isExist == false, "World: asset is exist");
         require(
@@ -224,42 +109,9 @@ contract World is IWorld, Ownable, Initializable {
         emit UpdateAsset(_contract, _image);
     }
 
-    function createAccount(address _address)
-        public
-        onlyInitialized
-        returns (uint256 id)
-    {
-        require(_address != address(0), "World: zero address");
-        require(_addressesToIds[_address] == 0, "World: address is exist");
-        _totalAccount++;
-        id = _totalAccount;
-        _accountsById[id] = Account(false, true, id, _address);
-        _addressesToIds[_address] = id;
-        emit CreateAccount(id, _address);
-    }
-
-    function changeAccount(
-        uint256 _id,
-        address _newAddress,
-        bool _isTrustWorld
-    ) public onlyOwner {
-        require(
-            _accountsById[_id]._isExist == true,
-            "World: account is not exist"
-        );
-        address oldAddress = _accountsById[_id]._address;
-        if (oldAddress != _newAddress) {
-            _accountsById[_id]._address = _newAddress;
-            _addressesToIds[_newAddress] = _id;
-            delete _addressesToIds[oldAddress];
-        }
-        _accountsById[_id]._isTrustWorld = _isTrustWorld;
-        emit UpdateAccount(_id, _newAddress, _isTrustWorld);
-    }
-
     function trustContract(uint256 _id, address _contract) public {
         require(
-            _accountsById[_id]._address == msg.sender,
+            Metaverse(_metaverse).getAddressById(_id) == msg.sender,
             "World: sender not account owner"
         );
         require(
@@ -272,7 +124,7 @@ contract World is IWorld, Ownable, Initializable {
 
     function untrustContract(uint256 _id, address _contract) public {
         require(
-            _accountsById[_id]._address == msg.sender,
+            getAddressById(_id) == msg.sender,
             "World: sender not account owner"
         );
         require(
@@ -324,7 +176,7 @@ contract World is IWorld, Ownable, Initializable {
     }
 
     function isTrustWorld(uint256 _id) public view returns (bool _isTrust) {
-        return _accountsById[_id]._isTrustWorld;
+        return _isTrustWorld[_id];
     }
 
     function isTrust(address _contract, uint256 _id)
@@ -337,7 +189,7 @@ contract World is IWorld, Ownable, Initializable {
         if (_safeContracts[_contract] == false) {
             return false;
         }
-        if (_accountsById[_id]._isTrustWorld == true) {
+        if (_isTrustWorld[_id] == true) {
             return true;
         }
         if (_isTrustContractByAccountId[_id][_contract] == false) {
@@ -348,5 +200,43 @@ contract World is IWorld, Ownable, Initializable {
 
     function isBWO(address _addr) public view virtual override returns (bool) {
         return _isOperatorByAddress[_addr] || _owner == _addr;
+    }
+
+    function getMetaverse() public view returns (address) {
+        return _metaverse;
+    }
+
+    function checkAddress(address _address, uint256 _id)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return Metaverse(_metaverse).checkAddress(_address, _id);
+    }
+
+    function getAccountIdByAddress(address _address)
+        public
+        view
+        override
+        returns (uint256)
+    {
+        return Metaverse(_metaverse).getIdByAddress(_address);
+    }
+
+    function getAddressById(uint256 _id) public view override returns (address) {
+        return Metaverse(_metaverse).getAddressById(_id);
+    }
+
+    function isFreeze(uint256 _id) public view  returns (bool) {
+        return Metaverse(_metaverse).isFreeze(_id);
+    }
+
+    function getOrCreateAccountId(address _address)
+        public
+        override
+        returns (uint256 id)
+    {
+        return Metaverse(_metaverse).getOrCreateAccountId(_address);
     }
 }
