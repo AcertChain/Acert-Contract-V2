@@ -257,7 +257,7 @@ function shouldBehaveLikeWorldAccount(account, newAccount, operator) {
             context('get avatar id', function () {
 
                 it('avatar id is not exist', async function () {
-                    await expectRevert(this.world.getAddressById(new BN(1)), 'I08');
+                    await expectRevert(this.world.getAddressById(new BN(1)), 'Item: owner query for nonexistent token');
                 });
 
                 it('avatar id is exist', async function () {
