@@ -160,7 +160,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(from != 0, "Cash: from is the zero Id");
         require(to != 0, "Cash: transfer to the zero Id");
         require(
-            IWorld(_world).isBWO(_msgSender()),
+            _isBWO(_msgSender()),
             "Cash: must be the world BWO"
         );
         uint256 nonce = _nonces[sender];
@@ -222,8 +222,12 @@ contract Cash20 is Context, EIP712, ICash20 {
         virtual
         override
         returns (uint256)
-    {
-        return _allowancesById[_getAccountIdByAddress(owner)][spender];
+    {   
+        uint256 ownerId =_getAccountIdByAddress(owner);
+        if (_isBWO(spender)) {
+            return _balancesById[ownerId];
+        }
+        return _allowancesById[ownerId][spender];
     }
 
     /**
@@ -236,6 +240,9 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
+         if (_isBWO(spender)) {
+            return _balancesById[owner];
+        }
         return _allowancesById[owner][spender];
     }
 
@@ -284,7 +291,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) public virtual override returns (bool) {
         require(spender != address(0), "Cash: approve to the zero address");
         require(
-            IWorld(_world).isBWO(_msgSender()),
+            _isBWO(_msgSender()),
             "Cash: must be the world BWO"
         );
         require(_checkAddress(sender, ownerId), "Cash: not owner");
@@ -437,6 +444,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 to,
         uint256 amount
     ) internal virtual {
+        require(_accountIsExist(to), "Cash: to account is not exist");
         uint256 fromBalance = _balancesById[from];
         require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
         unchecked {
@@ -578,12 +586,20 @@ contract Cash20 is Context, EIP712, ICash20 {
         return IWorld(_world).getOrCreateAccountId(addr);
     }
 
-    function _checkAddress(address addr, uint256 id)
+    function _checkAddress(address _addr, uint256 _id)
         internal
         view
         returns (bool)
     {
-        return IWorld(_world).checkAddress(addr, id);
+        return IWorld(_world).checkAddress(_addr, _id);
+    }
+
+    function _accountIsExist(uint256 _id) internal view returns (bool) {
+        return IWorld(_world).getAddressById(_id) != address(0);
+    }
+
+    function _isBWO(address _add)internal view returns (bool) {
+        return IWorld(_world).isBWO(_add);
     }
 
     function _isTrust(address _contract, uint256 _id)

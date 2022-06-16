@@ -33,6 +33,7 @@ I19:Item: transfer from incorrect owner
 I20:Item: transfer to the zero address or zero id
 I21:Item: must be the world
 I22:Item: not owner
+I23:Item: to account is not exist
  */
 
 contract Item721 is EIP712, ERC165, IItem721 {
@@ -203,7 +204,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(IWorld(_world).isBWO(msg.sender), "I01");
+        require(_isBWO(msg.sender), "I01");
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -226,7 +227,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         );
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndApprove(sender, to, tokenId);
-        emit ApprovalItemBWO(to, tokenId, sender, nonce,deadline);
+        emit ApprovalItemBWO(to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
     }
 
@@ -282,7 +283,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(IWorld(_world).isBWO(msg.sender), "I01");
+        require(_isBWO(msg.sender), "I01");
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -306,14 +307,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         );
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndSetApprovalForAllItem(sender, from, to, approved);
-        emit ApprovalForAllItemBWO(
-            from,
-            to,
-            approved,
-            sender,
-            nonce,
-            deadline
-        );
+        emit ApprovalForAllItemBWO(from, to, approved, sender, nonce, deadline);
         _nonces[sender] += 1;
     }
 
@@ -327,6 +321,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (bool)
     {
+        if (_isBWO(operator)) {
+            return true;
+        }
         return _operatorApprovalsById[_getAccountIdByAddress(owner)][operator];
     }
 
@@ -337,6 +334,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (bool)
     {
+        if (_isBWO(operator)) {
+            return true;
+        }
         return _operatorApprovalsById[owner][operator];
     }
 
@@ -379,7 +379,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(IWorld(_world).isBWO(msg.sender), "I01");
+        require(_isBWO(msg.sender), "I01");
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -404,14 +404,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndTransfer(sender, from, to, tokenId);
-        emit TransferItemBWO(
-            from,
-            to,
-            tokenId,
-            sender,
-            nonce,
-            deadline
-        );
+        emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
     }
 
@@ -443,7 +436,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(IWorld(_world).isBWO(msg.sender), "I01");
+        require(_isBWO(msg.sender), "I01");
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -468,14 +461,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndSafeTransfer(sender, from, to, tokenId, "");
-        emit TransferItemBWO(
-            from,
-            to,
-            tokenId,
-            sender,
-            nonce,
-            deadline
-        );
+        emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
     }
 
@@ -524,7 +510,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(IWorld(_world).isBWO(msg.sender), "I01");
+        require(_isBWO(msg.sender), "I01");
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -550,14 +536,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndSafeTransfer(sender, from, to, tokenId, data);
-        emit TransferItemBWO(
-            from,
-            to,
-            tokenId,
-            sender,
-            nonce,
-            deadline
-        );
+        emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
     }
 
@@ -697,6 +676,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) internal virtual {
         require(Item721.ownerOfItem(tokenId) == from, "I19");
         require(to != 0, "I20");
+        require(_accountIsExist(to), "I23");
 
         // Clear approvals from the previous owner
         _approve(address(0), tokenId);
@@ -786,6 +766,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
         returns (bool)
     {
         return IWorld(_world).checkAddress(addr, id);
+    }
+
+    function _accountIsExist(uint256 _id) internal view returns (bool) {
+        return IWorld(_world).getAddressById(_id) != address(0);
+    }
+
+    function _isBWO(address _add) internal view returns (bool) {
+        return IWorld(_world).isBWO(_add);
     }
 
     function _recoverSig(
