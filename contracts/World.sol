@@ -32,7 +32,8 @@ contract World is IWorld, Ownable, Initializable {
     event RemoveSafeContract(address indexed safeContract);
     event TrustContract(uint256 indexed id, address indexed safeContract);
     event UntrustContract(uint256 indexed id, address indexed safeContract);
-
+    event TrustWorld(uint256 indexed id);
+    event UntrustWorld(uint256 indexed id);
     // struct Asset
     struct Asset {
         uint8 _type;
@@ -136,35 +137,48 @@ contract World is IWorld, Ownable, Initializable {
         emit UntrustContract(_id, _contract);
     }
 
-    // 添加operator
     function addOperator(address _operator) public onlyOwner {
         require(_operator != address(0), "World: zero address");
         _isOperatorByAddress[_operator] = true;
         emit AddOperator(_operator);
     }
 
-    // 删除operator
     function removeOperator(address _operator) public onlyOwner {
         delete _isOperatorByAddress[_operator];
         emit RemoveOperator(_operator);
     }
 
-    // is operator
     function isOperator(address _operator) public view returns (bool) {
         return _isOperatorByAddress[_operator];
     }
 
-    // 添加contract
     function addContract(address _contract) public onlyOwner {
         require(_contract != address(0), "World: zero address");
         _safeContracts[_contract] = true;
         emit AddSafeContract(_contract);
     }
 
-    // 删除contract
     function removeContract(address _contract) public onlyOwner {
         delete _safeContracts[_contract];
         emit RemoveSafeContract(_contract);
+    }
+
+    function trustWorld(uint256 _id) public {
+        require(
+            Metaverse(_metaverse).getAddressById(_id) == msg.sender,
+            "World: sender not account owner"
+        );
+        _isTrustWorld[_id] = true;
+        emit TrustWorld(_id);
+    }
+
+    function untrustWorld(uint256 _id) public {
+        require(
+            Metaverse(_metaverse).getAddressById(_id) == msg.sender,
+            "World: sender not account owner"
+        );
+        delete _isTrustWorld[_id];
+        
     }
 
     function isSafeContract(address _contract) public view returns (bool) {
@@ -186,16 +200,9 @@ contract World is IWorld, Ownable, Initializable {
         override
         returns (bool _isTrust)
     {
-        if (_safeContracts[_contract] == false) {
-            return false;
-        }
-        if (_isTrustWorld[_id] == true) {
-            return true;
-        }
-        if (_isTrustContractByAccountId[_id][_contract] == false) {
-            return false;
-        }
-        return true;
+        return
+            (_safeContracts[_contract] && _isTrustWorld[_id]) ||
+            _isTrustContractByAccountId[_id][_contract];
     }
 
     function isBWO(address _addr) public view virtual override returns (bool) {
@@ -224,11 +231,16 @@ contract World is IWorld, Ownable, Initializable {
         return Metaverse(_metaverse).getIdByAddress(_address);
     }
 
-    function getAddressById(uint256 _id) public view override returns (address) {
+    function getAddressById(uint256 _id)
+        public
+        view
+        override
+        returns (address)
+    {
         return Metaverse(_metaverse).getAddressById(_id);
     }
 
-    function isFreeze(uint256 _id) public view  returns (bool) {
+    function isFreeze(uint256 _id) public view returns (bool) {
         return Metaverse(_metaverse).isFreeze(_id);
     }
 

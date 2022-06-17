@@ -216,6 +216,23 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
           }), `${errorPrefix}: transfer to the zero Id`, );
         });
       });
+
+      describe('when the recipientId is the not exist Id', function () {
+        const amount = initialSupply;
+        const to = 1000;
+
+        beforeEach(async function () {
+          await this.token.approveCash(tokenOwner, spenderAddr, amount, {
+            from: tokenOwnerAddr
+          });
+        });
+
+        it('reverts', async function () {
+          await expectRevert(this.token.transferCash(tokenOwner, to, amount, {
+            from: spenderAddr
+          }), `${errorPrefix}: to account is not exist`, );
+        });
+      });
     });
 
     describe('when the token owner is the zero id', function () {
@@ -234,6 +251,30 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
     });
   });
 
+  describe('isTrust safe conract and trust world', function () {
+
+    beforeEach('set safe contract and trust world', async function () {
+      await this.world.addContract(recipient);
+      await this.world.trustWorld(initialHolderId, {
+        from: initialHolder
+      });
+    });
+
+    shouldBehaveLikeIsTrust(initialSupply, initialHolder, initialHolderId, recipient, anotherAccount, anotherAccountId);
+
+  });
+
+  describe('isTrust trust contract', function () {
+
+    beforeEach('set safe contract and trust world', async function () {
+      await this.world.addContract(recipient);
+      await this.world.trustContract(initialHolderId, recipient, {
+        from: initialHolder
+      });
+    });
+    shouldBehaveLikeIsTrust(initialSupply, initialHolder, initialHolderId, recipient, anotherAccount, anotherAccountId);
+  });
+
   describe('approveCash', function () {
     shouldBehaveLikeCash20Approve(errorPrefix, initialHolder, initialHolderId, recipient, recipientId, initialSupply,
       function (ownerAddr, owner, spender, amount) {
@@ -242,6 +283,57 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
         });
       },
     );
+  });
+}
+
+function shouldBehaveLikeIsTrust(initialSupply, initialHolder, initialHolderId, spenderAddr, anotherAccount, anotherAccountId) {
+  const tokenOwner = initialHolderId;
+  const tokenOwnerAddr = initialHolder;
+
+  const amount = initialSupply;
+  const to = anotherAccountId;
+  const toAddr = anotherAccount;
+
+  describe('allowance ', function () {
+    it('decreases the spender allowance', async function () {
+      await this.token.transferCash(tokenOwner, to, amount, {
+        from: spenderAddr
+      });
+      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal('0');
+    });
+  });
+
+  describe('allowanceCash ', function () {
+    it('decreases the spender allowance', async function () {
+      await this.token.transferCash(tokenOwner, to, amount, {
+        from: spenderAddr
+      });
+
+      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal('0');
+    });
+
+  });
+
+  describe('transferFrom ', function () {
+    it('transfers the requested amount', async function () {
+      await this.token.transferFrom(tokenOwnerAddr, toAddr, amount, {
+        from: spenderAddr
+      });
+
+      expect(await this.token.balanceOfCash(tokenOwner)).to.be.bignumber.equal('0');
+      expect(await this.token.balanceOfCash(to)).to.be.bignumber.equal(amount);
+    });
+  });
+
+  describe('transferCash ', function () {
+    it('transfers the requested amount', async function () {
+      await this.token.transferCash(tokenOwner, to, amount, {
+        from: spenderAddr
+      });
+
+      expect(await this.token.balanceOfCash(tokenOwner)).to.be.bignumber.equal('0');
+      expect(await this.token.balanceOfCash(to)).to.be.bignumber.equal(amount);
+    });
   });
 }
 

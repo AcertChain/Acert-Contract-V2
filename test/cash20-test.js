@@ -19,7 +19,7 @@ const Wallet = require('ethereumjs-wallet').default;
 
 const Cash20 = artifacts.require('Cash20Mock');
 const World = artifacts.require('World');
-const Avatar = artifacts.require('AvatarMock');
+const Metaverse = artifacts.require('Metaverse');
 
 const {
   shouldBehaveLikeERC20,
@@ -66,16 +66,9 @@ contract('Cash20', function (accounts) {
   const BWOReceiptkey = receiptWallet.getPrivateKey();
 
   beforeEach(async function () {
-    const avatarName = 'My Avatar';
-    const avatarSymbol = 'MAVT';
-    const avatarVersion = '1.0.0';
-    const avataSupply = 0;
-    const maxAvatarId = 0;
-    this.world = await World.new();
-
-    this.avatar = await Avatar.new(avataSupply, maxAvatarId, avatarName, avatarSymbol, avatarVersion, this.world.address);
-    await this.world.registerAvatar(this.avatar.address, "");
-
+   
+    this.Metaverse = await Metaverse.new();
+    this.world = await World.new(this.Metaverse.address);
     this.token = await Cash20.new(name, symbol, version, this.world.address);
     this.receipt = await this.token.mint(initialHolder, initialSupply);
     this.tokenName = name;
@@ -83,14 +76,11 @@ contract('Cash20', function (accounts) {
     this.BWO = initialHolder;
     this.chainId = await this.token.getChainId();
 
-
-
     // 注册operater
     await this.world.addOperator(initialHolder);
     await this.world.getOrCreateAccountId(initialHolder);
     await this.world.getOrCreateAccountId(recipient);
     await this.world.getOrCreateAccountId(anotherAccount);
-
 
     await this.token.mint(BWOInitialHolder, initialSupply);
     await this.world.getOrCreateAccountId(BWOInitialHolder);

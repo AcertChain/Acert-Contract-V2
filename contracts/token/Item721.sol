@@ -167,7 +167,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) internal virtual {
         address owner = Item721.ownerOf(tokenId);
         require(to != owner, "Item: approval to current owner");
-        require(sender == owner || isApprovedForAll(owner, sender), "Item: approve caller is not owner nor approved for all");
+        require(
+            sender == owner || isApprovedForAll(owner, sender),
+            "Item: approve caller is not owner nor approved for all"
+        );
         _approve(to, tokenId);
     }
 
@@ -295,10 +298,11 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (bool)
     {
-        if (_isBWO(operator)) {
+        uint256 ownerId = _getAccountIdByAddress(owner);
+        if (_isTrust(operator, ownerId)) {
             return true;
         }
-        return _operatorApprovalsById[_getAccountIdByAddress(owner)][operator];
+        return _operatorApprovalsById[ownerId][operator];
     }
 
     function isApprovedForAllItem(uint256 owner, address operator)
@@ -308,7 +312,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (bool)
     {
-        if (_isBWO(operator)) {
+        if (_isTrust(operator, owner)) {
             return true;
         }
         return _operatorApprovalsById[owner][operator];
@@ -341,7 +345,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 to,
         uint256 tokenId
     ) internal virtual {
-        require(_isApprovedOrOwner(sender, tokenId), "Item: transfer caller is not owner nor approved");
+        require(
+            _isApprovedOrOwner(sender, tokenId),
+            "Item: transfer caller is not owner nor approved"
+        );
         _transfer(from, to, tokenId);
     }
 
@@ -471,7 +478,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 tokenId,
         bytes memory _data
     ) internal virtual {
-        require(_isApprovedOrOwner(sender, tokenId), "Item: transfer caller is not owner nor approved");
+        require(
+            _isApprovedOrOwner(sender, tokenId),
+            "Item: transfer caller is not owner nor approved"
+        );
         _safeTransfer(from, to, tokenId, _data);
     }
 
@@ -562,7 +572,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 ownerId = Item721.ownerOfItem(tokenId);
 
         return (sender == owner ||
-            IWorld(_world).isTrust(sender, ownerId) ||
+            _isTrust(sender, ownerId) ||
             isApprovedForAll(owner, sender) ||
             getApproved(tokenId) == sender);
     }
@@ -591,7 +601,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory _data
     ) internal virtual {
         _mint(to, tokenId);
-        require(_checkOnERC721Received(address(0), to, tokenId, _data), "Item: transfer to non ERC721Receiver implementer");
+        require(
+            _checkOnERC721Received(address(0), to, tokenId, _data),
+            "Item: transfer to non ERC721Receiver implementer"
+        );
     }
 
     /**
@@ -648,7 +661,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 to,
         uint256 tokenId
     ) internal virtual {
-        require(Item721.ownerOfItem(tokenId) == from, "Item: transfer from incorrect owner");
+        require(
+            Item721.ownerOfItem(tokenId) == from,
+            "Item: transfer from incorrect owner"
+        );
         require(to != 0, "Item: transfer to the zero id");
         require(_accountIsExist(to), "Item: to account is not exist");
 
@@ -673,7 +689,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bool approved
     ) internal virtual {
         require(owner != 0, "Item: id zero is not a valid owner");
-        require(owner != _getAccountIdByAddress(operator), "Item: approve to caller");
+        require(
+            owner != _getAccountIdByAddress(operator),
+            "Item: approve to caller"
+        );
         _operatorApprovalsById[owner][operator] = approved;
         emit ApprovalForAllItem(owner, operator, approved);
     }
@@ -750,6 +769,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return IWorld(_world).isBWO(_add);
     }
 
+    function _isTrust(address _contract, uint256 _id)
+        internal
+        view
+        returns (bool)
+    {
+        return IWorld(_world).isTrust(_contract, _id);
+    }
+
     function _recoverSig(
         uint256 deadline,
         address signer,
@@ -757,6 +784,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory signature
     ) internal view {
         require(block.timestamp < deadline, "Item: BWO call expired");
-        require(signer == ECDSA.recover(digest, signature), "Item: recoverSig failed");
+        require(
+            signer == ECDSA.recover(digest, signature),
+            "Item: recoverSig failed"
+        );
     }
 }

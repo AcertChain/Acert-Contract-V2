@@ -159,10 +159,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(sender != address(0), "Cash: sender is the zero address");
         require(from != 0, "Cash: from is the zero Id");
         require(to != 0, "Cash: transfer to the zero Id");
-        require(
-            _isBWO(_msgSender()),
-            "Cash: must be the world BWO"
-        );
+        require(_isBWO(_msgSender()), "Cash: must be the world BWO");
         uint256 nonce = _nonces[sender];
         require(
             sender ==
@@ -222,9 +219,9 @@ contract Cash20 is Context, EIP712, ICash20 {
         virtual
         override
         returns (uint256)
-    {   
-        uint256 ownerId =_getAccountIdByAddress(owner);
-        if (_isBWO(spender)) {
+    {
+        uint256 ownerId = _getAccountIdByAddress(owner);
+        if (_isTrust(spender, ownerId)) {
             return _balancesById[ownerId];
         }
         return _allowancesById[ownerId][spender];
@@ -240,7 +237,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-         if (_isBWO(spender)) {
+        if (_isTrust(spender, owner)) {
             return _balancesById[owner];
         }
         return _allowancesById[owner][spender];
@@ -290,10 +287,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         bytes memory signature
     ) public virtual override returns (bool) {
         require(spender != address(0), "Cash: approve to the zero address");
-        require(
-            _isBWO(_msgSender()),
-            "Cash: must be the world BWO"
-        );
+        require(_isBWO(_msgSender()), "Cash: must be the world BWO");
         require(_checkAddress(sender, ownerId), "Cash: not owner");
         uint256 nonce = _nonces[sender];
         require(
@@ -598,7 +592,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         return IWorld(_world).getAddressById(_id) != address(0);
     }
 
-    function _isBWO(address _add)internal view returns (bool) {
+    function _isBWO(address _add) internal view returns (bool) {
         return IWorld(_world).isBWO(_add);
     }
 
