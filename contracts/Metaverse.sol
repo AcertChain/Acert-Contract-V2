@@ -19,7 +19,15 @@ contract Metaverse is Ownable, EIP712 {
         address indexed newAddress,
         bool isTrustAdmin
     );
+    event UpdateAccountBWO(
+        uint256 indexed id,
+        address indexed newAddress,
+        bool isTrustAdmin,
+        uint256 nonce,
+        uint256 deadline
+    );
     event FreezeAccount(uint256 indexed id);
+    event FreezeAccountBWO(uint256 indexed id, uint256 nonce, uint256 deadline);
     event UnFreezeAccount(uint256 indexed id);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
@@ -165,27 +173,14 @@ contract Metaverse is Ownable, EIP712 {
         address _newAddress,
         bool _isTrustAdmin
     ) public {
-        require(_newAddress != address(0), "Metaverse: zero address");
-        require(
-            _addressesToIds[_newAddress] == 0,
-            "Metaverse: address is exist"
-        );
         Account storage account = _accountsById[_id];
-        require(account._isExist == true, "World: account is not exist");
         require(
             msg.sender == account._address ||
                 ((account._isTrustAdmin || account._isFreeze) &&
                     msg.sender == _admin),
             "Metaverse: sender not owner or admin"
         );
-
-        if (account._address != _newAddress) {
-            delete _addressesToIds[account._address];
-            _addressesToIds[_newAddress] = _id;
-            account._address = _newAddress;
-        }
-        account._isTrustAdmin = _isTrustAdmin;
-        emit UpdateAccount(_id, _newAddress, _isTrustAdmin);
+        _changeAccount(_id, _newAddress, _isTrustAdmin);
     }
 
     function changeAccountBWO(
@@ -196,7 +191,12 @@ contract Metaverse is Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
-        require(isBWO(msg.sender),"Metaverse: sender is not BWO");
+        require(isBWO(msg.sender), "Metaverse: sender is not BWO");
+        require(
+            _accountsById[_id]._isExist == true &&
+                _accountsById[_id]._address == sender,
+            "Metaverse: account is not exist"
+        );
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -218,7 +218,30 @@ contract Metaverse is Ownable, EIP712 {
             ),
             signature
         );
-        changeAccount(_id, _newAddress, _isTrustAdmin);
+        _changeAccount(_id, _newAddress, _isTrustAdmin);
+        emit UpdateAccountBWO(_id, _newAddress, _isTrustAdmin, nonce, deadline);
+    }
+
+    function _changeAccount(
+        uint256 _id,
+        address _newAddress,
+        bool _isTrustAdmin
+    ) private {
+        require(_newAddress != address(0), "Metaverse: zero address");
+        require(
+            _addressesToIds[_newAddress] == 0,
+            "Metaverse: address is exist"
+        );
+        Account storage account = _accountsById[_id];
+        require(account._isExist == true, "World: account is not exist");
+
+        if (account._address != _newAddress) {
+            delete _addressesToIds[account._address];
+            _addressesToIds[_newAddress] = _id;
+            account._address = _newAddress;
+        }
+        account._isTrustAdmin = _isTrustAdmin;
+        emit UpdateAccount(_id, _newAddress, _isTrustAdmin);
     }
 
     function freezeAccount(uint256 _id) public {
@@ -241,7 +264,12 @@ contract Metaverse is Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
-        require(isBWO(msg.sender),"Metaverse: sender is not BWO");
+        require(isBWO(msg.sender), "Metaverse: sender is not BWO");
+        require(
+            _accountsById[_id]._isExist == true &&
+                _accountsById[_id]._address == sender,
+            "Metaverse: account is not exist"
+        );
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -262,43 +290,15 @@ contract Metaverse is Ownable, EIP712 {
             signature
         );
 
-        freezeAccount(_id);
+        _accountsById[_id]._isFreeze = true;
+        emit FreezeAccount(_id);
+        emit FreezeAccountBWO(_id, nonce, deadline);
     }
 
     function unfreezeAccount(uint256 _id) public {
         require(msg.sender == _admin, "Metaverse: sender is not admin");
         _accountsById[_id]._isFreeze = false;
         emit UnFreezeAccount(_id);
-    }
-
-    function unfreezeAccountBWO(
-        uint256 _id,
-        address sender,
-        uint256 deadline,
-        bytes memory signature
-    ) public {
-        require(isBWO(msg.sender),"Metaverse: sender is not BWO");
-        uint256 nonce = _nonces[sender];
-        _recoverSig(
-            deadline,
-            sender,
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256(
-                            "BWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"
-                        ),
-                        _id,
-                        sender,
-                        nonce,
-                        deadline
-                    )
-                )
-            ),
-            signature
-        );
-
-        unfreezeAccount(_id);
     }
 
     function addOperator(address _operator) public onlyOwner {
@@ -374,6 +374,10 @@ contract Metaverse is Ownable, EIP712 {
 
     function getNonce(address account) public view returns (uint256) {
         return _nonces[account];
+    }
+
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
     }
 
     function _recoverSig(
