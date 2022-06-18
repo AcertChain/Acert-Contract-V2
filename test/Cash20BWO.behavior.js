@@ -329,6 +329,35 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
           }), `${errorPrefix}: transfer to the zero Id`, );
         });
       });
+
+
+      describe('when the recipientId is the not exist Id', function () {
+        const amount = initialSupply;
+        const to = 1000;
+
+        beforeEach(async function () {
+
+          const nonce = await this.token.getNonce(tokenOwnerAddr);;
+          const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
+            tokenOwner, spenderAddr, amount, tokenOwnerAddr, deadline, nonce);
+
+          await this.token.approveCashBWO(tokenOwner, spenderAddr, amount, tokenOwnerAddr, deadline, signature, {
+            from: this.BWO
+          });
+        });
+
+        it('reverts', async function () {
+
+          const nonce = await this.token.getNonce(spenderAddr);
+
+          const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
+            spenderAddr, tokenOwner, to, amount, deadline, nonce);
+
+          await expectRevert(this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
+            from: this.BWO
+          }), `${errorPrefix}: to account is not exist`, );
+        });
+      });
     });
 
     describe('when the token owner is the zero id', function () {
@@ -439,6 +468,21 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balan
         );
       });
     });
+
+    // describe('when the sender is Freeze', function () {
+    //   it('reverts', async function () {
+    //     await this.Metaverse.freezeAccount(from, {
+    //       from: spender
+    //     });
+
+    //     const nonce = await this.token.getNonce(spender);
+
+    //     await expectRevert(transfer.call(this, spender, from, to, balance, nonce, key),
+    //       `${errorPrefix}: transfer from is frozen`,
+    //     );
+    //   });
+    // });
+
   });
 
   describe('when the recipientId is the zero Id', function () {
@@ -464,9 +508,9 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
             owner: owner,
             spender: web3.utils.toChecksumAddress(spenderAddr),
             value: amount,
-            sender:web3.utils.toChecksumAddress(ownerAddr),
-            nonce:nonce,
-            deadline:deadline,
+            sender: web3.utils.toChecksumAddress(ownerAddr),
+            nonce: nonce,
+            deadline: deadline,
           },
         );
       });
@@ -509,9 +553,9 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
             owner: owner,
             spender: web3.utils.toChecksumAddress(spenderAddr),
             value: amount,
-            sender:web3.utils.toChecksumAddress(ownerAddr),
-            nonce:nonce,
-            deadline:deadline,
+            sender: web3.utils.toChecksumAddress(ownerAddr),
+            nonce: nonce,
+            deadline: deadline,
           },
         );
       });
@@ -540,6 +584,19 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
         });
       });
     });
+
+    // describe('when the owner is frozen', function () {
+    //   it('reverts', async function () {
+    //     await this.Metaverse.freezeAccount(owner, {
+    //       from: ownerAddr
+    //     });
+    //     const nonce = await this.token.getNonce(ownerAddr);
+    //     await expectRevert(approve.call(this, owner, ownerAddr, spenderAddr, amount, nonce, key),
+    //       `${errorPrefix}: approve owner is frozen`,
+    //     );
+
+    //   });
+    // })
   });
 
   describe('when the spender is the zero address', function () {

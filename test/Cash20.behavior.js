@@ -260,7 +260,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
       });
     });
 
-    shouldBehaveLikeIsTrust(initialSupply, initialHolder, initialHolderId, recipient, anotherAccount, anotherAccountId);
+    shouldBehaveLikeCash20IsTrust(initialSupply, initialHolder, initialHolderId, recipient, anotherAccount, anotherAccountId);
 
   });
 
@@ -272,7 +272,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
         from: initialHolder
       });
     });
-    shouldBehaveLikeIsTrust(initialSupply, initialHolder, initialHolderId, recipient, anotherAccount, anotherAccountId);
+    shouldBehaveLikeCash20IsTrust(initialSupply, initialHolder, initialHolderId, recipient, anotherAccount, anotherAccountId);
   });
 
   describe('approveCash', function () {
@@ -286,7 +286,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
   });
 }
 
-function shouldBehaveLikeIsTrust(initialSupply, initialHolder, initialHolderId, spenderAddr, anotherAccount, anotherAccountId) {
+function shouldBehaveLikeCash20IsTrust(initialSupply, initialHolder, initialHolderId, spenderAddr, anotherAccount, anotherAccountId) {
   const tokenOwner = initialHolderId;
   const tokenOwnerAddr = initialHolder;
 
@@ -394,6 +394,17 @@ function shouldBehaveLikeCash20Transfer(errorPrefix, fromAddr, from, to, balance
         );
       });
     });
+
+    describe('when the sender is Freeze', function () {
+      it('reverts', async function () {
+        await this.Metaverse.freezeAccount(from, {
+          from: fromAddr
+        });
+        await expectRevert(transfer.call(this, fromAddr, from, to, balance),
+          `${errorPrefix}: transfer from is frozen`,
+        );
+      });
+    });
   });
 
   describe('when the recipientId is the zero Id', function () {
@@ -476,6 +487,17 @@ function shouldBehaveLikeCash20Approve(errorPrefix, ownerAddr, owner, spenderAdd
         });
       });
     });
+
+    describe('when the owner is frozen', function () {
+      it('reverts', async function () {
+        await this.Metaverse.freezeAccount(owner, {
+          from: ownerAddr
+        })
+        await expectRevert(approve.call(this, ownerAddr, owner, spenderAddr, supply),
+          `${errorPrefix}: approve owner is frozen`,
+        );
+      });
+    })
   });
 
   describe('when the spender is the zero address', function () {

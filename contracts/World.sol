@@ -178,7 +178,7 @@ contract World is IWorld, Ownable, Initializable {
             "World: sender not account owner"
         );
         delete _isTrustWorld[_id];
-        
+
     }
 
     function isSafeContract(address _contract) public view returns (bool) {
@@ -240,7 +240,7 @@ contract World is IWorld, Ownable, Initializable {
         return Metaverse(_metaverse).getAddressById(_id);
     }
 
-    function isFreeze(uint256 _id) public view returns (bool) {
+    function isFreeze(uint256 _id) public view override returns (bool) {
         return Metaverse(_metaverse).isFreeze(_id);
     }
 

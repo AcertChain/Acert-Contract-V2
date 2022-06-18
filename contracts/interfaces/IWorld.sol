@@ -27,4 +27,6 @@ interface IWorld {
         external
         view
         returns (bool _isTrust);
+
+    function isFreeze(uint256 _id) external view returns (bool _isFreeze);
 }

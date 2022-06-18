@@ -143,7 +143,6 @@ contract Cash20 is Context, EIP712, ICash20 {
             _transferCash(from, to, amount);
             return true;
         }
-
         _checkAndTransferCash(_msgSender(), from, to, amount);
         return true;
     }
@@ -199,7 +198,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         if (_checkAddress(sender, from)) {
             return _transferCash(from, to, amount);
         }
-
         uint256 currentAllowance = allowanceCash(from, sender);
         if (currentAllowance != type(uint256).max) {
             require(currentAllowance >= amount, "Cash: insufficient allowance");
@@ -438,6 +436,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 to,
         uint256 amount
     ) internal virtual {
+        require(!_isFreeze(from), "Cash: transfer from is frozen");
         require(_accountIsExist(to), "Cash: to account is not exist");
         uint256 fromBalance = _balancesById[from];
         require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
@@ -465,6 +464,8 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     function _mintCash(uint256 accountId, uint256 amount) internal virtual {
         require(accountId != 0, "Cash: mint to the zero Id");
+        require(_accountIsExist(accountId), "Cash: to account is not exist");
+
         _totalSupply += amount;
         _balancesById[accountId] += amount;
         emit TransferCash(0, accountId, amount);
@@ -489,6 +490,7 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     function _burnCash(uint256 accountId, uint256 amount) internal virtual {
         require(accountId != 0, "Cash: burn from the zero Id");
+        require(_accountIsExist(accountId), "Cash: to account is not exist");
         uint256 accountBalance = _balancesById[accountId];
         require(accountBalance >= amount, "Cash: burn amount exceeds balance");
         unchecked {
@@ -541,6 +543,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 amount
     ) internal virtual {
         require(ownerId != 0, "Cash: approve from the zero Id");
+        require(!_isFreeze(ownerId), "Cash: approve owner is frozen");
         require(spender != address(0), "Cash: approve to the zero address");
         _allowancesById[ownerId][spender] = amount;
         emit ApprovalCash(ownerId, spender, amount);
@@ -602,6 +605,14 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (bool)
     {
         return IWorld(_world).isTrust(_contract, _id);
+    }
+
+    function _isFreeze(uint256 _id)
+        internal
+        view
+        returns (bool)
+    {
+        return IWorld(_world).isFreeze( _id);
     }
 
     function _recoverSig(bytes32 digest, bytes memory signature)

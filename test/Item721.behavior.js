@@ -46,8 +46,6 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
     'ERC721',
   ]);
 
-
-
   context('with minted tokens', function () {
     beforeEach(async function () {
       // create account
@@ -105,7 +103,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       });
     });
 
-    describe('transfersById', function () {
+    describe('transfersItem', function () {
       const tokenId = firstTokenId;
       const data = '0x42';
 
@@ -309,11 +307,22 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             );
           });
         });
+
+        context('when the address to transfer the token to is the id  not exist', function () {
+          it('reverts', async function () {
+            await expectRevert(
+              transferFunction.call(this, ownerId, ownerId, 1000, tokenId, {
+                from: owner
+              }),
+              'Item: to account is not exist',
+            );
+          });
+        });
       };
 
       describe('via transferFromItem', function () {
         shouldTransferTokensByUsers(function (senderId, fromId, toId, tokenId, opts) {
-          return this.token.transferFromItem( fromId, toId, tokenId, opts);
+          return this.token.transferFromItem(fromId, toId, tokenId, opts);
         });
       });
 
@@ -401,7 +410,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             await this.world.getOrCreateAccountId(invalidReceiver.address);
             const invalidReceiverId = new BN(await this.world.getAccountIdByAddress(invalidReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, invalidReceiverId, tokenId,  {
+              this.token.safeTransferFromItem(ownerId, invalidReceiverId, tokenId, {
                 from: owner
               }),
               'Item: transfer to non ERC721Receiver implementer',
@@ -416,7 +425,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,  {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, {
                 from: owner
               }),
               'ERC721ReceiverMock: reverting',
@@ -430,7 +439,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             await this.world.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,  {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, {
                 from: owner
               }),
               'Item: transfer to non ERC721Receiver implementer',
@@ -445,7 +454,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert.unspecified(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,  {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, {
                 from: owner
               }),
             );
@@ -459,7 +468,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const nonReceiverId = new BN(await this.world.getAccountIdByAddress(nonReceiver.address));
 
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, nonReceiverId, tokenId,  {
+              this.token.safeTransferFromItem(ownerId, nonReceiverId, tokenId, {
                 from: owner
               }),
               'Item: transfer to non ERC721Receiver implementer',
@@ -929,7 +938,141 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       });
     });
   });
+
+  describe('isTrust safe conract and trust world', function () {
+
+    beforeEach('set safe contract and trust world', async function () {
+
+      // create account
+      await this.world.getOrCreateAccountId(owner);
+      await this.world.getOrCreateAccountId(approved);
+      await this.world.getOrCreateAccountId(anotherApproved);
+      await this.world.getOrCreateAccountId(operator);
+      await this.world.getOrCreateAccountId(other);
+
+      await this.token.mint(owner, firstTokenId);
+      await this.token.mint(owner, secondTokenId);
+
+      await this.world.addContract(anotherApproved);
+      await this.world.trustWorld(ownerId, {
+        from: owner
+      });
+    });
+
+    shouldBehaveLikeItem721IsTrust(owner, approved, operator, other, anotherApproved);
+
+  });
+
+  describe('isTrust trust contract', function () {
+
+    beforeEach('trust contract', async function () {
+      // create account
+      await this.world.getOrCreateAccountId(owner);
+      await this.world.getOrCreateAccountId(approved);
+      await this.world.getOrCreateAccountId(anotherApproved);
+      await this.world.getOrCreateAccountId(operator);
+      await this.world.getOrCreateAccountId(other);
+
+      await this.token.mint(owner, firstTokenId);
+      await this.token.mint(owner, secondTokenId);
+
+      await this.world.addContract(anotherApproved);
+      await this.world.trustContract(ownerId, anotherApproved, {
+        from: owner
+      });
+    });
+    shouldBehaveLikeItem721IsTrust(owner, approved, operator, other, anotherApproved);
+  });
+
 }
+
+function shouldBehaveLikeItem721IsTrust(owner, approved, operator, other, trust) {
+  const tokenId = firstTokenId;
+  const data = '0x42';
+  let logs = null;
+  beforeEach(async function () {
+    await this.token.approve(approved, tokenId, {
+      from: owner
+    });
+    await this.token.setApprovalForAllItem(ownerId, operator, true, {
+      from: owner
+    });
+  });
+
+  describe('transferFrom', function () {
+    it('emit Transfer event', async function () {
+      expectEvent(
+        await this.token.transferFrom(owner, other, tokenId, {
+          from: trust
+        }),
+        'Transfer', {
+          from: owner,
+          to: other,
+          tokenId: tokenId
+        },
+      );
+    });
+  });
+  describe('transferFromItem', function () {
+    it('emit TransferItem event', async function () {
+      expectEvent(
+        await this.token.transferFromItem(ownerId, otherId, tokenId, {
+          from: trust
+        }),
+        'TransferItem', {
+          from: ownerId,
+          to: otherId,
+          tokenId: tokenId
+        },
+      );
+    });
+  });
+  describe('safeTransferFrom', function () {
+    it('emit Transfer event', async function () {
+      this.receiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.None);
+      expectEvent(
+        await this.token.safeTransferFrom(owner, this.receiver.address, tokenId, {
+          from: trust
+        }),
+        'Received', {
+          operator: owner,
+          from: owner,
+          tokenId: tokenId,
+          data: data,
+        });
+    });
+  });
+  describe('safeTransferFromItem', function () {
+    it('emit TransferItem event', async function () {
+      this.receiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.None);
+      await this.world.getOrCreateAccountId(this.receiver.address);
+      this.receiverId = new BN(await this.world.getAccountIdByAddress(this.receiver.address));
+
+      expectEvent(
+        await this.token.safeTransferFromItem(ownerId, ownerId, this.receiverId, tokenId, {
+          from: trust
+        }),
+        'Received', {
+          operator: ownerId,
+          from: ownerId,
+          tokenId: tokenId,
+          data: data,
+        });
+
+    });
+  });
+  describe('isApprovedForAll', function () {
+    it('return true', async function () {
+      expect(await this.token.isApprovedForAll(owner, trust)).to.equal(true);
+    });
+  });
+  describe('isApprovedForAllItem', function () {
+    it('return true', async function () {
+      expect(await this.token.isApprovedForAllItem(ownerId, trust)).to.equal(true);
+    });
+  });
+}
+
 
 module.exports = {
   shouldBehaveLikeItem721,

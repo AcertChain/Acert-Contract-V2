@@ -395,9 +395,13 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 tokenId
     ) public virtual override {
         require(to != address(0), "Item: transfer to the zero address");
-        uint256 fromId = _getIdByAddress(from);
-        uint256 toId = _getIdByAddress(to);
-        _checkAndSafeTransfer(msg.sender, fromId, toId, tokenId, "");
+        _checkAndSafeTransfer(
+            msg.sender,
+            _getIdByAddress(from),
+            _getIdByAddress(to),
+            tokenId,
+            ""
+        );
         emit Transfer(from, to, tokenId);
     }
 
@@ -665,6 +669,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             Item721.ownerOfItem(tokenId) == from,
             "Item: transfer from incorrect owner"
         );
+        require(!_isFreeze(from), "Item: transfer from frozen account");
         require(to != 0, "Item: transfer to the zero id");
         require(_accountIsExist(to), "Item: to account is not exist");
 
@@ -689,6 +694,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bool approved
     ) internal virtual {
         require(owner != 0, "Item: id zero is not a valid owner");
+        require(!_isFreeze(owner), "Item: owner is frozen");
         require(
             owner != _getAccountIdByAddress(operator),
             "Item: approve to caller"
@@ -775,6 +781,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
         returns (bool)
     {
         return IWorld(_world).isTrust(_contract, _id);
+    }
+
+    function _isFreeze(uint256 _id) internal view returns (bool) {
+        return IWorld(_world).isFreeze(_id);
     }
 
     function _recoverSig(

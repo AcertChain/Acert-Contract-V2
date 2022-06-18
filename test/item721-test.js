@@ -13,32 +13,25 @@ const {
 
 const Item721 = artifacts.require('Item721Mock');
 const World = artifacts.require('World');
-const Avatar = artifacts.require('AvatarMock');
+const Metaverse = artifacts.require('Metaverse');
 
 contract('Item721', function (accounts) {
   const name = 'Non Fungible Token';
   const symbol = 'NFT';
   const version = '1.0.0';
 
-  const avatarName = 'My Avatar';
-  const avatarSymbol = 'MAVT';
-  const avatarVersion = '1.0.0';
-  const avataSupply = 0;
-  const maxAvatarId = 0;
 
   const [op] = accounts;
 
   beforeEach(async function () {
-    this.world = await World.new();
+    this.Metaverse = await Metaverse.new();
+    this.world = await World.new(this.Metaverse.address);
     this.token = await Item721.new(name, symbol, version, this.world.address);
     this.chainId = await this.token.getChainId();
     this.tokenName = name;
     this.tokenVersion = version;
     this.operator = op;
 
-    this.avatar = await Avatar.new(avataSupply, maxAvatarId, avatarName, avatarSymbol, avatarVersion, this.world.address);
-    await this.world.registerAvatar(this.avatar.address, "");
-    
     await this.world.addOperator(op);
   });
 

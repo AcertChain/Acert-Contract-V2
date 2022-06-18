@@ -18,6 +18,10 @@ contract Metaverse is Ownable {
         address indexed newAddress,
         bool isTrustAdmin
     );
+    event FreezeAccount(uint256 indexed id);
+    event UnFreezeAccount(uint256 indexed id);
+    event AddOperator(address indexed operator);
+    event RemoveOperator(address indexed operator);
     event AddWorld(
         address indexed world,
         string name,
@@ -56,6 +60,8 @@ contract Metaverse is Ownable {
     mapping(uint256 => Account) private _accountsById;
     // Mapping from adress to account ID
     mapping(address => uint256) private _addressesToIds;
+    // Mapping from address to operator
+    mapping(address => bool) private _isOperatorByAddress;
 
     uint256 private _totalAccount;
 
@@ -161,7 +167,9 @@ contract Metaverse is Ownable {
         Account storage account = _accountsById[_id];
         require(account._isExist == true, "World: account is not exist");
         require(
-            msg.sender == account._address || msg.sender == _admin,
+            msg.sender == account._address ||
+                ((account._isTrustAdmin || account._isFreeze) &&
+                    msg.sender == _admin),
             "Metaverse: sender not owner or admin"
         );
 
@@ -185,6 +193,28 @@ contract Metaverse is Ownable {
         );
 
         _accountsById[_id]._isFreeze = true;
+        emit FreezeAccount(_id);
+    }
+
+    function unfreezeAccount(uint256 _id) public {
+        require(msg.sender == _admin, "Metaverse: sender is not admin");
+        _accountsById[_id]._isFreeze = false;
+        emit UnFreezeAccount(_id);
+    }
+
+    function addOperator(address _operator) public onlyOwner {
+        require(_operator != address(0), "Metaverse: zero address");
+        _isOperatorByAddress[_operator] = true;
+        emit AddOperator(_operator);
+    }
+
+    function removeOperator(address _operator) public onlyOwner {
+        delete _isOperatorByAddress[_operator];
+        emit RemoveOperator(_operator);
+    }
+
+    function isOperator(address _operator) public view returns (bool) {
+        return _isOperatorByAddress[_operator];
     }
 
     function checkAddress(address _address, uint256 _id)
