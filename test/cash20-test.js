@@ -67,7 +67,7 @@ contract('Cash20', function (accounts) {
 
   beforeEach(async function () {
    
-    this.Metaverse = await Metaverse.new();
+    this.Metaverse = await Metaverse.new("metaverse","1.0");
     this.world = await World.new(this.Metaverse.address);
     this.token = await Cash20.new(name, symbol, version, this.world.address);
     this.receipt = await this.token.mint(initialHolder, initialSupply);

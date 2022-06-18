@@ -202,7 +202,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
             ),
             signature
         );
-        require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndApprove(sender, to, tokenId);
         emit ApprovalItemBWO(to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
@@ -282,7 +281,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
             ),
             signature
         );
-        require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndSetApprovalForAllItem(sender, from, to, approved);
         emit ApprovalForAllItemBWO(from, to, approved, sender, nonce, deadline);
         _nonces[sender] += 1;
@@ -383,7 +381,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndTransfer(sender, from, to, tokenId);
         emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
@@ -444,7 +441,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndSafeTransfer(sender, from, to, tokenId, "");
         emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
@@ -522,7 +518,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        require(block.timestamp < deadline, "Cash: signed transaction expired");
         _checkAndSafeTransfer(sender, from, to, tokenId, data);
         emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;

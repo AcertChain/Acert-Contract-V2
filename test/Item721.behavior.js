@@ -989,7 +989,13 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 function shouldBehaveLikeItem721IsTrust(owner, approved, operator, other, trust) {
   const tokenId = firstTokenId;
   const data = '0x42';
-  let logs = null;
+  const safeTransferFromItemWithData = function (fromId, toId, tokenId, opts) {
+    return this.token.methods['safeTransferFromItem(uint256,uint256,uint256,bytes)'](fromId, toId, tokenId, data, opts);
+  };
+  const safeTransferFromWithData = function (from, to, tokenId, opts) {
+    return this.token.methods['safeTransferFrom(address,address,uint256,bytes)'](from, to, tokenId, data, opts);
+  };
+
   beforeEach(async function () {
     await this.token.approve(approved, tokenId, {
       from: owner
@@ -1030,16 +1036,17 @@ function shouldBehaveLikeItem721IsTrust(owner, approved, operator, other, trust)
   describe('safeTransferFrom', function () {
     it('emit Transfer event', async function () {
       this.receiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.None);
-      expectEvent(
-        await this.token.safeTransferFrom(owner, this.receiver.address, tokenId, {
-          from: trust
-        }),
-        'Received', {
-          operator: owner,
-          from: owner,
-          tokenId: tokenId,
-          data: data,
-        });
+
+      const receipt = await safeTransferFromWithData.call(this, owner, this.receiver.address, tokenId, {
+        from: trust
+      })
+
+      await expectEvent.inTransaction(receipt.tx, ERC721ReceiverMock, 'Received', {
+        operator: trust,
+        from: owner,
+        tokenId: tokenId,
+        data: data,
+      });
     });
   });
   describe('safeTransferFromItem', function () {
@@ -1048,16 +1055,15 @@ function shouldBehaveLikeItem721IsTrust(owner, approved, operator, other, trust)
       await this.world.getOrCreateAccountId(this.receiver.address);
       this.receiverId = new BN(await this.world.getAccountIdByAddress(this.receiver.address));
 
-      expectEvent(
-        await this.token.safeTransferFromItem(ownerId, ownerId, this.receiverId, tokenId, {
-          from: trust
-        }),
-        'Received', {
-          operator: ownerId,
-          from: ownerId,
-          tokenId: tokenId,
-          data: data,
-        });
+      const receipt = await safeTransferFromItemWithData.call(this, ownerId, this.receiverId, tokenId, {
+        from: trust
+      })
+      await expectEvent.inTransaction(receipt.tx, ERC721ReceiverMock, 'Received', {
+        operator: trust,
+        from: owner,
+        tokenId: tokenId,
+        data: data,
+      });
 
     });
   });

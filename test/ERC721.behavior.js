@@ -183,7 +183,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             await expectRevert(
               transferFunction.call(this, other, other, tokenId, { from: owner }),
-              'I19',
+              'Item: transfer from incorrect owner',
             );
           });
         });
