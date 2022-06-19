@@ -146,13 +146,13 @@ contract World is IWorld, Ownable, Initializable {
         return _isOperatorByAddress[_operator];
     }
 
-    function addContract(address _contract) public onlyOwner {
+    function addSafeContract(address _contract) public onlyOwner {
         require(_contract != address(0), "World: zero address");
         _safeContracts[_contract] = true;
         emit AddSafeContract(_contract);
     }
 
-    function removeContract(address _contract) public onlyOwner {
+    function removeSafeContract(address _contract) public onlyOwner {
         delete _safeContracts[_contract];
         emit RemoveSafeContract(_contract);
     }
