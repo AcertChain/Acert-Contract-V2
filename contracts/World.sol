@@ -104,6 +104,44 @@ contract World is IWorld, Ownable, Initializable {
         emit UpdateAsset(_contract, _image);
     }
 
+    function getAsset(address _contract) public view returns (Asset memory) {
+        return _assets[_contract];
+    }
+
+    function addSafeContract(address _contract) public onlyOwner {
+        require(_contract != address(0), "World: zero address");
+        _safeContracts[_contract] = true;
+        emit AddSafeContract(_contract);
+    }
+
+    function removeSafeContract(address _contract) public onlyOwner {
+        delete _safeContracts[_contract];
+        emit RemoveSafeContract(_contract);
+    }
+
+    function isSafeContract(address _contract) public view returns (bool) {
+        return _safeContracts[_contract];
+    }
+    
+    function addOperator(address _operator) public onlyOwner {
+        require(_operator != address(0), "World: zero address");
+        _isOperatorByAddress[_operator] = true;
+        emit AddOperator(_operator);
+    }
+
+    function removeOperator(address _operator) public onlyOwner {
+        delete _isOperatorByAddress[_operator];
+        emit RemoveOperator(_operator);
+    }
+
+    function isOperator(address _operator) public view returns (bool) {
+        return _isOperatorByAddress[_operator];
+    }
+
+    function isBWO(address _addr) public view virtual override returns (bool) {
+        return _isOperatorByAddress[_addr] || _owner == _addr;
+    }
+
     function trustContract(uint256 _id, address _contract) public {
         require(
             Metaverse(_metaverse).getAddressById(_id) == msg.sender,
@@ -131,32 +169,6 @@ contract World is IWorld, Ownable, Initializable {
         emit UntrustContract(_id, _contract);
     }
 
-    function addOperator(address _operator) public onlyOwner {
-        require(_operator != address(0), "World: zero address");
-        _isOperatorByAddress[_operator] = true;
-        emit AddOperator(_operator);
-    }
-
-    function removeOperator(address _operator) public onlyOwner {
-        delete _isOperatorByAddress[_operator];
-        emit RemoveOperator(_operator);
-    }
-
-    function isOperator(address _operator) public view returns (bool) {
-        return _isOperatorByAddress[_operator];
-    }
-
-    function addSafeContract(address _contract) public onlyOwner {
-        require(_contract != address(0), "World: zero address");
-        _safeContracts[_contract] = true;
-        emit AddSafeContract(_contract);
-    }
-
-    function removeSafeContract(address _contract) public onlyOwner {
-        delete _safeContracts[_contract];
-        emit RemoveSafeContract(_contract);
-    }
-
     function trustWorld(uint256 _id) public {
         require(
             Metaverse(_metaverse).getAddressById(_id) == msg.sender,
@@ -175,14 +187,6 @@ contract World is IWorld, Ownable, Initializable {
 
     }
 
-    function isSafeContract(address _contract) public view returns (bool) {
-        return _safeContracts[_contract];
-    }
-
-    function getAsset(address _contract) public view returns (Asset memory) {
-        return _assets[_contract];
-    }
-
     function isTrustWorld(uint256 _id) public view returns (bool _isTrust) {
         return _isTrustWorld[_id];
     }
@@ -198,10 +202,6 @@ contract World is IWorld, Ownable, Initializable {
             (_safeContracts[_contract] && 
             _isTrustContractByAccountId[_id][_contract]) ||
             _isTrustWorld[_id];
-    }
-
-    function isBWO(address _addr) public view virtual override returns (bool) {
-        return _isOperatorByAddress[_addr] || _owner == _addr;
     }
 
     function getMetaverse() public view returns (address) {
