@@ -94,18 +94,12 @@ contract World is IWorld, Ownable, Initializable {
 
     function updateAsset(
         address _contract,
-        AssetOperation _typeOperation,
         string calldata _image
     ) public onlyOwner {
         require(
             _assets[_contract]._isExist == true,
             "World: asset is not exist"
         );
-        require(
-            _assets[_contract]._type == uint8(_typeOperation),
-            "World: asset type is not match"
-        );
-
         _assets[_contract]._image = _image;
         emit UpdateAsset(_contract, _image);
     }
@@ -129,8 +123,8 @@ contract World is IWorld, Ownable, Initializable {
             "World: sender not account owner"
         );
         require(
-            _safeContracts[_contract] == true,
-            "World: contract is not safe"
+            _isTrustContractByAccountId[_id][_contract] == true,
+            "World: contract is not set to trusted"
         );
 
         delete _isTrustContractByAccountId[_id][_contract];
@@ -201,8 +195,9 @@ contract World is IWorld, Ownable, Initializable {
         returns (bool _isTrust)
     {
         return
-            (_safeContracts[_contract] && _isTrustWorld[_id]) ||
-            _isTrustContractByAccountId[_id][_contract];
+            (_safeContracts[_contract] && 
+            _isTrustContractByAccountId[_id][_contract]) ||
+            _isTrustWorld[_id];
     }
 
     function isBWO(address _addr) public view virtual override returns (bool) {
