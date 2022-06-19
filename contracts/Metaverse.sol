@@ -228,14 +228,14 @@ contract Metaverse is Ownable, EIP712 {
         bool _isTrustAdmin
     ) private {
         require(_newAddress != address(0), "Metaverse: zero address");
-        require(
-            _addressesToIds[_newAddress] == 0,
-            "Metaverse: address is exist"
-        );
         Account storage account = _accountsById[_id];
         require(account._isExist == true, "World: account is not exist");
 
         if (account._address != _newAddress) {
+            require(
+                _addressesToIds[_newAddress] == 0,
+                "Metaverse: new address has been used"
+            );
             delete _addressesToIds[account._address];
             _addressesToIds[_newAddress] = _id;
             account._address = _newAddress;
