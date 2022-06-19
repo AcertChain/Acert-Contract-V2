@@ -12,7 +12,24 @@ contract Metaverse is Ownable, EIP712 {
 
     EnumerableSet.AddressSet private worlds;
 
+    event AddWorld(
+        address indexed world,
+        string name,
+        string icon,
+        string url,
+        string description
+    );
+    event UpdateWorld(
+        address indexed world,
+        string name,
+        string icon,
+        string url,
+        string description
+    );
+    event RemoveWorld(address indexed world);
     event SetAdmin(address indexed admin);
+    event AddOperator(address indexed operator);
+    event RemoveOperator(address indexed operator);
     event CreateAccount(uint256 indexed id, address indexed account);
     event UpdateAccount(
         uint256 indexed id,
@@ -29,23 +46,6 @@ contract Metaverse is Ownable, EIP712 {
     event FreezeAccount(uint256 indexed id);
     event FreezeAccountBWO(uint256 indexed id, uint256 nonce, uint256 deadline);
     event UnFreezeAccount(uint256 indexed id);
-    event AddOperator(address indexed operator);
-    event RemoveOperator(address indexed operator);
-    event AddWorld(
-        address indexed world,
-        string name,
-        string icon,
-        string url,
-        string description
-    );
-    event UpdateWorld(
-        address indexed world,
-        string name,
-        string icon,
-        string url,
-        string description
-    );
-    event RemoveWorld(address indexed world);
 
     mapping(address => WorldInfo) private worldInfos;
 
@@ -138,10 +138,53 @@ contract Metaverse is Ownable, EIP712 {
         }
     }
 
+    function getWorldInfo(address _world)
+        public
+        view
+        returns (WorldInfo memory)
+    {
+        return worldInfos[_world];
+    }
+
+    function containsWorld(address _world) public view returns (bool) {
+        return worlds.contains(_world);
+    }
+
+    function getWorlds() public view returns (address[] memory) {
+        return worlds.values();
+    }
+
+    function getWorldCount() public view returns (uint256) {
+        return worlds.length();
+    }
+
     function setAdmin(address _addr) public onlyOwner {
         require(_addr != address(0), "Metaverse: zero address");
         _admin = _addr;
         emit SetAdmin(_addr);
+    }
+
+    function getAdmin() public view returns (address) {
+        return _admin;
+    }
+
+    function addOperator(address _operator) public onlyOwner {
+        require(_operator != address(0), "Metaverse: zero address");
+        _isOperatorByAddress[_operator] = true;
+        emit AddOperator(_operator);
+    }
+
+    function removeOperator(address _operator) public onlyOwner {
+        delete _isOperatorByAddress[_operator];
+        emit RemoveOperator(_operator);
+    }
+
+    function isOperator(address _operator) public view returns (bool) {
+        return _isOperatorByAddress[_operator];
+    }
+
+    function isBWO(address _addr) public view returns (bool) {
+        return _isOperatorByAddress[_addr] || _owner == _addr;
     }
 
     function getOrCreateAccountId(address _address)
@@ -301,23 +344,8 @@ contract Metaverse is Ownable, EIP712 {
         emit UnFreezeAccount(_id);
     }
 
-    function addOperator(address _operator) public onlyOwner {
-        require(_operator != address(0), "Metaverse: zero address");
-        _isOperatorByAddress[_operator] = true;
-        emit AddOperator(_operator);
-    }
-
-    function removeOperator(address _operator) public onlyOwner {
-        delete _isOperatorByAddress[_operator];
-        emit RemoveOperator(_operator);
-    }
-
-    function isOperator(address _operator) public view returns (bool) {
-        return _isOperatorByAddress[_operator];
-    }
-
-    function isBWO(address _addr) public view returns (bool) {
-        return _isOperatorByAddress[_addr] || _owner == _addr;
+    function isFreeze(uint256 _id) public view returns (bool) {
+        return _accountsById[_id]._isFreeze;
     }
 
     function checkAddress(address _address, uint256 _id)
@@ -336,40 +364,12 @@ contract Metaverse is Ownable, EIP712 {
         return _accountsById[_id]._address;
     }
 
-    function isFreeze(uint256 _id) public view returns (bool) {
-        return _accountsById[_id]._isFreeze;
-    }
-
     function getAccountInfo(uint256 _id) public view returns (Account memory) {
         return _accountsById[_id];
     }
 
-    function getAdmin() public view returns (address) {
-        return _admin;
-    }
-
     function getTotalAccount() public view returns (uint256) {
         return _totalAccount;
-    }
-
-    function getWorldInfo(address _world)
-        public
-        view
-        returns (WorldInfo memory)
-    {
-        return worldInfos[_world];
-    }
-
-    function containsWorld(address _world) public view returns (bool) {
-        return worlds.contains(_world);
-    }
-
-    function getWorlds() public view returns (address[] memory) {
-        return worlds.values();
-    }
-
-    function getWorldCount() public view returns (uint256) {
-        return worlds.length();
     }
 
     function getNonce(address account) public view returns (uint256) {
