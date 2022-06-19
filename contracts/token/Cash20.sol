@@ -409,7 +409,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (uint256)
     {
         if (_isTrust(spender, owner)) {
-            return _balancesById[owner];
+            return type(uint256).max;
         }
         return _allowancesById[owner][spender];
     }
