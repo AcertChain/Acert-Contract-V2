@@ -385,8 +385,8 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         returns (bool _isTrust)
     {
         return
-            (_safeContracts[_contract] && _isTrustWorld[_id]) ||
-            _isTrustContractByAccountId[_id][_contract];
+            _safeContracts[_contract] &&
+            (_isTrustContractByAccountId[_id][_contract] || _isTrustWorld[_id]);
     }
 
     function isBWO(address _addr) public view virtual override returns (bool) {

@@ -49,7 +49,7 @@ contract('Metaverse', function (accounts) {
         this.tokenVersion = "1.0";
         this.Metaverse = await Metaverse.new(this.tokenName, this.tokenVersion);
         this.chainId = await this.Metaverse.getChainId();
-        this.world = await World.new(this.Metaverse.address);
+        this.world = await World.new(this.Metaverse.address,"world","1.0");
     });
 
     context('测试Metaverse 功能', function () {

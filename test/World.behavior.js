@@ -9,11 +9,34 @@ const {
     expect
 } = require('chai');
 
+const Wallet = require('ethereumjs-wallet').default;
+const ethSigUtil = require('eth-sig-util');
+
 const {
     ZERO_ADDRESS
 } = constants;
 
 const ownerId = new BN(1);
+
+const deadline = new BN(parseInt(new Date().getTime() / 1000) + 36000);
+
+const EIP712Domain = [{
+        name: 'name',
+        type: 'string'
+    },
+    {
+        name: 'version',
+        type: 'string'
+    },
+    {
+        name: 'chainId',
+        type: 'uint256'
+    },
+    {
+        name: 'verifyingContract',
+        type: 'address'
+    },
+];
 
 function shouldBehaveLikeWorld(owner) {
     context('World', function () {
@@ -104,12 +127,12 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
     });
 }
 
-function shouldBehaveLikeWorldTrust(contract, account) {
+function shouldBehaveLikeWorldTrust(contract, account, operator) {
     context('Trust', function () {
         beforeEach(async function () {});
         describe('addContract', function () {
             context('add zero address', function () {
-                it('W01', async function () {
+                it('revert', async function () {
                     await expectRevert(this.world.addContract(ZERO_ADDRESS), 'World: zero address');
                 });
                 it('event AddSafeContract', async function () {
@@ -154,9 +177,39 @@ function shouldBehaveLikeWorldTrust(contract, account) {
                 it('account is trust World', async function () {
                     await this.world.getOrCreateAccountId(account);
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
-                    await this.world.trustWorld(accountId, {from: account});
+                    await this.world.trustWorld(accountId, {
+                        from: account
+                    });
                     expect(await this.world.isTrustWorld(accountId)).to.equal(true);
+                    await this.world.untrustWorld(accountId, {
+                        from: account
+                    });
+                    expect(await this.world.isTrustWorld(account)).to.equal(false);
                 });
+
+                it('account is trust World BWO', async function () {
+                    const accountW = Wallet.generate();
+                    const account = accountW.getChecksumAddressString();
+                    await this.world.getOrCreateAccountId(account)
+                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    await this.world.addOperator(operator)
+                    const nonce = await this.world.getNonce(account);
+                    const signature = signData(this.chainId, this.world.address, this.tokenName,
+                        accountW.getPrivateKey(), this.tokenVersion, accountId, account, nonce, deadline);
+                    await this.world.trustWorldBWO(accountId, account, deadline, signature, {
+                        from: operator
+                    });
+                    expect(await this.world.isTrustWorld(accountId)).to.equal(true);
+
+                    const nonce1 = await this.world.getNonce(account);
+                    const signature1 = signData(this.chainId, this.world.address, this.tokenName,
+                        accountW.getPrivateKey(), this.tokenVersion, accountId, account, nonce1, deadline);
+                    await this.world.untrustWorldBWO(accountId, account, deadline, signature1, {
+                        from: operator
+                    });
+                    expect(await this.world.isTrustWorld(account)).to.equal(false);
+                });
+
             });
         });
 
@@ -178,7 +231,9 @@ function shouldBehaveLikeWorldTrust(contract, account) {
                 it('conrtact is safe contract and user trust world', async function () {
                     await this.world.getOrCreateAccountId(account);
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
-                    await this.world.trustWorld(accountId, {from: account});
+                    await this.world.trustWorld(accountId, {
+                        from: account
+                    });
                     await this.world.addContract(contract);
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
                 });
@@ -209,6 +264,46 @@ function shouldBehaveLikeWorldTrust(contract, account) {
                     });
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
+
+                it('conrtact is safe contract and user not trust world  trust contract  BWO', async function () {
+                    const accountW = Wallet.generate();
+                    const account = accountW.getChecksumAddressString();
+                    await this.world.getOrCreateAccountId(account)
+                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    await this.world.addOperator(operator)
+                    const nonce = await this.world.getNonce(account);
+                    const signature = signContractData(this.chainId, this.world.address, this.tokenName,
+                        accountW.getPrivateKey(), this.tokenVersion, accountId, contract, account, nonce, deadline);
+
+
+                    await this.world.addContract(contract);
+                    expectEvent(await this.world.trustContractBWO(accountId, contract, account, deadline, signature, {
+                        from: operator
+                    }), 'TrustContractBWO', {
+                        id: accountId,
+                        safeContract: contract,
+                        sender: account,
+                        nonce: nonce,
+                        deadline: deadline,
+                    });
+                    expect(await this.world.isTrust(contract, accountId)).to.equal(true);
+
+                    const nonce1 = await this.world.getNonce(account);
+                    const signature1 = signContractData(this.chainId, this.world.address, this.tokenName,
+                        accountW.getPrivateKey(), this.tokenVersion, accountId, contract, account, nonce1, deadline);
+
+
+                    expectEvent(await this.world.untrustContractBWO(accountId, contract, account, deadline, signature1, {
+                        from: operator
+                    }), 'UntrustContractBWO', {
+                        id: accountId,
+                        safeContract: contract,
+                        sender: account,
+                        nonce: nonce1,
+                        deadline: deadline,
+                    });
+                    expect(await this.world.isTrust(contract, accountId)).to.equal(false);
+                });
             });
         });
     });
@@ -220,24 +315,24 @@ function shouldBehaveLikeWorldAsset() {
         describe('registerAsset', function () {
             context('zero addres', function () {
                 it('revert', async function () {
-                    await expectRevert(this.world.registerAsset(ZERO_ADDRESS, 0, ""), 'World: zero address');
+                    await expectRevert(this.world.registerAsset(ZERO_ADDRESS, ""), 'World: zero address');
                 });
             });
 
             context('addres is exist', function () {
                 it('revert', async function () {
-                    await this.world.registerAsset(this.cash.address, 0, "")
-                    await expectRevert(this.world.registerAsset(this.cash.address, 0, ""), 'World: asset is exist');
+                    await this.world.registerAsset(this.cash.address, "")
+                    await expectRevert(this.world.registerAsset(this.cash.address, ""), 'World: asset is exist');
                 });
             });
 
             context('RegisterAsset event', function () {
                 it('revert', async function () {
-                    expectEvent(await this.world.registerAsset(this.cash.address, 0, "test image"), 'RegisterAsset', {
-                        operation: new BN(0),
+                    expectEvent(await this.world.registerAsset(this.cash.address, "test image"), 'RegisterAsset', {
                         asset: this.cash.address,
                         name: "MTKN",
-                        image: "test image"
+                        image: "test image",
+                        protocol: new BN(0)
                     });
                 });
             });
@@ -246,18 +341,14 @@ function shouldBehaveLikeWorldAsset() {
         describe('updateAsset', function () {
             context('updateAsset', function () {
                 it('zero address', async function () {
-                    await expectRevert(this.world.updateAsset(ZERO_ADDRESS, 0, ""), 'World: asset is not exist');
+                    await expectRevert(this.world.updateAsset(ZERO_ADDRESS, ""), 'World: asset is not exist');
                 });
                 it('is not exist', async function () {
-                    await expectRevert(this.world.updateAsset(this.cash.address, 0, ""), 'World: asset is not exist');
-                });
-                it('type is not right', async function () {
-                    await this.world.registerAsset(this.cash.address, 0, "test image")
-                    await expectRevert(this.world.updateAsset(this.cash.address, 1, "test image"), 'World: asset type is not match');
+                    await expectRevert(this.world.updateAsset(this.cash.address, ""), 'World: asset is not exist');
                 });
                 it('ChangeAsset event', async function () {
-                    await this.world.registerAsset(this.cash.address, 0, "test image")
-                    expectEvent(await this.world.updateAsset(this.cash.address, 0, "test image"), 'UpdateAsset', {
+                    await this.world.registerAsset(this.cash.address, "test image")
+                    expectEvent(await this.world.updateAsset(this.cash.address, "test image"), 'UpdateAsset', {
                         asset: this.cash.address,
                         image: "test image"
                     });
@@ -267,14 +358,111 @@ function shouldBehaveLikeWorldAsset() {
         describe('getAsset', function () {
             context('get asset ', function () {
                 it('get asset', async function () {
-                    await this.world.registerAsset(this.cash.address, 0, "test image")
-                    expect(await this.world.getAsset(this.cash.address)).to.deep.equal(['0', true, this.cash.address, "MTKN", "test image"]);
+                    await this.world.registerAsset(this.cash.address, "test image")
+                    expect(await this.world.getAsset(this.cash.address)).to.deep.equal([true, this.cash.address, "MTKN", "test image", '0']);
                 });
             });
         });
 
     });
 }
+
+
+function signData(chainId, verifyingContract, name, key, version,
+    id, sender, nonce, deadline) {
+    const data = {
+        types: {
+            EIP712Domain,
+            BWO: [{
+                    name: 'id',
+                    type: 'uint256'
+                },
+                {
+                    name: 'sender',
+                    type: 'address'
+                },
+                {
+                    name: 'nonce',
+                    type: 'uint256'
+                },
+                {
+                    name: 'deadline',
+                    type: 'uint256'
+                },
+            ],
+        },
+        domain: {
+            name,
+            version,
+            chainId,
+            verifyingContract
+        },
+        primaryType: 'BWO',
+        message: {
+            id,
+            sender,
+            nonce,
+            deadline
+        },
+    };
+
+    const signature = ethSigUtil.signTypedMessage(key, {
+        data
+    });
+
+    return signature;
+}
+
+function signContractData(chainId, verifyingContract, name, key, version,
+    id, contract, sender, nonce, deadline) {
+    const data = {
+        types: {
+            EIP712Domain,
+            BWO: [{
+                    name: 'id',
+                    type: 'uint256'
+                },
+                {
+                    name: 'contract',
+                    type: 'address'
+                },
+                {
+                    name: 'sender',
+                    type: 'address'
+                },
+                {
+                    name: 'nonce',
+                    type: 'uint256'
+                },
+                {
+                    name: 'deadline',
+                    type: 'uint256'
+                },
+            ],
+        },
+        domain: {
+            name,
+            version,
+            chainId,
+            verifyingContract
+        },
+        primaryType: 'BWO',
+        message: {
+            id,
+            contract,
+            sender,
+            nonce,
+            deadline
+        },
+    };
+
+    const signature = ethSigUtil.signTypedMessage(key, {
+        data
+    });
+
+    return signature;
+}
+
 
 module.exports = {
     shouldBehaveLikeWorld,
