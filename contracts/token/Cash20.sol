@@ -64,10 +64,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         return 18;
     }
 
-    function worldAddress() external view virtual override returns (address) {
-        return _world;
-    }
-
     /**
      * @dev See {IERC20-totalSupply}.
      */
@@ -99,16 +95,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (uint256)
     {
         return _balancesById[account];
-    }
-
-    function getNonce(address account)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return _nonces[account];
     }
 
     /**
@@ -200,32 +186,81 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {IERC20-allowance}.
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Emits an {Approval} event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of {ERC20}.
+     *
+     * NOTE: Does not update the allowance if the current allowance
+     * is the maximum `uint256`.
+     *
+     * Requirements:
+     *
+     * - `from` and `to` cannot be the zero address.
+     * - `from` must have a balance of at least `amount`.
+     * - the caller must have allowance for ``from``'s tokens of at least
+     * `amount`.
      */
-    function allowance(address owner, address spender)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return allowanceCash(_getAccountIdByAddress(owner), spender);
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        if (_isTrust(_msgSender(), _getIdByAddress(from))) {
+            _transfer(from, to, amount);
+            return true;
+        }
+        uint256 currentAllowance = allowance(from, _msgSender());
+        if (currentAllowance != type(uint256).max) {
+            require(currentAllowance >= amount, "Cash: insufficient allowance");
+            unchecked {
+                _approve(from, _msgSender(), currentAllowance - amount);
+            }
+        }
+        _transfer(from, to, amount);
+        return true;
     }
 
     /**
-     * @dev See {IERC20-allowanceCash}.
+     * @dev Moves `amount` of tokens from `sender` to `recipient`.
+     *
+     * This internal function is equivalent to {transfer}, and can be used to
+     * e.g. implement automatic token fees, slashing mechanisms, etc.
+     *
+     * Emits a {Transfer} event.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `from` must have a balance of at least `amount`.
      */
-    function allowanceCash(uint256 owner, address spender)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        if (_isTrust(spender, owner)) {
-            return _balancesById[owner];
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {
+        require(from != address(0), "Cash: transfer from the zero address");
+        require(to != address(0), "Cash: transfer to the zero address");
+
+        _transferCash(_getIdByAddress(from), _getIdByAddress(to), amount);
+        emit Transfer(from, to, amount);
+    }
+
+    function _transferCash(
+        uint256 from,
+        uint256 to,
+        uint256 amount
+    ) internal virtual {
+        require(!_isFreeze(from), "Cash: transfer from is frozen");
+        require(_accountIsExist(to), "Cash: to account is not exist");
+        uint256 fromBalance = _balancesById[from];
+        require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
+        unchecked {
+            _balancesById[from] = fromBalance - amount;
         }
-        return _allowancesById[owner][spender];
+        _balancesById[to] += amount;
+        emit TransferCash(from, to, amount);
     }
 
     /**
@@ -303,39 +338,80 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
-     * @dev See {IERC20-transferFrom}.
+     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
      *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
+     * This internal function is equivalent to `approve`, and can be used to
+     * e.g. set automatic allowances for certain subsystems, etc.
      *
-     * NOTE: Does not update the allowance if the current allowance
-     * is the maximum `uint256`.
+     * Emits an {Approval} event.
      *
      * Requirements:
      *
-     * - `from` and `to` cannot be the zero address.
-     * - `from` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``from``'s tokens of at least
-     * `amount`.
+     * - `owner` cannot be the zero address.
+     * - `spender` cannot be the zero address.
      */
-    function transferFrom(
-        address from,
-        address to,
+    function _approve(
+        address owner,
+        address spender,
         uint256 amount
-    ) public virtual override returns (bool) {
-        if (_isTrust(_msgSender(), _getIdByAddress(from))) {
-            _transfer(from, to, amount);
-            return true;
+    ) internal virtual {
+        require(owner != address(0), "Cash: approve from the zero address");
+        _approveId(_getIdByAddress(owner), spender, amount);
+        emit Approval(owner, spender, amount);
+    }
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
+     *
+     * This internal function is equivalent to `approve`, and can be used to
+     * e.g. set automatic allowances for certain subsystems, etc.
+     *
+     * Emits an {ApprovalCash} event.
+     *
+     * Requirements:
+     *
+     * - `owner` cannot be the zero .
+     * - `spender` cannot be the zero .
+     */
+    function _approveId(
+        uint256 ownerId,
+        address spender,
+        uint256 amount
+    ) internal virtual {
+        require(ownerId != 0, "Cash: approve from the zero Id");
+        require(!_isFreeze(ownerId), "Cash: approve owner is frozen");
+        require(spender != address(0), "Cash: approve to the zero address");
+        _allowancesById[ownerId][spender] = amount;
+        emit ApprovalCash(ownerId, spender, amount);
+    }
+
+    /**
+     * @dev See {IERC20-allowance}.
+     */
+    function allowance(address owner, address spender)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        return allowanceCash(_getAccountIdByAddress(owner), spender);
+    }
+
+    /**
+     * @dev See {IERC20-allowanceCash}.
+     */
+    function allowanceCash(uint256 owner, address spender)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        if (_isTrust(spender, owner)) {
+            return _balancesById[owner];
         }
-        uint256 currentAllowance = allowance(from, _msgSender());
-        if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "Cash: insufficient allowance");
-            unchecked {
-                _approve(from, _msgSender(), currentAllowance - amount);
-            }
-        }
-        _transfer(from, to, amount);
-        return true;
+        return _allowancesById[owner][spender];
     }
 
     /**
@@ -392,48 +468,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         return true;
     }
 
-    /**
-     * @dev Moves `amount` of tokens from `sender` to `recipient`.
-     *
-     * This internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `from` cannot be the zero address.
-     * - `to` cannot be the zero address.
-     * - `from` must have a balance of at least `amount`.
-     */
-    function _transfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual {
-        require(from != address(0), "Cash: transfer from the zero address");
-        require(to != address(0), "Cash: transfer to the zero address");
-
-        _transferCash(_getIdByAddress(from), _getIdByAddress(to), amount);
-        emit Transfer(from, to, amount);
-    }
-
-    function _transferCash(
-        uint256 from,
-        uint256 to,
-        uint256 amount
-    ) internal virtual {
-        require(!_isFreeze(from), "Cash: transfer from is frozen");
-        require(_accountIsExist(to), "Cash: to account is not exist");
-        uint256 fromBalance = _balancesById[from];
-        require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
-        unchecked {
-            _balancesById[from] = fromBalance - amount;
-        }
-        _balancesById[to] += amount;
-        emit TransferCash(from, to, amount);
-    }
-
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
      *
@@ -488,54 +522,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         emit TransferCash(accountId, 0, amount);
     }
 
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual {
-        require(owner != address(0), "Cash: approve from the zero address");
-        _approveId(_getIdByAddress(owner), spender, amount);
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {ApprovalCash} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero .
-     * - `spender` cannot be the zero .
-     */
-    function _approveId(
-        uint256 ownerId,
-        address spender,
-        uint256 amount
-    ) internal virtual {
-        require(ownerId != 0, "Cash: approve from the zero Id");
-        require(!_isFreeze(ownerId), "Cash: approve owner is frozen");
-        require(spender != address(0), "Cash: approve to the zero address");
-        _allowancesById[ownerId][spender] = amount;
-        emit ApprovalCash(ownerId, spender, amount);
-    }
-
     function _getAccountIdByAddress(address addr)
         internal
         view
@@ -578,6 +564,20 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (bool)
     {
         return IWorld(_world).isFreeze( _id);
+    }
+
+    function getNonce(address account)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        return _nonces[account];
+    }
+
+    function worldAddress() external view virtual override returns (address) {
+        return _world;
     }
 
     function _recoverSig(
