@@ -126,26 +126,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return owner;
     }
 
-    function getNonce(address account)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return _nonces[account];
-    }
-
     function name() public view virtual override returns (string memory) {
         return _name;
     }
 
     function symbol() public view virtual override returns (string memory) {
         return _symbol;
-    }
-
-    function worldAddress() external view virtual override returns (address) {
-        return _world;
     }
 
     function tokenURI(uint256 tokenId)
@@ -199,6 +185,11 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _approve(to, tokenId);
         emit ApprovalItemBWO(to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
+    }
+
+    function _approve(address to, uint256 tokenId) internal virtual {
+        _tokenApprovalsById[tokenId] = to;
+        emit Approval(Item721.ownerOf(tokenId), to, tokenId);
     }
 
     /**
@@ -270,6 +261,21 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _setApprovalForAllItem(from, to, approved);
         emit ApprovalForAllItemBWO(from, to, approved, sender, nonce, deadline);
         _nonces[sender] += 1;
+    }
+
+    function _setApprovalForAllItem(
+        uint256 owner,
+        address operator,
+        bool approved
+    ) internal virtual {
+        require(owner != 0, "Item: id zero is not a valid owner");
+        require(!_isFreeze(owner), "Item: owner is frozen");
+        require(
+            operator != _getAddressById(owner),
+            "Item: approve to caller"
+        );
+        _operatorApprovalsById[owner][operator] = approved;
+        emit ApprovalForAllItem(owner, operator, approved);
     }
 
     /**
@@ -362,6 +368,29 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _transfer(from, to, tokenId);
         emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
+    }
+
+    function _transfer(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId
+    ) internal virtual {
+        require(
+            Item721.ownerOfItem(tokenId) == from,
+            "Item: transfer from incorrect owner"
+        );
+        require(!_isFreeze(from), "Item: transfer from frozen account");
+        require(to != 0, "Item: transfer to the zero id");
+        require(_accountIsExist(to), "Item: to account is not exist");
+
+        // Clear approvals from the previous owner
+        _approve(address(0), tokenId);
+
+        _balancesById[from] -= 1;
+        _balancesById[to] += 1;
+        _ownersById[tokenId] = to;
+
+        emit TransferItem(from, to, tokenId);
     }
 
     function safeTransferFrom(
@@ -572,49 +601,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         emit TransferItem(ownerId, 0, tokenId);
     }
 
-    function _transfer(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId
-    ) internal virtual {
-        require(
-            Item721.ownerOfItem(tokenId) == from,
-            "Item: transfer from incorrect owner"
-        );
-        require(!_isFreeze(from), "Item: transfer from frozen account");
-        require(to != 0, "Item: transfer to the zero id");
-        require(_accountIsExist(to), "Item: to account is not exist");
-
-        // Clear approvals from the previous owner
-        _approve(address(0), tokenId);
-
-        _balancesById[from] -= 1;
-        _balancesById[to] += 1;
-        _ownersById[tokenId] = to;
-
-        emit TransferItem(from, to, tokenId);
-    }
-
-    function _approve(address to, uint256 tokenId) internal virtual {
-        _tokenApprovalsById[tokenId] = to;
-        emit Approval(Item721.ownerOf(tokenId), to, tokenId);
-    }
-
-    function _setApprovalForAllItem(
-        uint256 owner,
-        address operator,
-        bool approved
-    ) internal virtual {
-        require(owner != 0, "Item: id zero is not a valid owner");
-        require(!_isFreeze(owner), "Item: owner is frozen");
-        require(
-            operator != _getAddressById(owner),
-            "Item: approve to caller"
-        );
-        _operatorApprovalsById[owner][operator] = approved;
-        emit ApprovalForAllItem(owner, operator, approved);
-    }
-
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
      * The call is not executed if the target address is not a contract.
@@ -697,6 +683,20 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
     function _isFreeze(uint256 _id) internal view returns (bool) {
         return IWorld(_world).isFreeze(_id);
+    }
+
+    function getNonce(address account)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        return _nonces[account];
+    }
+
+    function worldAddress() external view virtual override returns (address) {
+        return _world;
     }
 
     function _recoverSig(
