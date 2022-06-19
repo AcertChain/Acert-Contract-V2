@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IItem721.sol";
+import "../interfaces/IWorldAsset.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
@@ -146,6 +147,15 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
     function worldAddress() external view virtual override returns (address) {
         return _world;
+    }
+
+    function protocol()
+        external
+        pure
+        virtual
+        returns (IWorldAsset.ProtocolEnum)
+    {
+        return IWorldAsset.ProtocolEnum.ITEM721;
     }
 
     function tokenURI(uint256 tokenId)

@@ -458,7 +458,7 @@ function signChangeAccountData(chainId, verifyingContract, name, key, version,
         primaryType: 'BWO',
         message: {
             id,
-            new:newAddr,
+            new: newAddr,
             isTrustAdmin,
             sender,
             nonce,

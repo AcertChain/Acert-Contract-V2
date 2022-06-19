@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/ICash20.sol";
 import "../interfaces/IWorld.sol";
+import "../interfaces/IWorldAsset.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -66,6 +67,15 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     function worldAddress() external view virtual override returns (address) {
         return _world;
+    }
+
+    function protocol()
+        external
+        pure
+        virtual
+        returns (IWorldAsset.ProtocolEnum)
+    {
+        return IWorldAsset.ProtocolEnum.CASH20;
     }
 
     /**
@@ -607,12 +617,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         return IWorld(_world).isTrust(_contract, _id);
     }
 
-    function _isFreeze(uint256 _id)
-        internal
-        view
-        returns (bool)
-    {
-        return IWorld(_world).isFreeze( _id);
+    function _isFreeze(uint256 _id) internal view returns (bool) {
+        return IWorld(_world).isFreeze(_id);
     }
 
     function _recoverSig(bytes32 digest, bytes memory signature)

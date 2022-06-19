@@ -11,18 +11,15 @@ import "./common/Ownable.sol";
 import "./common/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract World is IWorld, Ownable, Initializable {
-    enum AssetOperation {
-        CASH20,
-        ITEM721
-    }
+contract World is IWorld, Ownable, Initializable, EIP712 {
     // event 注册Asset
     event RegisterAsset(
-        uint8 indexed operation,
         address indexed asset,
         string name,
-        string image
+        string image,
+        IWorldAsset.ProtocolEnum protocol
     );
 
     event UpdateAsset(address indexed asset, string image);
@@ -34,13 +31,40 @@ contract World is IWorld, Ownable, Initializable {
     event UntrustContract(uint256 indexed id, address indexed safeContract);
     event TrustWorld(uint256 indexed id);
     event UntrustWorld(uint256 indexed id);
+    event TrustContractBWO(
+        uint256 indexed id,
+        address indexed safeContract,
+        address indexed sender,
+        uint256 nonce,
+        uint256 deadline
+    );
+    event UntrustContractBWO(
+        uint256 indexed id,
+        address indexed safeContract,
+        address indexed sender,
+        uint256 nonce,
+        uint256 deadline
+    );
+
+    event TrustWorldBWO(
+        uint256 indexed id,
+        address indexed sender,
+        uint256 nonce,
+        uint256 deadline
+    );
+    event UntrustWorldBWO(
+        uint256 indexed id,
+        address indexed sender,
+        uint256 nonce,
+        uint256 deadline
+    );
     // struct Asset
     struct Asset {
-        uint8 _type;
         bool _isExist;
         address _contract;
         string _name;
         string _image;
+        IWorldAsset.ProtocolEnum _protocol;
     }
 
     // Mapping from address to operator
@@ -58,21 +82,27 @@ contract World is IWorld, Ownable, Initializable {
     // Mapping from address to Asset
     mapping(address => Asset) private _assets;
 
+    // nonce
+    mapping(address => uint256) private _nonces;
+
     address[] private _assetAddresses;
 
     address private _metaverse;
 
     // constructor
-    constructor(address metaverse) {
+    constructor(
+        address metaverse,
+        string memory name_,
+        string memory version_
+    ) EIP712(name_, version_) {
         _owner = msg.sender;
         _metaverse = metaverse;
     }
 
-    function registerAsset(
-        address _contract,
-        AssetOperation _operation,
-        string calldata _image
-    ) public onlyOwner {
+    function registerAsset(address _contract, string calldata _image)
+        public
+        onlyOwner
+    {
         require(_contract != address(0), "World: zero address");
         require(_assets[_contract]._isExist == false, "World: asset is exist");
         require(
@@ -81,29 +111,19 @@ contract World is IWorld, Ownable, Initializable {
         );
 
         string memory symbol = IWorldAsset(_contract).symbol();
-        _assets[_contract] = Asset(
-            uint8(_operation),
-            true,
-            _contract,
-            symbol,
-            _image
-        );
+        IWorldAsset.ProtocolEnum _protocol = IWorldAsset(_contract).protocol();
+        _assets[_contract] = Asset(true, _contract, symbol, _image, _protocol);
         _assetAddresses.push(_contract);
-        emit RegisterAsset(uint8(_operation), _contract, symbol, _image);
+        emit RegisterAsset(_contract, symbol, _image, _protocol);
     }
 
-    function updateAsset(
-        address _contract,
-        AssetOperation _typeOperation,
-        string calldata _image
-    ) public onlyOwner {
+    function updateAsset(address _contract, string calldata _image)
+        public
+        onlyOwner
+    {
         require(
             _assets[_contract]._isExist == true,
             "World: asset is not exist"
-        );
-        require(
-            _assets[_contract]._type == uint8(_typeOperation),
-            "World: asset type is not match"
         );
 
         _assets[_contract]._image = _image;
@@ -112,9 +132,51 @@ contract World is IWorld, Ownable, Initializable {
 
     function trustContract(uint256 _id, address _contract) public {
         require(
-            Metaverse(_metaverse).getAddressById(_id) == msg.sender,
+            getAddressById(_id) == msg.sender,
             "World: sender not account owner"
         );
+        _trustContract(_id, _contract);
+    }
+
+    function trustContractBWO(
+        uint256 _id,
+        address _contract,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public {
+        require(isBWO(msg.sender), "World: sender is not BWO");
+        require(
+            getAddressById(_id) == sender,
+            "World: sender not account owner"
+        );
+        uint256 nonce = getNonce(sender);
+        _recoverSig(
+            deadline,
+            sender,
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 id,address contract,address sender,uint256 nonce,uint256 deadline)"
+                        ),
+                        _id,
+                        _contract,
+                        sender,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
+        );
+
+        _trustContract(_id, _contract);
+        emit TrustContractBWO(_id, _contract, sender, nonce, deadline);
+        _nonces[sender]++;
+    }
+
+    function _trustContract(uint256 _id, address _contract) private {
         require(
             _safeContracts[_contract] == true,
             "World: contract is not safe"
@@ -128,6 +190,48 @@ contract World is IWorld, Ownable, Initializable {
             getAddressById(_id) == msg.sender,
             "World: sender not account owner"
         );
+        _untrustContract(_id, _contract);
+    }
+
+    function untrustContractBWO(
+        uint256 _id,
+        address _contract,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public {
+        require(isBWO(msg.sender), "World: sender is not BWO");
+        require(
+            getAddressById(_id) == sender,
+            "World: sender not account owner"
+        );
+        uint256 nonce = getNonce(sender);
+        _recoverSig(
+            deadline,
+            sender,
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 id,address contract,address sender,uint256 nonce,uint256 deadline)"
+                        ),
+                        _id,
+                        _contract,
+                        sender,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
+        );
+
+        _untrustContract(_id, _contract);
+        emit UntrustContractBWO(_id, _contract, sender, nonce, deadline);
+        _nonces[sender]++;
+    }
+
+    function _untrustContract(uint256 _id, address _contract) private {
         require(
             _safeContracts[_contract] == true,
             "World: contract is not safe"
@@ -165,20 +269,100 @@ contract World is IWorld, Ownable, Initializable {
 
     function trustWorld(uint256 _id) public {
         require(
-            Metaverse(_metaverse).getAddressById(_id) == msg.sender,
+            getAddressById(_id) == msg.sender,
             "World: sender not account owner"
         );
         _isTrustWorld[_id] = true;
         emit TrustWorld(_id);
     }
 
+    function trustWorldBWO(
+        uint256 _id,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public {
+        require(isBWO(msg.sender), "World: sender is not BWO");
+        require(
+            getAddressById(_id) == sender,
+            "World: sender not account owner"
+        );
+        uint256 nonce = getNonce(sender);
+        _recoverSig(
+            deadline,
+            sender,
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"
+                        ),
+                        _id,
+                        sender,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
+        );
+        _trustWorld(_id);
+        emit TrustWorldBWO(_id, sender, nonce, deadline);
+        _nonces[sender]++;
+    }
+
+    function _trustWorld(uint256 _id) private {
+        _isTrustWorld[_id] = true;
+        emit TrustWorld(_id);
+    }
+
     function untrustWorld(uint256 _id) public {
         require(
-            Metaverse(_metaverse).getAddressById(_id) == msg.sender,
+            getAddressById(_id) == msg.sender,
             "World: sender not account owner"
         );
         delete _isTrustWorld[_id];
+        emit UntrustWorld(_id);
+    }
 
+    function untrustWorldBWO(
+        uint256 _id,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public {
+        require(isBWO(msg.sender), "World: sender is not BWO");
+        require(
+            getAddressById(_id) == sender,
+            "World: sender not account owner"
+        );
+        uint256 nonce = getNonce(sender);
+        _recoverSig(
+            deadline,
+            sender,
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"
+                        ),
+                        _id,
+                        sender,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
+        );
+        _untrustWorld(_id);
+        emit UntrustWorldBWO(_id, sender, nonce, deadline);
+        _nonces[sender]++;
+    }
+
+    function _untrustWorld(uint256 _id) private {
+        delete _isTrustWorld[_id];
+        emit UntrustWorld(_id);
     }
 
     function isSafeContract(address _contract) public view returns (bool) {
@@ -250,5 +434,27 @@ contract World is IWorld, Ownable, Initializable {
         returns (uint256 id)
     {
         return Metaverse(_metaverse).getOrCreateAccountId(_address);
+    }
+
+    function getNonce(address account) public view returns (uint256) {
+        return _nonces[account];
+    }
+
+    // for test
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
+    }
+
+    function _recoverSig(
+        uint256 deadline,
+        address signer,
+        bytes32 digest,
+        bytes memory signature
+    ) internal view {
+        require(block.timestamp < deadline, "Metaverse: BWO call expired");
+        require(
+            signer == ECDSA.recover(digest, signature),
+            "Metaverse: recoverSig failed"
+        );
     }
 }

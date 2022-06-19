@@ -197,7 +197,7 @@ contract Metaverse is Ownable, EIP712 {
                 _accountsById[_id]._address == sender,
             "Metaverse: account is not exist"
         );
-        uint256 nonce = _nonces[sender];
+        uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
             sender,
@@ -220,6 +220,7 @@ contract Metaverse is Ownable, EIP712 {
         );
         _changeAccount(_id, _newAddress, _isTrustAdmin);
         emit UpdateAccountBWO(_id, _newAddress, _isTrustAdmin, nonce, deadline);
+        _nonces[sender]++;
     }
 
     function _changeAccount(
@@ -270,7 +271,7 @@ contract Metaverse is Ownable, EIP712 {
                 _accountsById[_id]._address == sender,
             "Metaverse: account is not exist"
         );
-        uint256 nonce = _nonces[sender];
+        uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
             sender,
@@ -293,6 +294,7 @@ contract Metaverse is Ownable, EIP712 {
         _accountsById[_id]._isFreeze = true;
         emit FreezeAccount(_id);
         emit FreezeAccountBWO(_id, nonce, deadline);
+        _nonces[sender]++;
     }
 
     function unfreezeAccount(uint256 _id) public {
@@ -376,6 +378,7 @@ contract Metaverse is Ownable, EIP712 {
         return _nonces[account];
     }
 
+    // for test
     function getChainId() external view returns (uint256) {
         return block.chainid;
     }
