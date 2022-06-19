@@ -143,7 +143,19 @@ contract Cash20 is Context, EIP712, ICash20 {
             _transferCash(from, to, amount);
             return true;
         }
-        _checkAndTransferCash(_msgSender(), from, to, amount);
+        if (_checkAddress(_msgSender(), from)) {
+            _transferCash(from, to, amount);
+            return true;
+        }
+        uint256 currentAllowance = allowanceCash(from, _msgSender());
+        if (currentAllowance != type(uint256).max) {
+            require(currentAllowance >= amount, "Cash: insufficient allowance");
+            unchecked {
+                _approveId(from, _msgSender(), currentAllowance - amount);
+            }
+        }
+        _transferCash(from, to, amount);
+
         return true;
     }
 
@@ -160,52 +172,31 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(to != 0, "Cash: transfer to the zero Id");
         require(_isBWO(_msgSender()), "Cash: must be the world BWO");
         uint256 nonce = _nonces[sender];
-        require(
-            sender ==
-                _recoverSig(
-                    _hashTypedDataV4(
+        _recoverSig(
+            deadline,
+            sender,
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
                         keccak256(
-                            abi.encode(
-                                keccak256(
-                                    "BWO(uint256 from,uint256 to,uint256 value,address sender,uint256 nonce,uint256 deadline)"
-                                ),
-                                from,
-                                to,
-                                amount,
-                                sender,
-                                nonce,
-                                deadline
-                            )
-                        )
-                    ),
-                    signature
-                ),
-            "Cash: recoverSig failed"
+                            "BWO(uint256 from,uint256 to,uint256 value,address sender,uint256 nonce,uint256 deadline)"
+                        ),
+                        from,
+                        to,
+                        amount,
+                        sender,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
         );
-        require(block.timestamp < deadline, "Cash: signed transaction expired");
-        _checkAndTransferCash(sender, from, to, amount);
+        require(_checkAddress(sender, from);
+        _transferCash(from, to, amount);
         emit TransferCashBWO(from, to, amount, sender, nonce, deadline);
         _nonces[sender] += 1;
         return true;
-    }
-
-    function _checkAndTransferCash(
-        address sender,
-        uint256 from,
-        uint256 to,
-        uint256 amount
-    ) internal virtual {
-        if (_checkAddress(sender, from)) {
-            return _transferCash(from, to, amount);
-        }
-        uint256 currentAllowance = allowanceCash(from, sender);
-        if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "Cash: insufficient allowance");
-            unchecked {
-                _approveId(from, sender, currentAllowance - amount);
-            }
-        }
-        _transferCash(from, to, amount);
     }
 
     /**
@@ -218,11 +209,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        uint256 ownerId = _getAccountIdByAddress(owner);
-        if (_isTrust(spender, ownerId)) {
-            return _balancesById[ownerId];
-        }
-        return _allowancesById[ownerId][spender];
+        return allowanceCash(_getAccountIdByAddress(owner), spender);
     }
 
     /**
@@ -288,33 +275,27 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(_isBWO(_msgSender()), "Cash: must be the world BWO");
         require(_checkAddress(sender, ownerId), "Cash: not owner");
         uint256 nonce = _nonces[sender];
-        require(
-            sender ==
-                _recoverSig(
-                    _hashTypedDataV4(
+        _recoverSig(
+            deadline,
+            sender,
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
                         keccak256(
-                            abi.encode(
-                                keccak256(
-                                    "BWO(uint256 ownerId,address spender,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
-                                ),
-                                ownerId,
-                                spender,
-                                amount,
-                                sender,
-                                nonce,
-                                deadline
-                            )
-                        )
-                    ),
-                    signature
-                ),
-            "approveCashBWO : recoverSig failed"
+                            "BWO(uint256 ownerId,address spender,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
+                        ),
+                        ownerId,
+                        spender,
+                        amount,
+                        sender,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
         );
 
-        require(
-            block.timestamp < deadline,
-            "approveCashBWO: signed transaction expired"
-        );
         _approveId(ownerId, spender, amount);
         emit ApprovalCashBWO(ownerId, spender, amount, sender, nonce, deadline);
         _nonces[sender] += 1;
@@ -346,7 +327,13 @@ contract Cash20 is Context, EIP712, ICash20 {
             _transfer(from, to, amount);
             return true;
         }
-        _spendAllowance(from, _msgSender(), amount);
+        uint256 currentAllowance = allowance(from, _msgSender());
+        if (currentAllowance != type(uint256).max) {
+            require(currentAllowance >= amount, "Cash: insufficient allowance");
+            unchecked {
+                _approve(from, _msgSender(), currentAllowance - amount);
+            }
+        }
         _transfer(from, to, amount);
         return true;
     }
@@ -549,28 +536,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         emit ApprovalCash(ownerId, spender, amount);
     }
 
-    /**
-     * @dev Updates `owner` s allowance for `spender` based on spent `amount`.
-     *
-     * Does not update the allowance amount in case of infinite allowance.
-     * Revert if not enough allowance is available.
-     *
-     * Might emit an {Approval} event.
-     */
-    function _spendAllowance(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual {
-        uint256 currentAllowance = allowance(owner, spender);
-        if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "Cash: insufficient allowance");
-            unchecked {
-                _approve(owner, spender, currentAllowance - amount);
-            }
-        }
-    }
-
     function _getAccountIdByAddress(address addr)
         internal
         view
@@ -615,11 +580,16 @@ contract Cash20 is Context, EIP712, ICash20 {
         return IWorld(_world).isFreeze( _id);
     }
 
-    function _recoverSig(bytes32 digest, bytes memory signature)
-        internal
-        pure
-        returns (address)
-    {
-        return ECDSA.recover(digest, signature);
+    function _recoverSig(
+        uint256 deadline,
+        address signer,
+        bytes32 digest,
+        bytes memory signature
+    ) internal view {
+        require(block.timestamp < deadline, "Metaverse: BWO call expired");
+        require(
+            signer == ECDSA.recover(digest, signature),
+            "Metaverse: recoverSig failed"
+        );
     }
 }
