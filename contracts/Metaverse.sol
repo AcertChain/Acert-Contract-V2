@@ -218,9 +218,13 @@ contract Metaverse is Ownable, EIP712 {
     ) public {
         Account storage account = _accountsById[_id];
         require(
+            _accountsById[_id]._isExist == true,
+            "Metaverse: account is not exist"
+        );
+        require(
             msg.sender == account._address ||
-                ((account._isTrustAdmin || account._isFreeze) &&
-                    msg.sender == _admin),
+            (msg.sender == _admin &&
+                (account._isTrustAdmin || account._isFreeze)),
             "Metaverse: sender not owner or admin"
         );
         _changeAccount(_id, _newAddress, _isTrustAdmin);
@@ -236,9 +240,12 @@ contract Metaverse is Ownable, EIP712 {
     ) public {
         require(isBWO(msg.sender), "Metaverse: sender is not BWO");
         require(
-            _accountsById[_id]._isExist == true &&
-                _accountsById[_id]._address == sender,
+            _accountsById[_id]._isExist == true,
             "Metaverse: account is not exist"
+        );
+        require(
+            _accountsById[_id]._address == sender,
+            "Metaverse: sender not owner"
         );
         uint256 nonce = _nonces[sender];
         _recoverSig(
@@ -309,10 +316,14 @@ contract Metaverse is Ownable, EIP712 {
     ) public {
         require(isBWO(msg.sender), "Metaverse: sender is not BWO");
         require(
-            _accountsById[_id]._isExist == true &&
-                _accountsById[_id]._address == sender,
+            _accountsById[_id]._isExist == true,
             "Metaverse: account is not exist"
         );
+        require(
+            _accountsById[_id]._address == sender,
+            "Metaverse: sender not owner"
+        );
+
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
