@@ -142,7 +142,6 @@ contract Cash20 is Context, EIP712, ICash20 {
             }
         }
         _transferCash(from, to, amount);
-
         return true;
     }
 
@@ -410,7 +409,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         returns (uint256)
     {
         if (_isTrust(spender, owner)) {
-            return type(uint256).max;
+            return _balancesById[owner];
         }
         return _allowancesById[owner][spender];
     }
