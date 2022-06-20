@@ -738,7 +738,7 @@ function shouldBehaveLikeERC721Metadata (errorPrefix, name, symbol, owner) {
       });
 
       it('return empty string by default', async function () {
-        expect(await this.token.tokenURI(firstTokenId)).to.be.equal('');
+        expect(await this.token.tokenURI(firstTokenId)).to.be.equal('testURI5042');
       });
 
       // it('reverts when queried for non existent token id', async function () {

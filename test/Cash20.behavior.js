@@ -299,7 +299,7 @@ function shouldBehaveLikeCash20IsTrust(initialSupply, initialHolder, initialHold
       await this.token.transferCash(tokenOwner, to, amount, {
         from: spenderAddr
       });
-      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal('0');
+      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal(MAX_UINT256);
     });
   });
 
@@ -309,7 +309,7 @@ function shouldBehaveLikeCash20IsTrust(initialSupply, initialHolder, initialHold
         from: spenderAddr
       });
 
-      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal('0');
+      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal(MAX_UINT256);
     });
 
   });

@@ -331,9 +331,9 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           return this.token.methods['safeTransferFromItem(uint256,uint256,uint256,bytes)'](fromId, toId, tokenId, data, opts);
         };
 
-        const safeTransferFromItemWithoutData = function (senderId, fromId, toId, tokenId, opts) {
-          return this.token.methods['safeTransferFromItem(uint256,uint256,uint256)'](fromId, toId, tokenId, opts);
-        };
+        // const safeTransferFromItemWithoutData = function (senderId, fromId, toId, tokenId, opts) {
+        //   return this.token.methods['safeTransferFromItem(uint256,uint256,uint256)'](fromId, toId, tokenId, opts);
+        // };
 
         const shouldTransferSafely = function (transferFun, data) {
           describe('to a user account', function () {
@@ -400,9 +400,9 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           shouldTransferSafely(safeTransferFromItemWithData, data);
         });
 
-        describe('without data', function () {
-          shouldTransferSafely(safeTransferFromItemWithoutData, null);
-        });
+        // describe('without data', function () {
+        //   shouldTransferSafely(safeTransferFromItemWithoutData, null);
+        // });
 
         describe('to a receiver contract returning unexpected value', function () {
           it('reverts', async function () {
@@ -410,7 +410,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             await this.world.getOrCreateAccountId(invalidReceiver.address);
             const invalidReceiverId = new BN(await this.world.getAccountIdByAddress(invalidReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, invalidReceiverId, tokenId, {
+              this.token.safeTransferFromItem(ownerId, invalidReceiverId, tokenId,'0x', {
                 from: owner
               }),
               'Item: transfer to non ERC721Receiver implementer',
@@ -425,7 +425,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,'0x', {
                 from: owner
               }),
               'ERC721ReceiverMock: reverting',
@@ -439,7 +439,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             await this.world.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, '0x',{
                 from: owner
               }),
               'Item: transfer to non ERC721Receiver implementer',
@@ -454,7 +454,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert.unspecified(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,'0x', {
                 from: owner
               }),
             );
@@ -468,7 +468,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const nonReceiverId = new BN(await this.world.getAccountIdByAddress(nonReceiver.address));
 
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, nonReceiverId, tokenId, {
+              this.token.safeTransferFromItem(ownerId, nonReceiverId, tokenId, '0x', {
                 from: owner
               }),
               'Item: transfer to non ERC721Receiver implementer',
@@ -953,7 +953,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
-      await this.world.addContract(anotherApproved);
+      await this.world.addSafeContract(anotherApproved);
       await this.world.trustWorld(ownerId, {
         from: owner
       });
@@ -976,7 +976,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
-      await this.world.addContract(anotherApproved);
+      await this.world.addSafeContract(anotherApproved);
       await this.world.trustContract(ownerId, anotherApproved, {
         from: owner
       });

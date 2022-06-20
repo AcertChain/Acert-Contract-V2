@@ -5,6 +5,7 @@ import "hardhat/console.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IItem721.sol";
 import "../interfaces/IWorldAsset.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
@@ -13,6 +14,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract Item721 is EIP712, ERC165, IItem721 {
     using Address for address;
+    using Strings for uint256;
 
     // Token name
     string private _name;
@@ -22,6 +24,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
     address private _world;
     // owner addr
     address private _owner;
+    // tokenURI
+    string private _tokenURI;
 
     // nonce
     mapping(address => uint256) private _nonces;
@@ -45,10 +49,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
         string memory name_,
         string memory symbol_,
         string memory version_,
+        string memory tokenURI_,
         address world_
     ) EIP712(name_, version_) {
         _name = name_;
         _symbol = symbol_;
+        _tokenURI = tokenURI_;
         _world = world_;
         _owner = msg.sender;
     }
@@ -141,7 +147,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
         virtual
         override
         returns (string memory)
-    {}
+    {
+        return string(abi.encodePacked(_tokenURI, tokenId.toString()));
+    }
 
     function approve(address to, uint256 tokenId) public virtual override {
         address owner = Item721.ownerOf(tokenId);
