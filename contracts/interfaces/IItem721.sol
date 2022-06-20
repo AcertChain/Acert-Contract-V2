@@ -30,12 +30,6 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
     function safeTransferFromItem(
         uint256 from,
         uint256 to,
-        uint256 tokenId
-    ) external;
-
-    function safeTransferFromItem(
-        uint256 from,
-        uint256 to,
         uint256 tokenId,
         bytes calldata data
     ) external;

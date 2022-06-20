@@ -37,7 +37,7 @@ contract('World', function (accounts) {
         this.world = await World.new(this.Metaverse.address, this.tokenName, this.tokenVersion);
         this.chainId = await this.world.getChainId();
 
-        this.item = await Item721.new(itemName, itemSymbol, itemVersion, this.world.address);
+        this.item = await Item721.new(itemName, itemSymbol, itemVersion, "", this.world.address);
         this.cash = await Cash20.new(cashName, cashSymbol, cashVersion, this.world.address);
     });
 

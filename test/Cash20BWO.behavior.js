@@ -83,225 +83,6 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
       const tokenOwner = initialHolderId;
       const tokenOwnerAddr = initialHolder;
 
-      describe('when the recipientId is not the zero id', function () {
-        const to = anotherAccountId;
-
-        describe('when the spender has enough allowance', function () {
-          beforeEach(async function () {
-            const nonce = await this.token.getNonce(initialHolder);
-
-            const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
-              initialHolderId, spenderAddr, initialSupply, initialHolder, deadline, nonce);
-            await this.token.approveCashBWO(initialHolderId, spenderAddr, initialSupply, initialHolder, deadline, signature, {
-              from: this.BWO
-            });
-          });
-
-          describe('when the token owner has enough balance', function () {
-            const amount = initialSupply;
-
-            it('transfers the requested amount', async function () {
-              const nonce = await this.token.getNonce(spenderAddr);
-              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-                spenderAddr, tokenOwner, to, amount, deadline, nonce);
-
-              await this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
-                from: this.BWO
-              });
-
-              expect(await this.token.balanceOfCash(tokenOwner)).to.be.bignumber.equal('0');
-
-              expect(await this.token.balanceOfCash(to)).to.be.bignumber.equal(amount);
-            });
-
-            it('decreases the spender allowance', async function () {
-              const nonce = await this.token.getNonce(spenderAddr);
-
-              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-                spenderAddr, tokenOwner, to, amount, deadline, nonce);
-
-              await this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
-                from: this.BWO
-              });
-
-              expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal('0');
-            });
-
-            it('emits a transfer by id event', async function () {
-              const nonce = await this.token.getNonce(spenderAddr);
-
-
-              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-                spenderAddr, tokenOwner, to, amount, deadline, nonce);
-              expectEvent(
-                await this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
-                  from: this.BWO
-                }),
-                'TransferCashBWO', {
-                  from: tokenOwner,
-                  to: to,
-                  amount: amount,
-                  sender: web3.utils.toChecksumAddress(spenderAddr),
-                  nonce: nonce,
-                  deadline: deadline,
-                },
-              );
-            });
-
-            it('emits an approval by id event', async function () {
-              const nonce = await this.token.getNonce(spenderAddr);
-
-              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-                spenderAddr, tokenOwner, to, amount, deadline, nonce);
-
-              expectEvent(
-                await this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
-                  from: this.BWO
-                }),
-                'ApprovalCash', {
-                  owner: tokenOwner,
-                  spender: web3.utils.toChecksumAddress(spenderAddr),
-                  value: await this.token.allowanceCash(tokenOwner, spenderAddr),
-                },
-              );
-            });
-          });
-
-          describe('when the token owner does not have enough balance', function () {
-            const amount = initialSupply;
-            beforeEach('reducing balance', async function () {
-              const nonce = await this.token.getNonce(tokenOwnerAddr);;
-
-              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
-                tokenOwnerAddr, tokenOwner, to, 1, deadline, nonce);
-              await this.token.transferCashBWO(tokenOwner, to, 1, tokenOwnerAddr, deadline, signature, {
-                from: this.BWO
-              });
-            });
-
-            it('reverts', async function () {
-              const nonce = await this.token.getNonce(spenderAddr);
-
-              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-                spenderAddr, tokenOwner, to, amount, deadline, nonce);
-
-              await expectRevert(
-                this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
-                  from: this.BWO
-                }),
-                `${errorPrefix}: transfer amount exceeds balance`,
-              );
-            });
-          });
-        });
-
-        describe('when the spender does not have enough allowance', function () {
-          const allowance = initialSupply.subn(1);
-
-          beforeEach(async function () {
-            const nonce = await this.token.getNonce(tokenOwnerAddr);;
-
-            const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
-              tokenOwner, spenderAddr, allowance, tokenOwnerAddr, deadline, nonce);
-
-            await this.token.approveCashBWO(tokenOwner, spenderAddr, allowance, tokenOwnerAddr, deadline, signature, {
-              from: this.BWO
-            });
-          });
-
-          describe('when the token owner has enough balance', function () {
-            const amount = initialSupply;
-
-            it('reverts', async function () {
-              const nonce = await this.token.getNonce(spenderAddr);
-
-              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-                spenderAddr, tokenOwner, to, amount, deadline, nonce);
-
-              await expectRevert(
-                this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
-                  from: this.BWO
-                }),
-                `${errorPrefix}: insufficient allowance`,
-              );
-            });
-          });
-
-          describe('when the token owner does not have enough balance', function () {
-            const amount = allowance;
-
-            beforeEach('reducing balance', async function () {
-              const nonce = await this.token.getNonce(tokenOwnerAddr);;
-
-              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
-                tokenOwnerAddr, tokenOwner, to, 2, deadline, nonce);
-
-              await this.token.transferCashBWO(tokenOwner, to, 2, tokenOwnerAddr, deadline, signature, {
-                from: this.BWO
-              });
-            });
-
-            it('reverts', async function () {
-
-              const nonce = await this.token.getNonce(spenderAddr);
-
-              const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-                spenderAddr, tokenOwner, to, amount, deadline, nonce);
-
-              await expectRevert(
-                this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
-                  from: this.BWO
-                }),
-                `${errorPrefix}: transfer amount exceeds balance`,
-              );
-            });
-          });
-        });
-
-        describe('when the spender has unlimited allowance', function () {
-          beforeEach(async function () {
-
-            const nonce = await this.token.getNonce(initialHolder);
-
-            const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
-              initialHolderId, spenderAddr, MAX_UINT256, initialHolder, deadline, nonce);
-
-            await this.token.approveCashBWO(initialHolderId, spenderAddr, MAX_UINT256, initialHolder, deadline, signature, {
-              from: this.BWO
-            });
-          });
-
-          it('does not decrease the spender allowance', async function () {
-
-            const nonce = await this.token.getNonce(spenderAddr);
-
-            const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-              spenderAddr, tokenOwner, to, 1, deadline, nonce);
-
-            await this.token.transferCashBWO(tokenOwner, to, 1, spenderAddr, deadline, signature, {
-              from: this.BWO
-            });
-
-            expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal(MAX_UINT256);
-          });
-
-          it('does not emit an approval by id event', async function () {
-
-            const nonce = await this.token.getNonce(spenderAddr);
-
-            const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-              spenderAddr, tokenOwner, to, 1, deadline, nonce);
-
-            expectEvent.notEmitted(
-              await this.token.transferCashBWO(tokenOwner, to, 1, spenderAddr, deadline, signature, {
-                from: this.BWO
-              }),
-              'ApprovalCashBWO',
-            );
-          });
-        });
-      });
-
       describe('when the recipientId is the zero Id', function () {
         const amount = initialSupply;
         const to = 0;
@@ -330,30 +111,18 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
         });
       });
 
-
       describe('when the recipientId is the not exist Id', function () {
         const amount = initialSupply;
         const to = 1000;
-
-        beforeEach(async function () {
-
-          const nonce = await this.token.getNonce(tokenOwnerAddr);;
-          const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
-            tokenOwner, spenderAddr, amount, tokenOwnerAddr, deadline, nonce);
-
-          await this.token.approveCashBWO(tokenOwner, spenderAddr, amount, tokenOwnerAddr, deadline, signature, {
-            from: this.BWO
-          });
-        });
 
         it('reverts', async function () {
 
           const nonce = await this.token.getNonce(spenderAddr);
 
-          const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-            spenderAddr, tokenOwner, to, amount, deadline, nonce);
+          const signature = signTransferData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
+            tokenOwnerAddr, tokenOwner, to, amount, deadline, nonce);
 
-          await expectRevert(this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
+          await expectRevert(this.token.transferCashBWO(tokenOwner, to, amount, tokenOwnerAddr, deadline, signature, {
             from: this.BWO
           }), `${errorPrefix}: to account is not exist`, );
         });

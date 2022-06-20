@@ -25,8 +25,8 @@ contract('Item721', function (accounts) {
 
   beforeEach(async function () {
     this.Metaverse = await Metaverse.new("metaverse", "1.0");
-    this.world = await World.new(this.Metaverse.address,"world","1.0");
-    this.token = await Item721.new(name, symbol, version, this.world.address);
+    this.world = await World.new(this.Metaverse.address, "world", "1.0");
+    this.token = await Item721.new(name, symbol, version, "testURI", this.world.address);
     this.chainId = await this.token.getChainId();
     this.tokenName = name;
     this.tokenVersion = version;

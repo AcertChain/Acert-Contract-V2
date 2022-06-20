@@ -38,15 +38,6 @@ interface IItem721BWO {
         bytes memory signature
     ) external;
 
-    function safeTransferFromItemBWO(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId,
-        address sender,
-        uint256 deadline,
-        bytes memory signature
-    ) external;
-
     function transferFromItemBWO(
         uint256 from,
         uint256 to,

@@ -254,7 +254,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
   describe('isTrust safe conract and trust world', function () {
 
     beforeEach('set safe contract and trust world', async function () {
-      await this.world.addContract(recipient);
+      await this.world.addSafeContract(recipient);
       await this.world.trustWorld(initialHolderId, {
         from: initialHolder
       });
@@ -267,7 +267,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
   describe('isTrust trust contract', function () {
 
     beforeEach('set safe contract and trust world', async function () {
-      await this.world.addContract(recipient);
+      await this.world.addSafeContract(recipient);
       await this.world.trustContract(initialHolderId, recipient, {
         from: initialHolder
       });
@@ -299,7 +299,7 @@ function shouldBehaveLikeCash20IsTrust(initialSupply, initialHolder, initialHold
       await this.token.transferCash(tokenOwner, to, amount, {
         from: spenderAddr
       });
-      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal('0');
+      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal(MAX_UINT256);
     });
   });
 
@@ -309,7 +309,7 @@ function shouldBehaveLikeCash20IsTrust(initialSupply, initialHolder, initialHold
         from: spenderAddr
       });
 
-      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal('0');
+      expect(await this.token.allowanceCash(tokenOwner, spenderAddr)).to.be.bignumber.equal(MAX_UINT256);
     });
 
   });

@@ -10,8 +10,9 @@ contract Item721Mock is Item721, Ownable {
         string memory name,
         string memory symbol,
         string memory version,
+        string memory tokenURI,
         address world
-    ) Item721(name, symbol, version, world) {
+    ) Item721(name, symbol, version, tokenURI, world) {
         _owner = msg.sender;
     }
 
@@ -19,11 +20,11 @@ contract Item721Mock is Item721, Ownable {
         return _exists(tokenId);
     }
 
-    function mint(address to, uint256 tokenId)  public onlyOwner {
+    function mint(address to, uint256 tokenId) public onlyOwner {
         _mint(to, tokenId);
     }
 
-    function safeMint(address to, uint256 tokenId) public onlyOwner{
+    function safeMint(address to, uint256 tokenId) public onlyOwner {
         _safeMint(to, tokenId);
     }
 
