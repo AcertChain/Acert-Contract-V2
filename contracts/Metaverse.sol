@@ -223,8 +223,8 @@ contract Metaverse is Ownable, EIP712 {
         );
         require(
             msg.sender == account._address ||
-            (msg.sender == _admin &&
-                (account._isTrustAdmin || account._isFreeze)),
+                (msg.sender == _admin &&
+                    (account._isTrustAdmin || account._isFreeze)),
             "Metaverse: sender not owner or admin"
         );
         _changeAccount(_id, _newAddress, _isTrustAdmin);
@@ -247,7 +247,7 @@ contract Metaverse is Ownable, EIP712 {
             _accountsById[_id]._address == sender,
             "Metaverse: sender not owner"
         );
-        uint256 nonce = _nonces[sender];
+        uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
             sender,
@@ -270,6 +270,7 @@ contract Metaverse is Ownable, EIP712 {
         );
         _changeAccount(_id, _newAddress, _isTrustAdmin);
         emit UpdateAccountBWO(_id, _newAddress, _isTrustAdmin, nonce, deadline);
+        _nonces[sender]++;
     }
 
     function _changeAccount(
@@ -323,8 +324,7 @@ contract Metaverse is Ownable, EIP712 {
             _accountsById[_id]._address == sender,
             "Metaverse: sender not owner"
         );
-
-        uint256 nonce = _nonces[sender];
+        uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
             sender,
@@ -347,6 +347,7 @@ contract Metaverse is Ownable, EIP712 {
         _accountsById[_id]._isFreeze = true;
         emit FreezeAccount(_id);
         emit FreezeAccountBWO(_id, nonce, deadline);
+        _nonces[sender]++;
     }
 
     function unfreezeAccount(uint256 _id) public {
@@ -387,6 +388,7 @@ contract Metaverse is Ownable, EIP712 {
         return _nonces[account];
     }
 
+    // for test
     function getChainId() external view returns (uint256) {
         return block.chainid;
     }

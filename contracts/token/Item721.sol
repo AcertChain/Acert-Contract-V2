@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IItem721.sol";
+import "../interfaces/IWorldAsset.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
@@ -270,10 +271,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) internal virtual {
         require(owner != 0, "Item: id zero is not a valid owner");
         require(!_isFreeze(owner), "Item: owner is frozen");
-        require(
-            operator != _getAddressById(owner),
-            "Item: approve to caller"
-        );
+        require(operator != _getAddressById(owner), "Item: approve to caller");
         _operatorApprovalsById[owner][operator] = approved;
         emit ApprovalForAllItem(owner, operator, approved);
     }
@@ -411,10 +409,13 @@ contract Item721 is EIP712, ERC165, IItem721 {
         bytes memory data
     ) public virtual override {
         require(to != address(0), "Item: transfer to the zero address");
-        uint256 fromId = _getIdByAddress(from);
-        uint256 toId = _getIdByAddress(to);
-        safeTransferFromItem(fromId, toId, tokenId, data);
-        emit Transfer(fromId, toId, tokenId);
+        safeTransferFromItem(
+            _getIdByAddress(from),
+            _getIdByAddress(to),
+            tokenId,
+            data
+        );
+        emit Transfer(from, to, tokenId);
     }
 
     function safeTransferFromItem(
@@ -697,6 +698,15 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
     function worldAddress() external view virtual override returns (address) {
         return _world;
+    }
+
+    function protocol()
+        external
+        pure
+        virtual
+        returns (IWorldAsset.ProtocolEnum)
+    {
+        return IWorldAsset.ProtocolEnum.ITEM721;
     }
 
     function _recoverSig(
