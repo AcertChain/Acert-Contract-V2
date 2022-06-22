@@ -47,9 +47,9 @@ contract('Metaverse', function (accounts) {
     beforeEach(async function () {
         this.tokenName = "metaverse";
         this.tokenVersion = "1.0";
-        this.Metaverse = await Metaverse.new(this.tokenName, this.tokenVersion);
+        this.Metaverse = await Metaverse.new(this.tokenName, this.tokenVersion, 0);
         this.chainId = await this.Metaverse.getChainId();
-        this.world = await World.new(this.Metaverse.address,"world","1.0");
+        this.world = await World.new(this.Metaverse.address, "world", "1.0");
     });
 
     context('测试Metaverse 功能', function () {
@@ -251,6 +251,17 @@ contract('Metaverse', function (accounts) {
                     const [account] = accounts;
                     await this.Metaverse.createAccount(account, true)
                     await expectRevert(this.Metaverse.createAccount(account, true), "Metaverse: address is exist");
+                });
+            });
+        });
+
+        describe('createAccount with start id', function () {
+            context('create account ', function () {
+                it('id expect 11', async function () {
+                    this.newMetaverse = await Metaverse.new(this.tokenName, this.tokenVersion, 10);
+                    const [account] = accounts;
+                    await this.newMetaverse.getOrCreateAccountId(account)
+                    expect(await this.newMetaverse.getIdByAddress(account)).to.bignumber.equal(new BN(11));
                 });
             });
         });

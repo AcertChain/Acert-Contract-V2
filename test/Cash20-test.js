@@ -66,9 +66,9 @@ contract('Cash20', function (accounts) {
   const BWOReceiptkey = receiptWallet.getPrivateKey();
 
   beforeEach(async function () {
-   
-    this.Metaverse = await Metaverse.new("metaverse","1.0");
-    this.world = await World.new(this.Metaverse.address,"world","1.0");
+
+    this.Metaverse = await Metaverse.new("metaverse", "1.0", 0);
+    this.world = await World.new(this.Metaverse.address, "world", "1.0");
     this.token = await Cash20.new(name, symbol, version, this.world.address);
     this.receipt = await this.token.mint(initialHolder, initialSupply);
     this.tokenName = name;
@@ -122,7 +122,7 @@ contract('Cash20', function (accounts) {
 
   shouldBehaveLikeCash20('Cash', initialSupply, initialHolder, initialHolderId, recipient, recipientId, anotherAccount, anotherAccountId);
 
-  shouldBehaveLikeCash20BWO('Cash', initialSupply, BWOInitialHolder, BWOfromId, BWOReceipt, BWOToId, anotherAccount, anotherAccountId, BWOkey,BWOReceiptkey);
+  shouldBehaveLikeCash20BWO('Cash', initialSupply, BWOInitialHolder, BWOfromId, BWOReceipt, BWOToId, anotherAccount, anotherAccountId, BWOkey, BWOReceiptkey);
 
   describe('decrease allowance', function () {
     describe('when the spender is not the zero address', function () {

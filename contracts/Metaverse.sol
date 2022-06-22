@@ -79,10 +79,15 @@ contract Metaverse is Ownable, EIP712 {
 
     address private _admin;
 
-    constructor(string memory name_, string memory version_)
-        EIP712(name_, version_)
-    {
+    uint256 private immutable _startId;
+
+    constructor(
+        string memory name_,
+        string memory version_,
+        uint256 startId_
+    ) EIP712(name_, version_) {
         _owner = msg.sender;
+        _startId = startId_;
     }
 
     function addWorld(
@@ -205,7 +210,7 @@ contract Metaverse is Ownable, EIP712 {
         require(_address != address(0), "Metaverse: zero address");
         require(_addressesToIds[_address] == 0, "Metaverse: address is exist");
         _totalAccount++;
-        id = _totalAccount;
+        id = _totalAccount + _startId;
         _accountsById[id] = Account(true, _isTrustAdmin, false, id, _address);
         _addressesToIds[_address] = id;
         emit CreateAccount(id, _address);

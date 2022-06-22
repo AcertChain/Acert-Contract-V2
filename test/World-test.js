@@ -33,7 +33,7 @@ contract('World', function (accounts) {
     beforeEach(async function () {
         this.tokenName = "world";
         this.tokenVersion = "1.0";
-        this.Metaverse = await Metaverse.new("metaverse", "1.0");
+        this.Metaverse = await Metaverse.new("metaverse", "1.0", 0);
         this.world = await World.new(this.Metaverse.address, this.tokenName, this.tokenVersion);
         this.chainId = await this.world.getChainId();
 
