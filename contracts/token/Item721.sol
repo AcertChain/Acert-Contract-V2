@@ -523,10 +523,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
     {
         require(_exists(tokenId), "Item: operator query for nonexistent token");
         address owner = Item721.ownerOf(tokenId);
-        uint256 ownerId = Item721.ownerOfItem(tokenId);
 
         return (sender == owner ||
-            _isTrust(sender, ownerId) ||
             isApprovedForAll(owner, sender) ||
             getApproved(tokenId) == sender);
     }
