@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require("solidity-docgen")
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
@@ -30,6 +31,10 @@ require('hardhat-contract-sizer');
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
+  docgen: {
+    output: 'docs',
+    pages: 'files',
+  },
   solidity: "0.8.4",
   networks: {
     bscTest: {
