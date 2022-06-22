@@ -206,10 +206,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         address to,
         uint256 amount
     ) public virtual override returns (bool) {
-        if (_isTrust(_msgSender(), _getIdByAddress(from))) {
-            _transfer(from, to, amount);
-            return true;
-        }
         uint256 currentAllowance = allowance(from, _msgSender());
         if (currentAllowance != type(uint256).max) {
             require(currentAllowance >= amount, "Cash: insufficient allowance");
