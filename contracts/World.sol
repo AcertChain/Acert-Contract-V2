@@ -270,11 +270,6 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
     }
 
     function _untrustContract(uint256 _id, address _contract) private {
-        require(
-            _isTrustContractByAccountId[_id][_contract] == true,
-            "World: contract is not set to trusted"
-        );
-
         delete _isTrustContractByAccountId[_id][_contract];
         emit UntrustContract(_id, _contract);
     }
@@ -284,8 +279,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
             getAddressById(_id) == msg.sender,
             "World: sender not account owner"
         );
-        _isTrustWorld[_id] = true;
-        emit TrustWorld(_id);
+        _trustWorld(_id);
     }
 
     function trustWorldBWO(
@@ -333,8 +327,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
             getAddressById(_id) == msg.sender,
             "World: sender not account owner"
         );
-        delete _isTrustWorld[_id];
-        emit UntrustWorld(_id);
+        _untrustWorld(_id);
     }
 
     function untrustWorldBWO(
