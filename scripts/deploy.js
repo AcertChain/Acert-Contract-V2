@@ -5,13 +5,16 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   //deploy Metaverse 
   const Metaverse = (await ethers.getContractFactory("Metaverse")).connect(deployer);
-  const Mcontract = await Metaverse.deploy("M", "1.0");
+  const Mcontract = await Metaverse.deploy("M", "1.0",0);
   await Mcontract.deployed();
 
   //deploy world
   const World = (await ethers.getContractFactory("World")).connect(deployer);
   const Wcontract = await World.deploy(Mcontract.address, "W", "1.0");
   await Wcontract.deployed();
+
+  // register world
+  await Mcontract.addWorld(Wcontract.address,"", "", "", "");
 
   //deploy cash20
   const Cash20 = (await ethers.getContractFactory("Cash20Mock")).connect(deployer);
@@ -22,6 +25,11 @@ async function main() {
   const Item721 = (await ethers.getContractFactory("Item721Mock")).connect(deployer);
   const Icontract = await Item721.deploy("I", "I", "1.0", "testURI", Ccontract.address);
   await Icontract.deployed();
+
+
+  // world register asset
+  await Wcontract.registerAsset(Icontract.address, "");
+  await Wcontract.registerAsset(Ccontract.address, "");
 
 
   console.log("Metaverse deployed to", Mcontract.address);
