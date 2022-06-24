@@ -133,11 +133,12 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         describe('addContract', function () {
             context('add zero address', function () {
                 it('revert', async function () {
-                    await expectRevert(this.world.addSafeContract(ZERO_ADDRESS), 'World: zero address');
+                    await expectRevert(this.world.addSafeContract(ZERO_ADDRESS, ""), 'World: zero address');
                 });
                 it('event AddSafeContract', async function () {
-                    expectEvent(await this.world.addSafeContract(contract), 'AddSafeContract', {
-                        safeContract: contract
+                    expectEvent(await this.world.addSafeContract(contract, "test"), 'AddSafeContract', {
+                        safeContract: contract,
+                        name: "test"
                     });
                 });
             });
@@ -146,7 +147,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         describe('removeContract', function () {
             context('remove contract address', function () {
                 it('event RemoveSafeContract', async function () {
-                    await this.world.addSafeContract(contract);
+                    await this.world.addSafeContract(contract, "");
                     expectEvent(await this.world.removeSafeContract(contract), 'RemoveSafeContract', {
                         safeContract: contract
                     });
@@ -157,7 +158,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         describe('isSafeContract', function () {
             context('contract is safe', function () {
                 it('is safe ', async function () {
-                    await this.world.addSafeContract(contract);
+                    await this.world.addSafeContract(contract, "");
                     expect(await this.world.isSafeContract(contract)).to.equal(true);
                 });
                 it('is safe by zero address', async function () {
@@ -225,7 +226,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                     await this.world.getOrCreateAccountId(account);
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
 
-                    await this.world.addSafeContract(contract);
+                    await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user trust world', async function () {
@@ -234,21 +235,21 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                     await this.world.trustWorld(accountId, {
                         from: account
                     });
-                    await this.world.addSafeContract(contract);
+                    await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
                 });
                 it('conrtact is safe contract and user not trust world not trust contract ', async function () {
                     await this.world.getOrCreateAccountId(account);
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
 
-                    await this.world.addSafeContract(contract);
+                    await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user not trust world  trust contract ', async function () {
                     await this.world.getOrCreateAccountId(account);
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
 
-                    await this.world.addSafeContract(contract);
+                    await this.world.addSafeContract(contract, "");
                     expectEvent(await this.world.trustContract(accountId, contract, {
                         from: account
                     }), 'TrustContract', {
@@ -276,7 +277,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                         accountW.getPrivateKey(), this.tokenVersion, accountId, contract, account, nonce, deadline);
 
 
-                    await this.world.addSafeContract(contract);
+                    await this.world.addSafeContract(contract, "");
                     expectEvent(await this.world.trustContractBWO(accountId, contract, account, deadline, signature, {
                         from: operator
                     }), 'TrustContractBWO', {

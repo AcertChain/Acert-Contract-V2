@@ -25,7 +25,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
     event UpdateAsset(address indexed asset, string image);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
-    event AddSafeContract(address indexed safeContract);
+    event AddSafeContract(address indexed safeContract, string name);
     event RemoveSafeContract(address indexed safeContract);
     event TrustContract(uint256 indexed id, address indexed safeContract);
     event UntrustContract(uint256 indexed id, address indexed safeContract);
@@ -67,11 +67,18 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         IWorldAsset.ProtocolEnum _protocol;
     }
 
+    // struct Contract
+    struct Contract {
+        bool _isExist;
+        address _contract;
+        string _name;
+    }
+
     // Mapping from address to operator
     mapping(address => bool) private _isOperatorByAddress;
 
     // Mapping from address to trust contract
-    mapping(address => bool) private _safeContracts;
+    mapping(address => Contract) private _safeContracts;
 
     // Mapping from account Id to contract
     mapping(uint256 => mapping(address => bool))
@@ -134,18 +141,25 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         return _assets[_contract];
     }
 
-    function addSafeContract(address _contract) public onlyOwner {
+    function addSafeContract(address _contract, string calldata _name)
+        public
+        onlyOwner
+    {
         require(_contract != address(0), "World: zero address");
-        _safeContracts[_contract] = true;
-        emit AddSafeContract(_contract);
+        _safeContracts[_contract] = Contract(true, _contract, _name);
+        emit AddSafeContract(_contract, _name);
     }
 
     function removeSafeContract(address _contract) public onlyOwner {
-        delete _safeContracts[_contract];
+        _safeContracts[_contract]._isExist == false;
         emit RemoveSafeContract(_contract);
     }
 
     function isSafeContract(address _contract) public view returns (bool) {
+        return _safeContracts[_contract]._isExist;
+    }
+
+    function getSafeContract(address _contract) public view returns (Contract memory) {
         return _safeContracts[_contract];
     }
 
@@ -216,7 +230,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
 
     function _trustContract(uint256 _id, address _contract) private {
         require(
-            _safeContracts[_contract] == true,
+            _safeContracts[_contract]._isExist == true,
             "World: contract is not safe"
         );
         _isTrustContractByAccountId[_id][_contract] = true;
@@ -382,7 +396,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         returns (bool _isTrust)
     {
         return
-            _safeContracts[_contract] &&
+            _safeContracts[_contract]._isExist &&
             (_isTrustContractByAccountId[_id][_contract] || _isTrustWorld[_id]);
     }
 

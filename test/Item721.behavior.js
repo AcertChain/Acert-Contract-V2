@@ -953,7 +953,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
-      await this.world.addSafeContract(anotherApproved);
+      await this.world.addSafeContract(anotherApproved,"");
       await this.world.trustWorld(ownerId, {
         from: owner
       });
@@ -976,7 +976,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
-      await this.world.addSafeContract(anotherApproved);
+      await this.world.addSafeContract(anotherApproved,"");
       await this.world.trustContract(ownerId, anotherApproved, {
         from: owner
       });
