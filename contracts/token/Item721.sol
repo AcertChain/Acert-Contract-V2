@@ -42,6 +42,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
     // Mapping from owner to operator approvals
     mapping(uint256 => mapping(address => bool)) private _operatorApprovalsById;
 
+    // Mapping from owner to list of owned token IDs
+    mapping(uint256 => mapping(uint256 => uint256)) public _ownedTokens;
+
+    // Mapping from token ID to index of the owner tokens list
+    mapping(uint256 => uint256) public _ownedTokensIndex;
+
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
@@ -131,6 +137,61 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 owner = _ownersById[tokenId];
         require(owner != 0, "Item: owner query for nonexistent token");
         return owner;
+    }
+
+    function itemsOf(
+        uint256 owner,
+        uint256 startAt,
+        uint256 endAt
+    ) public view virtual override returns (uint256[] memory) {
+        require(
+            startAt <= endAt,
+            "Item: startAt must be less than or equal to endAt"
+        );
+        require(
+            endAt < balanceOfItem(owner),
+            "Item: endAt must be less than the balance of the owner"
+        );
+        uint256[] memory items = new uint256[](endAt - startAt + 1);
+        for (uint256 i = 0; i <= endAt - startAt; i++) {
+            items[i] = _ownedTokens[owner][startAt + i];
+        }
+        return items;
+    }
+
+    function _beforeTokenTransfer(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId
+    ) internal {
+        if (from != 0 && from != to) {
+            _removeTokenFromOwnerEnumeration(from, tokenId);
+        }
+        if (to != 0 && to != from) {
+            _addTokenToOwnerEnumeration(to, tokenId);
+        }
+    }
+
+    function _addTokenToOwnerEnumeration(uint256 to, uint256 tokenId) private {
+        uint256 length = balanceOfItem(to);
+        _ownedTokens[to][length] = tokenId;
+        _ownedTokensIndex[tokenId] = length;
+    }
+
+    function _removeTokenFromOwnerEnumeration(uint256 from, uint256 tokenId)
+        private
+    {
+        uint256 lastTokenIndex = balanceOfItem(from) - 1;
+        uint256 tokenIndex = _ownedTokensIndex[tokenId];
+
+        if (tokenIndex != lastTokenIndex) {
+            uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
+            _ownedTokens[from][tokenIndex] = lastTokenId;
+            _ownedTokensIndex[lastTokenId] = tokenIndex;
+        }
+
+        delete _ownedTokensIndex[tokenId];
+        delete _ownedTokens[from][lastTokenIndex];
     }
 
     function name() public view virtual override returns (string memory) {
@@ -389,6 +450,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
         require(to != 0, "Item: transfer to the zero id");
         require(_accountIsExist(to), "Item: to account is not exist");
 
+        _beforeTokenTransfer(from, to, tokenId);
+
         // Clear approvals from the previous owner
         _approve(address(0), tokenId);
 
@@ -580,7 +643,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     function _mintItem(uint256 to, uint256 tokenId) internal virtual {
         require(to != 0, "Item: transfer to the zero id");
         require(!_exists(tokenId), "Item: token already minted");
-
+        _beforeTokenTransfer(0, to, tokenId);
         _balancesById[to] += 1;
         _ownersById[tokenId] = to;
         emit TransferItem(0, to, tokenId);
@@ -601,6 +664,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         // Clear approvals
         _approve(address(0), tokenId);
         uint256 ownerId = _getIdByAddress(owner);
+        _beforeTokenTransfer(ownerId, 0, tokenId);
         _balancesById[ownerId] -= 1;
         delete _ownersById[tokenId];
 

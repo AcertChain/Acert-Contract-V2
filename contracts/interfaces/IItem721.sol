@@ -18,7 +18,10 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
         bool approved
     );
 
-    function balanceOfItem(uint256 owner) external view returns (uint256 balance);
+    function balanceOfItem(uint256 owner)
+        external
+        view
+        returns (uint256 balance);
 
     function ownerOfItem(uint256 tokenId) external view returns (uint256 owner);
 
@@ -26,6 +29,12 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
         external
         view
         returns (bool);
+
+    function itemsOf(
+        uint256 owner,
+        uint256 startAt,
+        uint256 endAt
+    ) external view returns (uint256[] memory tokenIds);
 
     function safeTransferFromItem(
         uint256 from,
