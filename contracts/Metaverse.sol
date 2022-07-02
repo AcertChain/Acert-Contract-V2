@@ -30,7 +30,11 @@ contract Metaverse is Ownable, EIP712 {
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
-    event CreateAccount(uint256 indexed id, address indexed account);
+    event CreateAccount(
+        uint256 indexed id,
+        address indexed account,
+        bool isTrustAdmin
+    );
     event UpdateAccount(
         uint256 indexed id,
         address indexed newAddress,
@@ -213,7 +217,7 @@ contract Metaverse is Ownable, EIP712 {
         id = _totalAccount + _startId;
         _accountsById[id] = Account(true, _isTrustAdmin, false, id, _address);
         _addressesToIds[_address] = id;
-        emit CreateAccount(id, _address);
+        emit CreateAccount(id, _address, _isTrustAdmin);
     }
 
     function changeAccount(
