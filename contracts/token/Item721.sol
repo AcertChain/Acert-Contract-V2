@@ -43,10 +43,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
     mapping(uint256 => mapping(address => bool)) private _operatorApprovalsById;
 
     // Mapping from owner to list of owned token IDs
-    mapping(uint256 => mapping(uint256 => uint256)) public _ownedTokens;
+    mapping(uint256 => mapping(uint256 => uint256)) private _ownedTokens;
 
     // Mapping from token ID to index of the owner tokens list
-    mapping(uint256 => uint256) public _ownedTokensIndex;
+    mapping(uint256 => uint256) private _ownedTokensIndex;
 
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
