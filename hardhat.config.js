@@ -37,8 +37,9 @@ module.exports = {
   },
   solidity: "0.8.4",
   networks: {
-    bscTest: {
-      url: process.env.URL || "",
+    bsctest: {
+      url: process.env.URL,
+      chainId: 97,
       accounts: process.env.PRIVATE_KEY !== undefined ? process.env.PRIVATE_KEY.split(",") : [],
     },
   },
