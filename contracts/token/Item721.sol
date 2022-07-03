@@ -62,7 +62,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _symbol = symbol_;
         _tokenURI = tokenURI_;
         _world = world_;
-        _owner = msg.sender;
     }
 
     /**
@@ -117,11 +116,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
         view
         virtual
         override
-        returns (address)
+        returns (address owner)
     {
-        address owner = _getAddressById(_ownersById[tokenId]);
+        owner = _getAddressById(_ownersById[tokenId]);
         require(owner != address(0), "Item: owner query for nonexistent token");
-        return owner;
     }
 
     /**
@@ -132,18 +130,17 @@ contract Item721 is EIP712, ERC165, IItem721 {
         view
         virtual
         override
-        returns (uint256)
+        returns (uint256 owner)
     {
-        uint256 owner = _ownersById[tokenId];
+        owner = _ownersById[tokenId];
         require(owner != 0, "Item: owner query for nonexistent token");
-        return owner;
     }
 
     function itemsOf(
         uint256 owner,
         uint256 startAt,
         uint256 endAt
-    ) public view virtual override returns (uint256[] memory) {
+    ) public view virtual override returns (uint256[] memory ) {
         require(
             startAt <= endAt,
             "Item: startAt must be less than or equal to endAt"
@@ -210,6 +207,11 @@ contract Item721 is EIP712, ERC165, IItem721 {
         returns (string memory)
     {
         return string(abi.encodePacked(_tokenURI, tokenId.toString()));
+    }
+
+    function setTokenURI(string memory uri) public {
+        require(_owner == msg.sender, "only owner");
+        _tokenURI = uri;
     }
 
     function approve(address to, uint256 tokenId) public virtual override {
@@ -591,24 +593,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
             getApproved(tokenId) == sender);
     }
 
-    /**
-     * @dev Safely mints `tokenId` and transfers it to `to`.
-     *
-     * Requirements:
-     *
-     * - `tokenId` must not exist.
-     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-     *
-     * Emits a {Transfer} event.
-     */
-    function _safeMint(address to, uint256 tokenId) internal virtual {
-        _safeMint(to, tokenId, "");
-    }
-
-    /**
-     * @dev Same as {xref-ERC721-_safeMint-address-uint256-}[`_safeMint`], with an additional `data` parameter which is
-     * forwarded in {IERC721Receiver-onERC721Received} to contract recipients.
-     */
     function _safeMint(
         address to,
         uint256 tokenId,

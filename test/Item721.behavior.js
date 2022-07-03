@@ -410,7 +410,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             await this.world.getOrCreateAccountId(invalidReceiver.address);
             const invalidReceiverId = new BN(await this.world.getAccountIdByAddress(invalidReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, invalidReceiverId, tokenId,'0x', {
+              this.token.safeTransferFromItem(ownerId, invalidReceiverId, tokenId, '0x', {
                 from: owner
               }),
               'Item: transfer to non ERC721Receiver implementer',
@@ -425,7 +425,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,'0x', {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, '0x', {
                 from: owner
               }),
               'ERC721ReceiverMock: reverting',
@@ -439,7 +439,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             await this.world.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, '0x',{
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, '0x', {
                 from: owner
               }),
               'Item: transfer to non ERC721Receiver implementer',
@@ -454,7 +454,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             const revertingReceiverId = new BN(await this.world.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert.unspecified(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId,'0x', {
+              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, '0x', {
                 from: owner
               }),
             );
@@ -496,7 +496,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
         it('calls onERC721Received — without data', async function () {
           this.receiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.None);
-          const receipt = await this.token.safeMint(this.receiver.address, tokenId);
+          const receipt = await this.token.safeMint(this.receiver.address, tokenId, "");
 
           await expectEvent.inTransaction(receipt.tx, ERC721ReceiverMock, 'Received', {
             from: ZERO_ADDRESS,
@@ -508,7 +508,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
             await expectRevert(
-              this.token.safeMint(invalidReceiver.address, tokenId),
+              this.token.safeMint(invalidReceiver.address, tokenId, ""),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -518,7 +518,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithMessage);
             await expectRevert(
-              this.token.safeMint(revertingReceiver.address, tokenId),
+              this.token.safeMint(revertingReceiver.address, tokenId, ""),
               'ERC721ReceiverMock: reverting',
             );
           });
@@ -528,7 +528,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
             await expectRevert(
-              this.token.safeMint(revertingReceiver.address, tokenId),
+              this.token.safeMint(revertingReceiver.address, tokenId, ""),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -538,7 +538,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.Panic);
             await expectRevert.unspecified(
-              this.token.safeMint(revertingReceiver.address, tokenId),
+              this.token.safeMint(revertingReceiver.address, tokenId, ""),
             );
           });
         });
@@ -547,7 +547,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const nonReceiver = this.token;
             await expectRevert(
-              this.token.safeMint(nonReceiver.address, tokenId),
+              this.token.safeMint(nonReceiver.address, tokenId, ""),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -953,7 +953,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
-      await this.world.addSafeContract(anotherApproved,"");
+      await this.world.addSafeContract(anotherApproved, "");
       await this.world.trustWorld(ownerId, {
         from: owner
       });
@@ -976,7 +976,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
-      await this.world.addSafeContract(anotherApproved,"");
+      await this.world.addSafeContract(anotherApproved, "");
       await this.world.trustContract(ownerId, anotherApproved, {
         from: owner
       });

@@ -1,13 +1,26 @@
-const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
-const { expect } = require('chai');
-const { ZERO_ADDRESS } = constants;
+const {
+  BN,
+  constants,
+  expectEvent,
+  expectRevert
+} = require('@openzeppelin/test-helpers');
+const {
+  expect
+} = require('chai');
+const {
+  ZERO_ADDRESS
+} = constants;
 
-const { shouldSupportInterfaces } = require('./SupportsInterface.behavior');
+const {
+  shouldSupportInterfaces
+} = require('./SupportsInterface.behavior');
 
 const ERC721ReceiverMock = artifacts.require('ERC721ReceiverMock');
 
-const Error = [ 'None', 'RevertWithMessage', 'RevertWithoutMessage', 'Panic' ]
-  .reduce((acc, entry, idx) => Object.assign({ [entry]: idx }, acc), {});
+const Error = ['None', 'RevertWithMessage', 'RevertWithoutMessage', 'Panic']
+  .reduce((acc, entry, idx) => Object.assign({
+    [entry]: idx
+  }, acc), {});
 
 const firstTokenId = new BN('5042');
 const secondTokenId = new BN('79217');
@@ -17,7 +30,7 @@ const baseURI = 'https://api.example.com/v1/';
 
 const RECEIVER_MAGIC_VALUE = '0x150b7a02';
 
-function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, anotherApproved, operator, other) {
+function shouldBehaveLikeERC721(errorPrefix, owner, newOwner, approved, anotherApproved, operator, other) {
   shouldSupportInterfaces([
     'ERC165',
     'ERC721',
@@ -79,17 +92,29 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       let logs = null;
 
       beforeEach(async function () {
-        await this.token.approve(approved, tokenId, { from: owner });
-        await this.token.setApprovalForAll(operator, true, { from: owner });
+        await this.token.approve(approved, tokenId, {
+          from: owner
+        });
+        await this.token.setApprovalForAll(operator, true, {
+          from: owner
+        });
       });
 
-      const transferWasSuccessful = function ({ owner, tokenId, approved }) {
+      const transferWasSuccessful = function ({
+        owner,
+        tokenId,
+        approved
+      }) {
         it('transfers the ownership of the given token ID to the given address', async function () {
           expect(await this.token.ownerOf(tokenId)).to.be.equal(this.toWhom);
         });
 
         it('emits a Transfer event', async function () {
-          expectEvent.inLogs(logs, 'Transfer', { from: owner, to: this.toWhom, tokenId: tokenId });
+          expectEvent.inLogs(logs, 'Transfer', {
+            from: owner,
+            to: this.toWhom,
+            tokenId: tokenId
+          });
         });
 
         it('clears the approval for the token ID', async function () {
@@ -97,7 +122,11 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
         });
 
         it('emits an Approval event', async function () {
-          expectEvent.inLogs(logs, 'Approval', { owner, approved: ZERO_ADDRESS, tokenId: tokenId });
+          expectEvent.inLogs(logs, 'Approval', {
+            owner,
+            approved: ZERO_ADDRESS,
+            tokenId: tokenId
+          });
         });
 
         it('adjusts owners balances', async function () {
@@ -116,36 +145,74 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       const shouldTransferTokensByUsers = function (transferFunction) {
         context('when called by the owner', function () {
           beforeEach(async function () {
-            ({ logs } = await transferFunction.call(this, owner, this.toWhom, tokenId, { from: owner }));
+            ({
+              logs
+            } = await transferFunction.call(this, owner, this.toWhom, tokenId, {
+              from: owner
+            }));
           });
-          transferWasSuccessful({ owner, tokenId, approved });
+          transferWasSuccessful({
+            owner,
+            tokenId,
+            approved
+          });
         });
 
         context('when called by the approved individual', function () {
           beforeEach(async function () {
-            ({ logs } = await transferFunction.call(this, owner, this.toWhom, tokenId, { from: approved }));
+            ({
+              logs
+            } = await transferFunction.call(this, owner, this.toWhom, tokenId, {
+              from: approved
+            }));
           });
-          transferWasSuccessful({ owner, tokenId, approved });
+          transferWasSuccessful({
+            owner,
+            tokenId,
+            approved
+          });
         });
 
         context('when called by the operator', function () {
           beforeEach(async function () {
-            ({ logs } = await transferFunction.call(this, owner, this.toWhom, tokenId, { from: operator }));
+            ({
+              logs
+            } = await transferFunction.call(this, owner, this.toWhom, tokenId, {
+              from: operator
+            }));
           });
-          transferWasSuccessful({ owner, tokenId, approved });
+          transferWasSuccessful({
+            owner,
+            tokenId,
+            approved
+          });
         });
 
         context('when called by the owner without an approved user', function () {
           beforeEach(async function () {
-            await this.token.approve(ZERO_ADDRESS, tokenId, { from: owner });
-            ({ logs } = await transferFunction.call(this, owner, this.toWhom, tokenId, { from: operator }));
+            await this.token.approve(ZERO_ADDRESS, tokenId, {
+              from: owner
+            });
+            ({
+              logs
+            } = await transferFunction.call(this, owner, this.toWhom, tokenId, {
+              from: operator
+            }));
           });
-          transferWasSuccessful({ owner, tokenId, approved: null });
+          transferWasSuccessful({
+            owner,
+            tokenId,
+            approved: null
+          });
         });
 
         context('when sent to the owner', function () {
           beforeEach(async function () {
-            ({ logs } = await transferFunction.call(this, owner, owner, tokenId, { from: owner }));
+            ({
+              logs
+            } = await transferFunction.call(this, owner, owner, tokenId, {
+              from: owner
+            }));
           });
 
           it('keeps ownership of the token', async function () {
@@ -182,7 +249,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
         context('when the address of the previous owner is incorrect', function () {
           it('reverts', async function () {
             await expectRevert(
-              transferFunction.call(this, other, other, tokenId, { from: owner }),
+              transferFunction.call(this, other, other, tokenId, {
+                from: owner
+              }),
               'Item: transfer from incorrect owner',
             );
           });
@@ -191,7 +260,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
         context('when the sender is not authorized for the token id', function () {
           it('reverts', async function () {
             await expectRevert(
-              transferFunction.call(this, owner, other, tokenId, { from: other }),
+              transferFunction.call(this, owner, other, tokenId, {
+                from: other
+              }),
               'Item: transfer caller is not owner nor approved',
             );
           });
@@ -200,7 +271,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
         context('when the given token ID does not exist', function () {
           it('reverts', async function () {
             await expectRevert(
-              transferFunction.call(this, owner, other, nonExistentTokenId, { from: owner }),
+              transferFunction.call(this, owner, other, nonExistentTokenId, {
+                from: owner
+              }),
               'Item: operator query for nonexistent token',
             );
           });
@@ -209,7 +282,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
         context('when the address to transfer the token to is the zero address', function () {
           it('reverts', async function () {
             await expectRevert(
-              transferFunction.call(this, owner, ZERO_ADDRESS, tokenId, { from: owner }),
+              transferFunction.call(this, owner, ZERO_ADDRESS, tokenId, {
+                from: owner
+              }),
               'Item: transfer to the zero address',
             );
           });
@@ -245,7 +320,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
             shouldTransferTokensByUsers(transferFun);
 
             it('calls onERC721Received', async function () {
-              const receipt = await transferFun.call(this, owner, this.receiver.address, tokenId, { from: owner });
+              const receipt = await transferFun.call(this, owner, this.receiver.address, tokenId, {
+                from: owner
+              });
 
               await expectEvent.inTransaction(receipt.tx, ERC721ReceiverMock, 'Received', {
                 operator: owner,
@@ -256,7 +333,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
             });
 
             it('calls onERC721Received from approved', async function () {
-              const receipt = await transferFun.call(this, owner, this.receiver.address, tokenId, { from: approved });
+              const receipt = await transferFun.call(this, owner, this.receiver.address, tokenId, {
+                from: approved
+              });
 
               await expectEvent.inTransaction(receipt.tx, ERC721ReceiverMock, 'Received', {
                 operator: approved,
@@ -273,8 +352,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
                     this,
                     owner,
                     this.receiver.address,
-                    nonExistentTokenId,
-                    { from: owner },
+                    nonExistentTokenId, {
+                      from: owner
+                    },
                   ),
                   'Item: operator query for nonexistent token',
                 );
@@ -295,7 +375,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
             await expectRevert(
-              this.token.safeTransferFrom(owner, invalidReceiver.address, tokenId, { from: owner }),
+              this.token.safeTransferFrom(owner, invalidReceiver.address, tokenId, {
+                from: owner
+              }),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -305,7 +387,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithMessage);
             await expectRevert(
-              this.token.safeTransferFrom(owner, revertingReceiver.address, tokenId, { from: owner }),
+              this.token.safeTransferFrom(owner, revertingReceiver.address, tokenId, {
+                from: owner
+              }),
               'ERC721ReceiverMock: reverting',
             );
           });
@@ -315,7 +399,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
             await expectRevert(
-              this.token.safeTransferFrom(owner, revertingReceiver.address, tokenId, { from: owner }),
+              this.token.safeTransferFrom(owner, revertingReceiver.address, tokenId, {
+                from: owner
+              }),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -325,7 +411,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.Panic);
             await expectRevert.unspecified(
-              this.token.safeTransferFrom(owner, revertingReceiver.address, tokenId, { from: owner }),
+              this.token.safeTransferFrom(owner, revertingReceiver.address, tokenId, {
+                from: owner
+              }),
             );
           });
         });
@@ -334,7 +422,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const nonReceiver = this.token;
             await expectRevert(
-              this.token.safeTransferFrom(owner, nonReceiver.address, tokenId, { from: owner }),
+              this.token.safeTransferFrom(owner, nonReceiver.address, tokenId, {
+                from: owner
+              }),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -360,7 +450,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
         it('calls onERC721Received — without data', async function () {
           this.receiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.None);
-          const receipt = await this.token.safeMint(this.receiver.address, tokenId);
+          const receipt = await this.token.safeMint(this.receiver.address, tokenId, "");
 
           await expectEvent.inTransaction(receipt.tx, ERC721ReceiverMock, 'Received', {
             from: ZERO_ADDRESS,
@@ -372,7 +462,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
             await expectRevert(
-              this.token.safeMint(invalidReceiver.address, tokenId),
+              this.token.safeMint(invalidReceiver.address, tokenId, ""),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -382,7 +472,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithMessage);
             await expectRevert(
-              this.token.safeMint(revertingReceiver.address, tokenId),
+              this.token.safeMint(revertingReceiver.address, tokenId, ""),
               'ERC721ReceiverMock: reverting',
             );
           });
@@ -392,7 +482,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
             await expectRevert(
-              this.token.safeMint(revertingReceiver.address, tokenId),
+              this.token.safeMint(revertingReceiver.address, tokenId, ""),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -402,7 +492,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.Panic);
             await expectRevert.unspecified(
-              this.token.safeMint(revertingReceiver.address, tokenId),
+              this.token.safeMint(revertingReceiver.address, tokenId, ""),
             );
           });
         });
@@ -411,7 +501,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           it('reverts', async function () {
             const nonReceiver = this.token;
             await expectRevert(
-              this.token.safeMint(nonReceiver.address, tokenId),
+              this.token.safeMint(nonReceiver.address, tokenId, ""),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -449,7 +539,11 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       context('when clearing approval', function () {
         context('when there was no prior approval', function () {
           beforeEach(async function () {
-            ({ logs } = await this.token.approve(ZERO_ADDRESS, tokenId, { from: owner }));
+            ({
+              logs
+            } = await this.token.approve(ZERO_ADDRESS, tokenId, {
+              from: owner
+            }));
           });
 
           itClearsApproval();
@@ -458,8 +552,14 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
         context('when there was a prior approval', function () {
           beforeEach(async function () {
-            await this.token.approve(approved, tokenId, { from: owner });
-            ({ logs } = await this.token.approve(ZERO_ADDRESS, tokenId, { from: owner }));
+            await this.token.approve(approved, tokenId, {
+              from: owner
+            });
+            ({
+              logs
+            } = await this.token.approve(ZERO_ADDRESS, tokenId, {
+              from: owner
+            }));
           });
 
           itClearsApproval();
@@ -470,7 +570,11 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       context('when approving a non-zero address', function () {
         context('when there was no prior approval', function () {
           beforeEach(async function () {
-            ({ logs } = await this.token.approve(approved, tokenId, { from: owner }));
+            ({
+              logs
+            } = await this.token.approve(approved, tokenId, {
+              from: owner
+            }));
           });
 
           itApproves(approved);
@@ -479,8 +583,14 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
         context('when there was a prior approval to the same address', function () {
           beforeEach(async function () {
-            await this.token.approve(approved, tokenId, { from: owner });
-            ({ logs } = await this.token.approve(approved, tokenId, { from: owner }));
+            await this.token.approve(approved, tokenId, {
+              from: owner
+            });
+            ({
+              logs
+            } = await this.token.approve(approved, tokenId, {
+              from: owner
+            }));
           });
 
           itApproves(approved);
@@ -489,8 +599,14 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
         context('when there was a prior approval to a different address', function () {
           beforeEach(async function () {
-            await this.token.approve(anotherApproved, tokenId, { from: owner });
-            ({ logs } = await this.token.approve(anotherApproved, tokenId, { from: owner }));
+            await this.token.approve(anotherApproved, tokenId, {
+              from: owner
+            });
+            ({
+              logs
+            } = await this.token.approve(anotherApproved, tokenId, {
+              from: owner
+            }));
           });
 
           itApproves(anotherApproved);
@@ -501,30 +617,44 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       context('when the address that receives the approval is the owner', function () {
         it('reverts', async function () {
           await expectRevert(
-            this.token.approve(owner, tokenId, { from: owner }), 'Item: approval to current owner',
+            this.token.approve(owner, tokenId, {
+              from: owner
+            }), 'Item: approval to current owner',
           );
         });
       });
 
       context('when the sender does not own the given token ID', function () {
         it('reverts', async function () {
-          await expectRevert(this.token.approve(approved, tokenId, { from: other }),
+          await expectRevert(this.token.approve(approved, tokenId, {
+              from: other
+            }),
             'Item: approve caller is not owner nor approved for all');
         });
       });
 
       context('when the sender is approved for the given token ID', function () {
         it('reverts', async function () {
-          await this.token.approve(approved, tokenId, { from: owner });
-          await expectRevert(this.token.approve(anotherApproved, tokenId, { from: approved }),
+          await this.token.approve(approved, tokenId, {
+            from: owner
+          });
+          await expectRevert(this.token.approve(anotherApproved, tokenId, {
+              from: approved
+            }),
             'Item: approve caller is not owner nor approved for all');
         });
       });
 
       context('when the sender is an operator', function () {
         beforeEach(async function () {
-          await this.token.setApprovalForAll(operator, true, { from: owner });
-          ({ logs } = await this.token.approve(approved, tokenId, { from: operator }));
+          await this.token.setApprovalForAll(operator, true, {
+            from: owner
+          });
+          ({
+            logs
+          } = await this.token.approve(approved, tokenId, {
+            from: operator
+          }));
         });
 
         itApproves(approved);
@@ -533,7 +663,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
       context('when the given token ID does not exist', function () {
         it('reverts', async function () {
-          await expectRevert(this.token.approve(approved, nonExistentTokenId, { from: operator }),
+          await expectRevert(this.token.approve(approved, nonExistentTokenId, {
+              from: operator
+            }),
             'Item: owner query for nonexistent token');
         });
       });
@@ -543,13 +675,19 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
       context('when the operator willing to approve is not the owner', function () {
         context('when there is no operator approval set by the sender', function () {
           it('approves the operator', async function () {
-            await this.token.setApprovalForAll(operator, true, { from: owner });
+            await this.token.setApprovalForAll(operator, true, {
+              from: owner
+            });
 
             expect(await this.token.isApprovedForAll(owner, operator)).to.equal(true);
           });
 
           it('emits an approval event', async function () {
-            const { logs } = await this.token.setApprovalForAll(operator, true, { from: owner });
+            const {
+              logs
+            } = await this.token.setApprovalForAll(operator, true, {
+              from: owner
+            });
 
             expectEvent.inLogs(logs, 'ApprovalForAll', {
               owner: owner,
@@ -561,17 +699,25 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
         context('when the operator was set as not approved', function () {
           beforeEach(async function () {
-            await this.token.setApprovalForAll(operator, false, { from: owner });
+            await this.token.setApprovalForAll(operator, false, {
+              from: owner
+            });
           });
 
           it('approves the operator', async function () {
-            await this.token.setApprovalForAll(operator, true, { from: owner });
+            await this.token.setApprovalForAll(operator, true, {
+              from: owner
+            });
 
             expect(await this.token.isApprovedForAll(owner, operator)).to.equal(true);
           });
 
           it('emits an approval event', async function () {
-            const { logs } = await this.token.setApprovalForAll(operator, true, { from: owner });
+            const {
+              logs
+            } = await this.token.setApprovalForAll(operator, true, {
+              from: owner
+            });
 
             expectEvent.inLogs(logs, 'ApprovalForAll', {
               owner: owner,
@@ -581,7 +727,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
           });
 
           it('can unset the operator approval', async function () {
-            await this.token.setApprovalForAll(operator, false, { from: owner });
+            await this.token.setApprovalForAll(operator, false, {
+              from: owner
+            });
 
             expect(await this.token.isApprovedForAll(owner, operator)).to.equal(false);
           });
@@ -589,17 +737,25 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
         context('when the operator was already approved', function () {
           beforeEach(async function () {
-            await this.token.setApprovalForAll(operator, true, { from: owner });
+            await this.token.setApprovalForAll(operator, true, {
+              from: owner
+            });
           });
 
           it('keeps the approval to the given address', async function () {
-            await this.token.setApprovalForAll(operator, true, { from: owner });
+            await this.token.setApprovalForAll(operator, true, {
+              from: owner
+            });
 
             expect(await this.token.isApprovedForAll(owner, operator)).to.equal(true);
           });
 
           it('emits an approval event', async function () {
-            const { logs } = await this.token.setApprovalForAll(operator, true, { from: owner });
+            const {
+              logs
+            } = await this.token.setApprovalForAll(operator, true, {
+              from: owner
+            });
 
             expectEvent.inLogs(logs, 'ApprovalForAll', {
               owner: owner,
@@ -612,7 +768,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
       context('when the operator is the owner', function () {
         it('reverts', async function () {
-          await expectRevert(this.token.setApprovalForAll(owner, true, { from: owner }),
+          await expectRevert(this.token.setApprovalForAll(owner, true, {
+              from: owner
+            }),
             'Item: approve to caller');
         });
       });
@@ -637,7 +795,9 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
         context('when account has been approved', async function () {
           beforeEach(async function () {
-            await this.token.approve(approved, firstTokenId, { from: owner });
+            await this.token.approve(approved, firstTokenId, {
+              from: owner
+            });
           });
 
           it('returns approved account', async function () {
@@ -657,11 +817,17 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
     context('with minted token', async function () {
       beforeEach(async function () {
-        ({ logs: this.logs } = await this.token.mint(owner, firstTokenId));
+        ({
+          logs: this.logs
+        } = await this.token.mint(owner, firstTokenId));
       });
 
       it('emits a Transfer event', function () {
-        expectEvent.inLogs(this.logs, 'Transfer', { from: ZERO_ADDRESS, to: owner, tokenId: firstTokenId });
+        expectEvent.inLogs(this.logs, 'Transfer', {
+          from: ZERO_ADDRESS,
+          to: owner,
+          tokenId: firstTokenId
+        });
       });
 
       it('creates the token', async function () {
@@ -690,15 +856,25 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
 
       context('with burnt token', function () {
         beforeEach(async function () {
-          ({ logs: this.logs } = await this.token.burn(firstTokenId));
+          ({
+            logs: this.logs
+          } = await this.token.burn(firstTokenId));
         });
 
         it('emits a Transfer event', function () {
-          expectEvent.inLogs(this.logs, 'Transfer', { from: owner, to: ZERO_ADDRESS, tokenId: firstTokenId });
+          expectEvent.inLogs(this.logs, 'Transfer', {
+            from: owner,
+            to: ZERO_ADDRESS,
+            tokenId: firstTokenId
+          });
         });
 
         it('emits an Approval event', function () {
-          expectEvent.inLogs(this.logs, 'Approval', { owner, approved: ZERO_ADDRESS, tokenId: firstTokenId });
+          expectEvent.inLogs(this.logs, 'Approval', {
+            owner,
+            approved: ZERO_ADDRESS,
+            tokenId: firstTokenId
+          });
         });
 
         it('deletes the token', async function () {
@@ -718,7 +894,7 @@ function shouldBehaveLikeERC721 (errorPrefix, owner, newOwner, approved, another
   });
 }
 
-function shouldBehaveLikeERC721Metadata (errorPrefix, name, symbol, owner) {
+function shouldBehaveLikeERC721Metadata(errorPrefix, name, symbol, owner) {
   shouldSupportInterfaces([
     'ERC721Metadata',
   ]);

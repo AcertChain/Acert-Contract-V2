@@ -16,17 +16,13 @@ contract Item721Mock is Item721, Ownable {
         _owner = msg.sender;
     }
 
-    function exists(uint256 tokenId) public view returns (bool) {
-        return _exists(tokenId);
-    }
-
     function mint(address to, uint256 tokenId) public onlyOwner {
         _mint(to, tokenId);
     }
 
-    function safeMint(address to, uint256 tokenId) public onlyOwner {
-        _safeMint(to, tokenId);
-    }
+    // function safeMint(address to, uint256 tokenId) public onlyOwner {
+    //     _safeMint(to, tokenId, "");
+    // }
 
     function safeMint(
         address to,
