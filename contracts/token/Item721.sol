@@ -385,7 +385,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
     ) public virtual override {
         require(to != address(0), "Item: transfer to the zero address");
         transferFromItem(_getIdByAddress(from), _getIdByAddress(to), tokenId);
-        emit Transfer(from, to, tokenId);
     }
 
     function transferFromItem(
@@ -460,6 +459,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _ownersById[tokenId] = to;
 
         emit TransferItem(from, to, tokenId);
+        emit Transfer(_getAddressById(from), _getAddressById(to), tokenId);
     }
 
     function safeTransferFrom(
@@ -486,7 +486,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
             tokenId,
             data
         );
-        emit Transfer(from, to, tokenId);
     }
 
     function safeTransferFromItem(
@@ -637,7 +636,6 @@ contract Item721 is EIP712, ERC165, IItem721 {
     function _mint(address to, uint256 tokenId) internal virtual {
         require(to != address(0), "Item: mint to the zero address");
         _mintItem(_getIdByAddress(to), tokenId);
-        emit Transfer(address(0), to, tokenId);
     }
 
     function _mintItem(uint256 to, uint256 tokenId) internal virtual {
@@ -647,6 +645,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _balancesById[to] += 1;
         _ownersById[tokenId] = to;
         emit TransferItem(0, to, tokenId);
+        emit Transfer(address(0), _getAddressById(to), tokenId);
     }
 
     /**

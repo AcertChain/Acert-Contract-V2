@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 contract Cash20 is Context, EIP712, ICash20 {
     mapping(uint256 => uint256) private _balancesById;
     mapping(uint256 => mapping(address => uint256)) private _allowancesById;
-    // nonce
     mapping(address => uint256) private _nonces;
 
     uint256 private _totalSupply;
@@ -240,7 +239,6 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(to != address(0), "Cash: transfer to the zero address");
 
         _transferCash(_getIdByAddress(from), _getIdByAddress(to), amount);
-        emit Transfer(from, to, amount);
     }
 
     function _transferCash(
@@ -257,6 +255,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         }
         _balancesById[to] += amount;
         emit TransferCash(from, to, amount);
+        emit Transfer(_getAddressById(from), _getAddressById(to), amount);
     }
 
     /**
@@ -476,7 +475,6 @@ contract Cash20 is Context, EIP712, ICash20 {
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "Cash: mint to the zero address");
         _mintCash(_getIdByAddress(account), amount);
-        emit Transfer(address(0), account, amount);
     }
 
     function _mintCash(uint256 accountId, uint256 amount) internal virtual {
@@ -486,6 +484,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         _totalSupply += amount;
         _balancesById[accountId] += amount;
         emit TransferCash(0, accountId, amount);
+        emit Transfer(address(0), _getAddressById(accountId), amount);
     }
 
     /**
@@ -502,7 +501,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     function _burn(address account, uint256 amount) internal virtual {
         require(account != address(0), "Cash: burn from the zero address");
         _burnCash(_getIdByAddress(account), amount);
-        emit Transfer(account, address(0), amount);
+        
     }
 
     function _burnCash(uint256 accountId, uint256 amount) internal virtual {
@@ -516,6 +515,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         _totalSupply -= amount;
 
         emit TransferCash(accountId, 0, amount);
+        emit Transfer(_getAddressById(accountId), address(0), amount);
     }
 
     function _getAccountIdByAddress(address addr)
@@ -528,6 +528,10 @@ contract Cash20 is Context, EIP712, ICash20 {
 
     function _getIdByAddress(address addr) internal returns (uint256) {
         return IWorld(_world).getOrCreateAccountId(addr);
+    }
+
+    function _getAddressById(uint256 id) internal view returns (address) {
+        return IWorld(_world).getAddressById(id);
     }
 
     function _checkAddress(address _addr, uint256 _id)
