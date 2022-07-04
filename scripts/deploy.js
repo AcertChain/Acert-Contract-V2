@@ -1,5 +1,29 @@
 const hre = require("hardhat");
 
+// bsc
+// const cash20Name = "Galaxy Gem";
+// const cash20Symbol = "GGM";
+
+// const item721Name = "MOGA";
+// const item721Symbol = "MOGA";
+// const item721URI = "https://moga.taobaozx.net/moga/";
+
+// const item721NameE = "MOGA Equipment";
+// const item721SymbolE = "eqpt";
+// const item721URIE = "https://moga.ggm.com/equipment";
+
+// heco
+const cash20Name = "Galaxy Gem";
+const cash20Symbol = "GGM";
+
+const item721Name = "MOGA";
+const item721Symbol = "MOGA";
+const item721URI = "https://moga.taobaozx.net/moga/";
+
+const item721NameE = "MOGA Equipment";
+const item721SymbolE = "EQPT";
+const item721URIE = "https://moga.taobaozx.net/equipment/";
+
 async function main() {
   // We get the contract to deploy
   const [deployer] = await ethers.getSigners();
@@ -17,28 +41,23 @@ async function main() {
   await Mcontract.addWorld(Wcontract.address, "", "", "", "");
 
   //deploy cash20
-  //GGM(name : Galaxy Gem ; symbol GGM ; 精度：18位)
   const Cash20 = (await ethers.getContractFactory("Cash20Mock")).connect(deployer);
-  const Ccontract = await Cash20.deploy("Galaxy Gem", "GGM", "1.0", Wcontract.address);
+  const Ccontract = await Cash20.deploy(cash20Name, cash20Symbol, "1.0", Wcontract.address);
   await Ccontract.deployed();
 
   //deploy Item721
-  //moga, equipment(name: MOGA ; symbol : MOGA ; tokenURI: https://moga.taobaozx.net/moga/，id起始号: 没有ID起始号根据moga信息组合成）
   const Item721M = (await ethers.getContractFactory("Item721Mock")).connect(deployer);
-  const IMcontract = await Item721M.deploy("MOGA", "MOGA", "1.0", "https://moga.taobaozx.net/moga/", Wcontract.address);
+  const IMcontract = await Item721M.deploy(item721Name, item721Symbol, "1.0", item721URI, Wcontract.address);
   await IMcontract.deployed();
 
-
   // world register asset
-  // moga, equipment(name: MOGA Equipment; symbol : eqpt ; tokenURI: https://moga.taobaozx.net/equipment/，id起始号: 没有ID起始号根据装备信息组合成）
   const Item721E = (await ethers.getContractFactory("Item721Mock")).connect(deployer);
-  const IEcontract = await Item721E.deploy("MOGA Equipment", "eqpt", "1.0", "https://moga.taobaozx.net/equipment/", Wcontract.address);
+  const IEcontract = await Item721E.deploy(item721NameE, item721SymbolE, "1.0", item721URIE, Wcontract.address);
   await IEcontract.deployed();
 
-
-  await Wcontract.registerAsset(IMcontract.address, "");
-  await Wcontract.registerAsset(IEcontract.address, "");
-  await Wcontract.registerAsset(Ccontract.address, "");
+  await (await Wcontract.registerAsset(IMcontract.address, "")).wait();
+  await (await Wcontract.registerAsset(IEcontract.address, "")).wait();
+  await (await Wcontract.registerAsset(Ccontract.address, "")).wait();
 
 
   console.log("Metaverse deployed to", Mcontract.address);

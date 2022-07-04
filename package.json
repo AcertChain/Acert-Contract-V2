@@ -7,7 +7,7 @@
     "build": "npx hardhat compile",
     "test": "npx hardhat test",
     "clean": "npx hardhat clean",
-    "deploy-bsc-test": "npx hardhat --network bsctest run scripts/deploy.js",
+    "deploy": "npx hardhat --network test run scripts/deploy.js",
     "size": "npx hardhat size-contracts",
     "docgen":"npx hardhat docgen"
   },
