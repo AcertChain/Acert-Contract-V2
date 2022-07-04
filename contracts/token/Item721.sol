@@ -62,6 +62,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _symbol = symbol_;
         _tokenURI = tokenURI_;
         _world = world_;
+        _owner = msg.sender;
     }
 
     /**
