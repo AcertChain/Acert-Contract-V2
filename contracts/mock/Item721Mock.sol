@@ -6,6 +6,7 @@ import "../token/Item721.sol";
 import "../common/Ownable.sol";
 
 contract Item721Mock is Item721, Ownable {
+
     constructor(
         string memory name,
         string memory symbol,
@@ -19,10 +20,6 @@ contract Item721Mock is Item721, Ownable {
     function mint(address to, uint256 tokenId) public onlyOwner {
         _mint(to, tokenId);
     }
-
-    // function safeMint(address to, uint256 tokenId) public onlyOwner {
-    //     _safeMint(to, tokenId, "");
-    // }
 
     function safeMint(
         address to,

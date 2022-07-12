@@ -159,7 +159,11 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         return _safeContracts[_contract]._isExist;
     }
 
-    function getSafeContract(address _contract) public view returns (Contract memory) {
+    function getSafeContract(address _contract)
+        public
+        view
+        returns (Contract memory)
+    {
         return _safeContracts[_contract];
     }
 
@@ -229,10 +233,6 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
     }
 
     function _trustContract(uint256 _id, address _contract) private {
-        require(
-            _safeContracts[_contract]._isExist == true,
-            "World: contract is not safe"
-        );
         _isTrustContractByAccountId[_id][_contract] = true;
         emit TrustContract(_id, _contract);
     }
@@ -396,8 +396,8 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         returns (bool _isTrust)
     {
         return
-            _safeContracts[_contract]._isExist &&
-            (_isTrustContractByAccountId[_id][_contract] || _isTrustWorld[_id]);
+            (_safeContracts[_contract]._isExist && _isTrustWorld[_id]) ||
+            _isTrustContractByAccountId[_id][_contract];
     }
 
     function getMetaverse() public view returns (address) {

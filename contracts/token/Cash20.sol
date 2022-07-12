@@ -591,10 +591,10 @@ contract Cash20 is Context, EIP712, ICash20 {
         bytes32 digest,
         bytes memory signature
     ) internal view {
-        require(block.timestamp < deadline, "Metaverse: BWO call expired");
+        require(block.timestamp < deadline, "Cash: BWO call expired");
         require(
             signer == ECDSA.recover(digest, signature),
-            "Metaverse: recoverSig failed"
+            "Cash: recoverSig failed"
         );
     }
 }
