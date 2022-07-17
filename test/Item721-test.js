@@ -32,6 +32,12 @@ contract('Item721', function (accounts) {
     this.tokenVersion = version;
     this.operator = op;
 
+    // register world
+    await this.Metaverse.registerWorld(this.world.address, "", "", "", "");
+
+    // register token
+    await this.world.registerAsset(this.token.address, "");
+
     await this.world.addOperator(op);
   });
 

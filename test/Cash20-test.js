@@ -70,6 +70,11 @@ contract('Cash20', function (accounts) {
     this.Metaverse = await Metaverse.new("metaverse", "1.0", 0);
     this.world = await World.new(this.Metaverse.address, "world", "1.0");
     this.token = await Cash20.new(name, symbol, version, this.world.address);
+    // register world
+    await this.Metaverse.registerWorld(this.world.address, "", "", "", "");
+    // register token
+    await this.world.registerAsset(this.token.address, "");
+
     this.receipt = await this.token.mint(initialHolder, initialSupply);
     this.tokenName = name;
     this.tokenVersion = version;

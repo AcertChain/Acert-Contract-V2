@@ -39,6 +39,10 @@ contract('World', function (accounts) {
 
         this.item = await Item721.new(itemName, itemSymbol, itemVersion, "", this.world.address);
         this.cash = await Cash20.new(cashName, cashSymbol, cashVersion, this.world.address);
+
+        // register world
+        await this.Metaverse.registerWorld(this.world.address, "", "", "", "");
+
     });
 
     shouldBehaveLikeWorld(...accounts);

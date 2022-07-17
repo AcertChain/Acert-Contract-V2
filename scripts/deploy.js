@@ -38,7 +38,7 @@ async function main() {
   await Wcontract.deployed();
 
   // register world
-  await Mcontract.addWorld(Wcontract.address, "", "", "", "");
+  await Mcontract.registerWorld(Wcontract.address, "", "", "", "");
 
   //deploy cash20
   const Cash20 = (await ethers.getContractFactory("Cash20Mock")).connect(deployer);

@@ -12,6 +12,12 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
         uint256 indexed tokenId
     );
 
+    event ApprovalItem(
+        uint256 indexed owner,
+        address indexed approved,
+        uint256 indexed tokenId
+    );
+
     event ApprovalForAllItem(
         uint256 indexed owner,
         address indexed operator,
@@ -46,6 +52,13 @@ interface IItem721 is IERC721Metadata, IItem721BWO, IAsset {
     function transferFromItem(
         uint256 from,
         uint256 to,
+        uint256 tokenId
+    ) external;
+
+
+    function approveItem(
+        uint256 from,
+        address to,
         uint256 tokenId
     ) external;
 

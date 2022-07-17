@@ -352,7 +352,6 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) internal virtual {
         require(owner != address(0), "Cash: approve from the zero address");
         _approveId(_getIdByAddress(owner), spender, amount);
-        emit Approval(owner, spender, amount);
     }
 
     /**
@@ -378,6 +377,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(spender != address(0), "Cash: approve to the zero address");
         _allowancesById[ownerId][spender] = amount;
         emit ApprovalCash(ownerId, spender, amount);
+        emit Approval(_getAddressById(ownerId), spender, amount);
     }
 
     /**
@@ -547,7 +547,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     function _isBWO(address _add) internal view returns (bool) {
-        return IWorld(_world).isBWO(_add);
+        return IWorld(_world).isBWOByAsset(_add);
     }
 
     function _isTrust(address _contract, uint256 _id)
@@ -555,7 +555,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         view
         returns (bool)
     {
-        return IWorld(_world).isTrust(_contract, _id);
+        return IWorld(_world).isTrustByAsset(_contract, _id);
     }
 
     function _isFreeze(uint256 _id) internal view returns (bool) {

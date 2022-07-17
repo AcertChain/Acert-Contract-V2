@@ -28,7 +28,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     string private _tokenURI;
 
     // nonce
-    mapping(address => uint256) private _nonces;
+    mapping(address => uint256) public _nonces;
 
     // Mapping from token ID to owner address
     mapping(uint256 => uint256) private _ownersById;
@@ -91,7 +91,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (uint256)
     {
-        require(owner != address(0), "Item: address zero is not a valid owner");
+        _checkAddrIsNotZero(owner, "Item: address zero is not a valid owner");
         return _balancesById[_getAccountIdByAddress(owner)];
     }
 
@@ -105,7 +105,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         override
         returns (uint256)
     {
-        require(ownerId != 0, "Item: id zero is not a valid owner");
+        _checkIdIsNotZero(ownerId, "Item: id zero is not a valid owner");
         return _balancesById[ownerId];
     }
 
@@ -120,7 +120,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         returns (address owner)
     {
         owner = _getAddressById(_ownersById[tokenId]);
-        require(owner != address(0), "Item: owner query for nonexistent token");
+        _checkAddrIsNotZero(owner, "Item: owner query for nonexistent token");
     }
 
     /**
@@ -131,17 +131,17 @@ contract Item721 is EIP712, ERC165, IItem721 {
         view
         virtual
         override
-        returns (uint256 owner)
+        returns (uint256 ownerId)
     {
-        owner = _ownersById[tokenId];
-        require(owner != 0, "Item: owner query for nonexistent token");
+        ownerId = _ownersById[tokenId];
+        _checkIdIsNotZero(ownerId, "Item: owner query for nonexistent token");
     }
 
     function itemsOf(
         uint256 owner,
         uint256 startAt,
         uint256 endAt
-    ) public view virtual override returns (uint256[] memory ) {
+    ) public view virtual override returns (uint256[] memory) {
         require(
             startAt <= endAt,
             "Item: startAt must be less than or equal to endAt"
@@ -225,6 +225,15 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _approve(to, tokenId);
     }
 
+    function approveItem(
+        uint256 from,
+        address to,
+        uint256 tokenId
+    ) public virtual override {
+        _checkAddress(msg.sender, from);
+        approve(to, tokenId);
+    }
+
     function approveItemBWO(
         address to,
         uint256 tokenId,
@@ -232,7 +241,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(_isBWO(msg.sender), "Item: must be the BWO");
+        _isBWO(msg.sender);
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -254,7 +263,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
         require(to != sender, "Item: approval to current owner");
-        require(_checkAddress(sender, ownerOfItem(tokenId)), "Item: not owner");
+        _checkAddress(sender, ownerOfItem(tokenId));
         _approve(to, tokenId);
         emit ApprovalItemBWO(to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
@@ -263,6 +272,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     function _approve(address to, uint256 tokenId) internal virtual {
         _tokenApprovalsById[tokenId] = to;
         emit Approval(Item721.ownerOf(tokenId), to, tokenId);
+        emit ApprovalItem(Item721.ownerOfItem(tokenId), to, tokenId);
     }
 
     /**
@@ -296,7 +306,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         address to,
         bool approved
     ) public virtual override {
-        require(_checkAddress(msg.sender, from), "Item: not owner");
+        _checkAddress(msg.sender, from);
         _setApprovalForAllItem(from, to, approved);
     }
 
@@ -308,7 +318,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(_isBWO(msg.sender), "Item: must be the BWO");
+        _isBWO(msg.sender);
+
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -330,7 +341,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             ),
             signature
         );
-        require(_checkAddress(sender, from), "Item: not owner");
+        _checkAddress(sender, from);
         _setApprovalForAllItem(from, to, approved);
         emit ApprovalForAllItemBWO(from, to, approved, sender, nonce, deadline);
         _nonces[sender] += 1;
@@ -341,8 +352,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
         address operator,
         bool approved
     ) internal virtual {
-        require(owner != 0, "Item: id zero is not a valid owner");
-        require(!_isFreeze(owner), "Item: owner is frozen");
+        _checkIdIsNotZero(owner, "Item: id zero is not a valid owner");
+        _isFreeze(owner, "Item: owner is frozen");
         require(operator != _getAddressById(owner), "Item: approve to caller");
         _operatorApprovalsById[owner][operator] = approved;
         emit ApprovalForAllItem(owner, operator, approved);
@@ -386,7 +397,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         address to,
         uint256 tokenId
     ) public virtual override {
-        require(to != address(0), "Item: transfer to the zero address");
+        _checkAddrIsNotZero(to, "Item: transfer to the zero address");
         transferFromItem(_getIdByAddress(from), _getIdByAddress(to), tokenId);
     }
 
@@ -410,7 +421,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(_isBWO(msg.sender), "Item: must be the BWO");
+        _isBWO(msg.sender);
+
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -433,7 +445,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        require(_checkAddress(sender, from), "Item: not owner");
+        _checkAddress(sender, from);
         _transfer(from, to, tokenId);
         emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
@@ -448,9 +460,9 @@ contract Item721 is EIP712, ERC165, IItem721 {
             Item721.ownerOfItem(tokenId) == from,
             "Item: transfer from incorrect owner"
         );
-        require(!_isFreeze(from), "Item: transfer from frozen account");
-        require(to != 0, "Item: transfer to the zero id");
-        require(_accountIsExist(to), "Item: to account is not exist");
+        _isFreeze(from, "Item: transfer from frozen account");
+        _checkIdIsNotZero(to, "Item: transfer to the zero id");
+        _accountIsExist(to);
 
         _beforeTokenTransfer(from, to, tokenId);
 
@@ -482,7 +494,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 tokenId,
         bytes memory data
     ) public virtual override {
-        require(to != address(0), "Item: transfer to the zero address");
+        _checkAddrIsNotZero(to, "Item: transfer to the zero address");
         safeTransferFromItem(
             _getIdByAddress(from),
             _getIdByAddress(to),
@@ -513,7 +525,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(_isBWO(msg.sender), "Item: must be the BWO");
+        _isBWO(msg.sender);
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -537,7 +549,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        require(_checkAddress(sender, from), "Item: not owner");
+        _checkAddress(sender, from);
         _safeTransfer(from, to, tokenId, data);
         emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
         _nonces[sender] += 1;
@@ -619,12 +631,12 @@ contract Item721 is EIP712, ERC165, IItem721 {
      * Emits a {Transfer} event.
      */
     function _mint(address to, uint256 tokenId) internal virtual {
-        require(to != address(0), "Item: mint to the zero address");
+        _checkAddrIsNotZero(to, "Item: mint to the zero address");
         _mintItem(_getIdByAddress(to), tokenId);
     }
 
     function _mintItem(uint256 to, uint256 tokenId) internal virtual {
-        require(to != 0, "Item: transfer to the zero id");
+        _checkIdIsNotZero(to, "Item: transfer to the zero id");
         require(!_exists(tokenId), "Item: token already minted");
         _beforeTokenTransfer(0, to, tokenId);
         _balancesById[to] += 1;
@@ -712,20 +724,16 @@ contract Item721 is EIP712, ERC165, IItem721 {
         return IWorld(_world).getAddressById(id);
     }
 
-    function _checkAddress(address addr, uint256 id)
-        internal
-        view
-        returns (bool)
-    {
-        return IWorld(_world).checkAddress(addr, id);
+    function _checkAddress(address addr, uint256 id) internal view {
+        require(IWorld(_world).checkAddress(addr, id), "Item: not owner");
     }
 
-    function _accountIsExist(uint256 _id) internal view returns (bool) {
-        return IWorld(_world).getAddressById(_id) != address(0);
+    function _accountIsExist(uint256 _id) internal view  {
+        require( IWorld(_world).getAddressById(_id) != address(0),"Item: to account is not exist");
     }
 
-    function _isBWO(address _add) internal view returns (bool) {
-        return IWorld(_world).isBWO(_add);
+    function _isBWO(address _add) internal view {
+        require(IWorld(_world).isBWOByAsset(_add), "Item: must be the BWO");
     }
 
     function _isTrust(address _contract, uint256 _id)
@@ -733,11 +741,22 @@ contract Item721 is EIP712, ERC165, IItem721 {
         view
         returns (bool)
     {
-        return IWorld(_world).isTrust(_contract, _id);
+        return IWorld(_world).isTrustByAsset(_contract, _id);
     }
 
-    function _isFreeze(uint256 _id) internal view returns (bool) {
-        return IWorld(_world).isFreeze(_id);
+    function _isFreeze(uint256 _id, string memory _msg) internal view {
+        require(!IWorld(_world).isFreeze(_id), _msg);
+    }
+
+    function _checkIdIsNotZero(uint256 _id, string memory _msg) internal pure {
+        require(_id != 0, _msg);
+    }
+
+    function _checkAddrIsNotZero(address _addr, string memory _msg)
+        internal
+        pure
+    {
+        require(_addr != address(0), _msg);
     }
 
     function getNonce(address account)

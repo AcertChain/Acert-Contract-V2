@@ -496,7 +496,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
 
         it('calls onERC721Received — without data', async function () {
           this.receiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.None);
-          const receipt = await this.token.safeMint(this.receiver.address, tokenId, "");
+          const receipt = await this.token.safeMint(this.receiver.address, tokenId, '0x');
 
           await expectEvent.inTransaction(receipt.tx, ERC721ReceiverMock, 'Received', {
             from: ZERO_ADDRESS,
@@ -508,7 +508,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
             await expectRevert(
-              this.token.safeMint(invalidReceiver.address, tokenId, ""),
+              this.token.safeMint(invalidReceiver.address, tokenId,'0x'),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -518,7 +518,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithMessage);
             await expectRevert(
-              this.token.safeMint(revertingReceiver.address, tokenId, ""),
+              this.token.safeMint(revertingReceiver.address, tokenId,'0x'),
               'ERC721ReceiverMock: reverting',
             );
           });
@@ -528,7 +528,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
             await expectRevert(
-              this.token.safeMint(revertingReceiver.address, tokenId, ""),
+              this.token.safeMint(revertingReceiver.address, tokenId,'0x'),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -538,7 +538,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.Panic);
             await expectRevert.unspecified(
-              this.token.safeMint(revertingReceiver.address, tokenId, ""),
+              this.token.safeMint(revertingReceiver.address, tokenId,'0x'),
             );
           });
         });
@@ -547,7 +547,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const nonReceiver = this.token;
             await expectRevert(
-              this.token.safeMint(nonReceiver.address, tokenId, ""),
+              this.token.safeMint(nonReceiver.address, tokenId,'0x'),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });

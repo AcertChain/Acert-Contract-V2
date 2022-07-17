@@ -23,6 +23,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
     );
 
     event UpdateAsset(address indexed asset, string image);
+    event DisableAsset(address indexed asset);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
     event AddSafeContract(address indexed safeContract, string name);
@@ -61,6 +62,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
     // struct Asset
     struct Asset {
         bool _isExist;
+        bool _isEnabled;
         address _contract;
         string _name;
         string _image;
@@ -106,6 +108,14 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         _metaverse = metaverse;
     }
 
+    modifier onlyAsset() {
+        require(
+            _assets[msg.sender]._isExist && _assets[msg.sender]._isEnabled,
+            "World: asset is not exist or disabled"
+        );
+        _;
+    }
+
     function registerAsset(address _contract, string calldata _image)
         public
         onlyOwner
@@ -119,7 +129,14 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
 
         string memory symbol = IWorldAsset(_contract).symbol();
         IWorldAsset.ProtocolEnum _protocol = IWorldAsset(_contract).protocol();
-        _assets[_contract] = Asset(true, _contract, symbol, _image, _protocol);
+        _assets[_contract] = Asset(
+            true,
+            true,
+            _contract,
+            symbol,
+            _image,
+            _protocol
+        );
         _assetAddresses.push(_contract);
         emit RegisterAsset(_contract, symbol, _image, _protocol);
     }
@@ -135,6 +152,16 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
 
         _assets[_contract]._image = _image;
         emit UpdateAsset(_contract, _image);
+    }
+
+    function disableAsset(address _contract) public onlyOwner {
+        require(
+            _assets[_contract]._isExist == true,
+            "World: asset is not exist"
+        );
+
+        _assets[_contract]._isEnabled = false;
+        emit DisableAsset(_contract);
     }
 
     function getAsset(address _contract) public view returns (Asset memory) {
@@ -184,6 +211,17 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
 
     function isBWO(address _addr) public view virtual override returns (bool) {
         return _isOperatorByAddress[_addr] || _owner == _addr;
+    }
+
+    function isBWOByAsset(address _addr)
+        public
+        view
+        virtual
+        override
+        onlyAsset
+        returns (bool)
+    {
+        return isBWO(_addr);
     }
 
     function trustContract(uint256 _id, address _contract) public {
@@ -400,6 +438,17 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
             _isTrustContractByAccountId[_id][_contract];
     }
 
+    function isTrustByAsset(address _contract, uint256 _id)
+        public
+        view
+        virtual
+        override
+        onlyAsset
+        returns (bool _isTrust)
+    {
+        return isTrust(_contract, _id);
+    }
+
     function getMetaverse() public view returns (address) {
         return _metaverse;
     }
@@ -410,7 +459,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (bool)
     {
-        return Metaverse(_metaverse).checkAddress(_address, _id);
+        return Metaverse(_metaverse).checkAddressByWorld(_address, _id);
     }
 
     function getAccountIdByAddress(address _address)
@@ -419,7 +468,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (uint256)
     {
-        return Metaverse(_metaverse).getIdByAddress(_address);
+        return Metaverse(_metaverse).getIdByAddressByWorld(_address);
     }
 
     function getAddressById(uint256 _id)
@@ -428,11 +477,11 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (address)
     {
-        return Metaverse(_metaverse).getAddressById(_id);
+        return Metaverse(_metaverse).getAddressByIdByWorld(_id);
     }
 
     function isFreeze(uint256 _id) public view override returns (bool) {
-        return Metaverse(_metaverse).isFreeze(_id);
+        return Metaverse(_metaverse).isFreezeByWorld(_id);
     }
 
     function getOrCreateAccountId(address _address)
@@ -440,7 +489,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (uint256 id)
     {
-        return Metaverse(_metaverse).getOrCreateAccountId(_address);
+        return Metaverse(_metaverse).getOrCreateAccountIdByWorld(_address);
     }
 
     function getNonce(address account) public view returns (uint256) {

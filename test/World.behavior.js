@@ -356,11 +356,29 @@ function shouldBehaveLikeWorldAsset() {
                 });
             });
         });
+
+        describe('disableAsset', function () {
+            it('call disable asset', async function () {
+                await this.world.registerAsset(this.cash.address, "")
+                expectEvent(await this.world.disableAsset(this.cash.address), "DisableAsset", {
+                    asset: this.cash.address
+                });
+                expect(await this.world.getAsset(this.cash.address)).to.deep.equal([true, false, this.cash.address, "MTKN", "", '0']);
+            });
+
+            it('disable asset', async function () {
+                await this.world.registerAsset(this.cash.address, "")
+                await this.world.disableAsset(this.cash.address);
+                await expectRevert(this.cash.allowanceCash(1, ZERO_ADDRESS), 'World: asset is not exist or disabled');
+            });
+
+
+        });
         describe('getAsset', function () {
             context('get asset ', function () {
                 it('get asset', async function () {
                     await this.world.registerAsset(this.cash.address, "test image")
-                    expect(await this.world.getAsset(this.cash.address)).to.deep.equal([true, this.cash.address, "MTKN", "test image", '0']);
+                    expect(await this.world.getAsset(this.cash.address)).to.deep.equal([true, true, this.cash.address, "MTKN", "test image", '0']);
                 });
             });
         });

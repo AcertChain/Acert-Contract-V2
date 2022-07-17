@@ -53,16 +53,16 @@ contract('Metaverse', function (accounts) {
     });
 
     context('测试Metaverse 功能', function () {
-        describe('addWorld ', function () {
+        describe('registerWorld ', function () {
             it('zero address should return revert', async function () {
                 await expectRevert(
-                    this.Metaverse.addWorld(ZERO_ADDRESS, "", "", "", ""), 'Metaverse: zero address',
+                    this.Metaverse.registerWorld(ZERO_ADDRESS, "", "", "", ""), 'Metaverse: zero address',
                 );
             });
 
             it('return event ', async function () {
                 expectRevert(
-                    await this.Metaverse.addWorld(this.world.address, "1", "2", "3", "4"),
+                    await this.Metaverse.registerWorld(this.world.address, "1", "2", "3", "4"),
                     'AddWorld', {
                         world: this.world.address,
                         name: "1",
@@ -75,21 +75,26 @@ contract('Metaverse', function (accounts) {
 
         });
 
-        describe('removeWorld ', function () {
+        describe('disableWorld ', function () {
             it('zero address should return revert', async function () {
                 await expectRevert(
-                    this.Metaverse.removeWorld(ZERO_ADDRESS), 'Metaverse: zero address',
+                    this.Metaverse.disableWorld(ZERO_ADDRESS), 'Metaverse: zero address',
                 );
             });
 
             it('return event ', async function () {
-                await this.Metaverse.addWorld(this.world.address, "", "", "", "");
+                await this.Metaverse.registerWorld(this.world.address, "", "", "", "");
                 expectRevert(
-                    await this.Metaverse.removeWorld(this.world.address),
-                    'removeWorld', {
+                    await this.Metaverse.disableWorld(this.world.address),
+                    'DisableWorld', {
                         world: this.world.address
                     },
                 );
+                
+                await expectRevert(
+                    this.world.isFreeze(1), 'Metaverse: World is disabled',
+                );
+                
             });
 
         });
@@ -102,7 +107,7 @@ contract('Metaverse', function (accounts) {
             });
 
             it('return event ', async function () {
-                await this.Metaverse.addWorld(this.world.address, "", "", "", "");
+                await this.Metaverse.registerWorld(this.world.address, "", "", "", "");
                 expectRevert(
                     await this.Metaverse.updateWorldInfo(this.world.address, "1", "2", "3", "4"),
                     'UpdateWorld', {
@@ -180,13 +185,11 @@ contract('Metaverse', function (accounts) {
 
         describe('containsWorld, getWorlds, getWorldCount, getWorldInfo', function () {
             beforeEach(async function () {
-                await this.Metaverse.addWorld(this.world.address, "1", "2", "3", "4");
+                await this.Metaverse.registerWorld(this.world.address, "1", "2", "3", "4");
             });
 
             it('containsWorld', async function () {
                 expect(await this.Metaverse.containsWorld(this.world.address)).to.be.equal(true);
-                await this.Metaverse.removeWorld(this.world.address);
-                expect(await this.Metaverse.containsWorld(this.world.address)).to.be.equal(false);
             });
 
             it('getWorlds', async function () {
@@ -198,8 +201,7 @@ contract('Metaverse', function (accounts) {
             });
 
             it('getWorldInfo', async function () {
-
-                expect(await this.Metaverse.getWorldInfo(this.world.address)).have.ordered.members([this.world.address, "1", "2", "3", "4"]);
+                expect(await this.Metaverse.getWorldInfo(this.world.address)).have.ordered.members([this.world.address, "1", "2", "3", "4", true]);
             });
         });
     });

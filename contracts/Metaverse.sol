@@ -12,7 +12,7 @@ contract Metaverse is Ownable, EIP712 {
 
     EnumerableSet.AddressSet private worlds;
 
-    event AddWorld(
+    event RegisterWorld(
         address indexed world,
         string name,
         string icon,
@@ -26,7 +26,7 @@ contract Metaverse is Ownable, EIP712 {
         string url,
         string description
     );
-    event RemoveWorld(address indexed world);
+    event DisableWorld(address indexed world);
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
@@ -59,6 +59,7 @@ contract Metaverse is Ownable, EIP712 {
         string icon;
         string url;
         string description;
+        bool isEnabled;
     }
 
     struct Account {
@@ -94,7 +95,16 @@ contract Metaverse is Ownable, EIP712 {
         _startId = startId_;
     }
 
-    function addWorld(
+    modifier onlyWorld() {
+        require(
+            worlds.contains(msg.sender),
+            "Metaverse: Only world can call this function"
+        );
+        require(worldInfos[msg.sender].isEnabled, "Metaverse: World is disabled");
+        _;
+    }
+
+    function registerWorld(
         address _world,
         string calldata _name,
         string calldata _icon,
@@ -113,17 +123,17 @@ contract Metaverse is Ownable, EIP712 {
             name: _name,
             icon: _icon,
             url: _url,
-            description: _description
+            description: _description,
+            isEnabled: true
         });
-        emit AddWorld(_world, _name, _icon, _url, _description);
+        emit RegisterWorld(_world, _name, _icon, _url, _description);
     }
 
-    function removeWorld(address _world) public onlyOwner {
+    function disableWorld(address _world) public onlyOwner {
         require(_world != address(0), "Metaverse: zero address");
         if (worlds.contains(_world)) {
-            worlds.remove(_world);
-            delete worldInfos[_world];
-            emit RemoveWorld(_world);
+            worldInfos[_world].isEnabled = false;
+            emit DisableWorld(_world);
         }
     }
 
@@ -136,13 +146,10 @@ contract Metaverse is Ownable, EIP712 {
     ) public onlyOwner {
         require(_world != address(0), "Metaverse: zero address");
         if (worlds.contains(_world)) {
-            worldInfos[_world] = WorldInfo({
-                world: _world,
-                name: _name,
-                icon: _icon,
-                url: _url,
-                description: _description
-            });
+            worldInfos[_world].name = _name;
+            worldInfos[_world].icon = _icon;
+            worldInfos[_world].url = _url;
+            worldInfos[_world].description = _description;
             emit UpdateWorld(_world, _name, _icon, _url, _description);
         }
     }
@@ -207,17 +214,34 @@ contract Metaverse is Ownable, EIP712 {
         }
     }
 
-    function createAccount(address _address, bool _isTrustAdmin)
+    function getOrCreateAccountIdByWorld(address _address)
         public
+        onlyWorld
         returns (uint256 id)
     {
-        require(_address != address(0), "Metaverse: zero address");
-        require(_addressesToIds[_address] == 0, "Metaverse: address is exist");
+        return getOrCreateAccountId(_address);
+    }
+
+    function createAccount(address _address, bool _isTrustAdmin)
+        public
+        virtual
+        returns (uint256 id)
+    {
         _totalAccount++;
         id = _totalAccount + _startId;
-        _accountsById[id] = Account(true, _isTrustAdmin, false, id, _address);
-        _addressesToIds[_address] = id;
-        emit CreateAccount(id, _address, _isTrustAdmin);
+        _createAccount(id, _address, _isTrustAdmin);
+    }
+
+    function _createAccount(
+        uint256 _id,
+        address _address,
+        bool _isTrustAdmin
+    ) internal virtual {
+        require(_address != address(0), "Metaverse: zero address");
+        require(_addressesToIds[_address] == 0, "Metaverse: address is exist");
+        _accountsById[_id] = Account(true, _isTrustAdmin, false, _id, _address);
+        _addressesToIds[_address] = _id;
+        emit CreateAccount(_id, _address, _isTrustAdmin);
     }
 
     function changeAccount(
@@ -369,6 +393,11 @@ contract Metaverse is Ownable, EIP712 {
         return _accountsById[_id]._isFreeze;
     }
 
+
+    function isFreezeByWorld(uint256 _id) public view onlyWorld returns (bool) {
+        return isFreeze(_id);
+    }
+
     function checkAddress(address _address, uint256 _id)
         public
         view
@@ -377,12 +406,34 @@ contract Metaverse is Ownable, EIP712 {
         return _accountsById[_id]._address == _address;
     }
 
+    function checkAddressByWorld(address _address, uint256 _id)
+        public
+        view
+        onlyWorld
+        returns (bool)
+    {
+        return checkAddress(_address, _id);
+    }
+
     function getIdByAddress(address _address) public view returns (uint256) {
         return _addressesToIds[_address];
     }
 
+    function getIdByAddressByWorld(address _address) public view onlyWorld returns (uint256) {
+        return getIdByAddress(_address);
+    }
+
     function getAddressById(uint256 _id) public view returns (address) {
         return _accountsById[_id]._address;
+    }
+
+    function getAddressByIdByWorld(uint256 _id)
+        public
+        view
+        onlyWorld
+        returns (address)
+    {
+        return getAddressById(_id);
     }
 
     function getAccountInfo(uint256 _id) public view returns (Account memory) {
