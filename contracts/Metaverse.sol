@@ -44,11 +44,10 @@ contract Metaverse is Ownable, EIP712 {
         uint256 indexed id,
         address indexed newAddress,
         bool isTrustAdmin,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
     event FreezeAccount(uint256 indexed id);
-    event FreezeAccountBWO(uint256 indexed id, uint256 nonce, uint256 deadline);
+    event FreezeAccountBWO(uint256 indexed id, uint256 nonce);
     event UnFreezeAccount(uint256 indexed id);
 
     mapping(address => WorldInfo) private worldInfos;
@@ -302,7 +301,7 @@ contract Metaverse is Ownable, EIP712 {
             signature
         );
         _changeAccount(_id, _newAddress, _isTrustAdmin);
-        emit UpdateAccountBWO(_id, _newAddress, _isTrustAdmin, nonce, deadline);
+        emit UpdateAccountBWO(_id, _newAddress, _isTrustAdmin, nonce);
         _nonces[sender]++;
     }
 
@@ -379,7 +378,7 @@ contract Metaverse is Ownable, EIP712 {
 
         _accountsById[_id]._isFreeze = true;
         emit FreezeAccount(_id);
-        emit FreezeAccountBWO(_id, nonce, deadline);
+        emit FreezeAccountBWO(_id, nonce);
         _nonces[sender]++;
     }
 

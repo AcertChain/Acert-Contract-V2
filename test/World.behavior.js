@@ -285,7 +285,6 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                         safeContract: contract,
                         sender: account,
                         nonce: nonce,
-                        deadline: deadline,
                     });
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
 
@@ -301,7 +300,6 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                         safeContract: contract,
                         sender: account,
                         nonce: nonce1,
-                        deadline: deadline,
                     });
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });

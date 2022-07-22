@@ -7,16 +7,14 @@ interface IItem721BWO {
         uint256 to,
         uint256 indexed tokenId,
         address indexed sender,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
 
     event ApprovalItemBWO(
         address indexed to,
         uint256 indexed tokenId,
         address indexed sender,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
 
     event ApprovalForAllItemBWO(
@@ -24,8 +22,7 @@ interface IItem721BWO {
         address indexed to,
         bool approved,
         address indexed sender,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
 
     function safeTransferFromItemBWO(

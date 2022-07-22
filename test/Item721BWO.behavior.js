@@ -185,7 +185,6 @@ function shouldBehaveLikeItem721BWO() {
             to: this.toWhomId,
             tokenId: tokenId,
             sender: web3.utils.toChecksumAddress(sender),
-            deadline: deadline,
           });
         });
 
@@ -664,8 +663,6 @@ function shouldBehaveLikeItem721BWO() {
             to: web3.utils.toChecksumAddress(addr),
             tokenId: tokenId,
             sender: web3.utils.toChecksumAddress(sender),
-            deadline,
-            deadline,
           });
         });
       };
@@ -865,7 +862,6 @@ function shouldBehaveLikeItem721BWO() {
               approved: true,
               sender: web3.utils.toChecksumAddress(owner),
               nonce: nonce,
-              deadline: deadline,
             });
           });
         });
@@ -911,7 +907,6 @@ function shouldBehaveLikeItem721BWO() {
               approved: true,
               sender: web3.utils.toChecksumAddress(owner),
               nonce: nonce,
-              deadline: deadline,
             });
           });
 
@@ -969,7 +964,6 @@ function shouldBehaveLikeItem721BWO() {
               approved: true,
               sender: web3.utils.toChecksumAddress(owner),
               nonce: nonce,
-              deadline: deadline,
             });
           });
         });

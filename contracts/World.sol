@@ -36,28 +36,24 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         uint256 indexed id,
         address indexed safeContract,
         address indexed sender,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
     event UntrustContractBWO(
         uint256 indexed id,
         address indexed safeContract,
         address indexed sender,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
 
     event TrustWorldBWO(
         uint256 indexed id,
         address indexed sender,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
     event UntrustWorldBWO(
         uint256 indexed id,
         address indexed sender,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
     // struct Asset
     struct Asset {
@@ -266,7 +262,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         );
 
         _trustContract(_id, _contract);
-        emit TrustContractBWO(_id, _contract, sender, nonce, deadline);
+        emit TrustContractBWO(_id, _contract, sender, nonce);
         _nonces[sender]++;
     }
 
@@ -317,7 +313,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         );
 
         _untrustContract(_id, _contract);
-        emit UntrustContractBWO(_id, _contract, sender, nonce, deadline);
+        emit UntrustContractBWO(_id, _contract, sender, nonce);
         _nonces[sender]++;
     }
 
@@ -365,7 +361,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
             signature
         );
         _trustWorld(_id);
-        emit TrustWorldBWO(_id, sender, nonce, deadline);
+        emit TrustWorldBWO(_id, sender, nonce);
         _nonces[sender]++;
     }
 
@@ -413,7 +409,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
             signature
         );
         _untrustWorld(_id);
-        emit UntrustWorldBWO(_id, sender, nonce, deadline);
+        emit UntrustWorldBWO(_id, sender, nonce);
         _nonces[sender]++;
     }
 

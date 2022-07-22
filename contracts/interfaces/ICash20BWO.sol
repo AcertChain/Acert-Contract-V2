@@ -7,8 +7,7 @@ interface ICash20BWO {
         uint256 indexed to,
         uint256 amount,
         address indexed sender,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
 
     event ApprovalCashBWO(
@@ -16,8 +15,7 @@ interface ICash20BWO {
         address indexed spender,
         uint256 value,
         address indexed sender,
-        uint256 nonce,
-        uint256 deadline
+        uint256 nonce
     );
 
     function transferCashBWO(

@@ -265,7 +265,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         require(to != sender, "Item: approval to current owner");
         _checkAddress(sender, ownerOfItem(tokenId));
         _approve(to, tokenId);
-        emit ApprovalItemBWO(to, tokenId, sender, nonce, deadline);
+        emit ApprovalItemBWO(to, tokenId, sender, nonce);
         _nonces[sender] += 1;
     }
 
@@ -343,7 +343,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
         );
         _checkAddress(sender, from);
         _setApprovalForAllItem(from, to, approved);
-        emit ApprovalForAllItemBWO(from, to, approved, sender, nonce, deadline);
+        emit ApprovalForAllItemBWO(from, to, approved, sender, nonce);
         _nonces[sender] += 1;
     }
 
@@ -447,7 +447,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         _checkAddress(sender, from);
         _transfer(from, to, tokenId);
-        emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
+        emit TransferItemBWO(from, to, tokenId, sender, nonce);
         _nonces[sender] += 1;
     }
 
@@ -551,7 +551,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
         _checkAddress(sender, from);
         _safeTransfer(from, to, tokenId, data);
-        emit TransferItemBWO(from, to, tokenId, sender, nonce, deadline);
+        emit TransferItemBWO(from, to, tokenId, sender, nonce);
         _nonces[sender] += 1;
     }
 

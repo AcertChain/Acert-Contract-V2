@@ -179,7 +179,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
         require(_checkAddress(sender, from), "Cash: not owner");
         _transferCash(from, to, amount);
-        emit TransferCashBWO(from, to, amount, sender, nonce, deadline);
+        emit TransferCashBWO(from, to, amount, sender, nonce);
         _nonces[sender] += 1;
         return true;
     }
@@ -327,7 +327,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
 
         _approveId(ownerId, spender, amount);
-        emit ApprovalCashBWO(ownerId, spender, amount, sender, nonce, deadline);
+        emit ApprovalCashBWO(ownerId, spender, amount, sender, nonce);
         _nonces[sender] += 1;
         return true;
     }
