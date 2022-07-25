@@ -32,7 +32,7 @@ contract Metaverse is Ownable, EIP712 {
     event RemoveOperator(address indexed operator);
     event CreateAccount(
         uint256 indexed id,
-        address indexed account,
+        address indexed authAddress,
         bool isTrustAdmin
     );
     event UpdateAccount(
