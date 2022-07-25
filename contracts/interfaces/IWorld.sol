@@ -28,7 +28,15 @@ interface IWorld {
         view
         returns (bool _isTrust);
 
-    function isBWOByAsset(address _contract) external view returns (bool _isBWO);
+    function isTrustContract(address _contract, uint256 _id)
+        external
+        view
+        returns (bool _isTrust);
+
+    function isBWOByAsset(address _contract)
+        external
+        view
+        returns (bool _isBWO);
 
     function isTrustByAsset(address _contract, uint256 _id)
         external

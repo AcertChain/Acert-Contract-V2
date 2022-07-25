@@ -434,6 +434,16 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
             _isTrustContractByAccountId[_id][_contract];
     }
 
+    function isTrustContract(address _contract, uint256 _id)
+        public
+        view
+        virtual
+        override
+        returns (bool _isTrust)
+    {
+        return _isTrustContractByAccountId[_id][_contract];
+    }
+
     function isTrustByAsset(address _contract, uint256 _id)
         public
         view
