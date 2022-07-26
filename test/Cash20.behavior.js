@@ -91,10 +91,10 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
                   from: spenderAddr
                 }),
                 'TransferCash', {
-                  from: tokenOwner,
-                  to: to,
-                  value: amount
-                },
+                from: tokenOwner,
+                to: to,
+                value: amount
+              },
               );
             });
 
@@ -104,10 +104,10 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
                   from: spenderAddr
                 }),
                 'ApprovalCash', {
-                  owner: tokenOwner,
-                  spender: spenderAddr,
-                  value: await this.token.allowanceCash(tokenOwner, spenderAddr)
-                },
+                owner: tokenOwner,
+                spender: spenderAddr,
+                value: await this.token.allowanceCash(tokenOwner, spenderAddr)
+              },
               );
             });
           });
@@ -213,7 +213,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
         it('reverts', async function () {
           await expectRevert(this.token.transferCash(tokenOwner, to, amount, {
             from: spenderAddr
-          }), `${errorPrefix}: transfer to the zero Id`, );
+          }), `${errorPrefix}: transfer to the zero Id`);
         });
       });
 
@@ -230,7 +230,7 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
         it('reverts', async function () {
           await expectRevert(this.token.transferCash(tokenOwner, to, amount, {
             from: spenderAddr
-          }), `${errorPrefix}: to account is not exist`, );
+          }), `${errorPrefix}: to account is not exist`);
         });
       });
     });
@@ -254,8 +254,8 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
   describe('isTrust safe conract and trust world', function () {
 
     beforeEach('set safe contract and trust world', async function () {
-      await this.world.addSafeContract(recipient,"");
-      await this.world.trustWorld(initialHolderId, {
+      await this.world.addSafeContract(recipient, "");
+      await this.world.trustWorld({
         from: initialHolder
       });
     });
@@ -267,8 +267,8 @@ function shouldBehaveLikeCash20(errorPrefix, initialSupply, initialHolder, initi
   describe('isTrust trust contract', function () {
 
     beforeEach('set safe contract and trust world', async function () {
-      await this.world.addSafeContract(recipient,"");
-      await this.world.trustContract(initialHolderId, recipient, {
+      await this.world.addSafeContract(recipient, "");
+      await this.world.trustContract(recipient, {
         from: initialHolder
       });
     });
@@ -364,10 +364,10 @@ function shouldBehaveLikeCash20Transfer(errorPrefix, fromAddr, from, to, balance
         expectEvent(
           await transfer.call(this, fromAddr, from, to, amount),
           'TransferCash', {
-            from,
-            to,
-            value: amount
-          },
+          from,
+          to,
+          value: amount
+        },
         );
       });
     });
@@ -387,10 +387,10 @@ function shouldBehaveLikeCash20Transfer(errorPrefix, fromAddr, from, to, balance
         expectEvent(
           await transfer.call(this, fromAddr, from, to, amount),
           'TransferCash', {
-            from,
-            to,
-            value: amount
-          },
+          from,
+          to,
+          value: amount
+        },
         );
       });
     });
@@ -425,10 +425,10 @@ function shouldBehaveLikeCash20Approve(errorPrefix, ownerAddr, owner, spenderAdd
         expectEvent(
           await approve.call(this, ownerAddr, owner, spenderAddr, amount),
           'ApprovalCash', {
-            owner: owner,
-            spender: spenderAddr,
-            value: amount
-          },
+          owner: owner,
+          spender: spenderAddr,
+          value: amount
+        },
         );
       });
 
@@ -460,10 +460,10 @@ function shouldBehaveLikeCash20Approve(errorPrefix, ownerAddr, owner, spenderAdd
         expectEvent(
           await approve.call(this, ownerAddr, owner, spenderAddr, amount),
           'ApprovalCash', {
-            owner: owner,
-            spender: spenderAddr,
-            value: amount
-          },
+          owner: owner,
+          spender: spenderAddr,
+          value: amount
+        },
         );
       });
 

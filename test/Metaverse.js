@@ -213,7 +213,7 @@ contract('Metaverse', function (accounts) {
                     const [account] = accounts;
                     expectEvent(await this.Metaverse.getOrCreateAccountId(account), 'CreateAccount', {
                         id: new BN(await this.Metaverse.getIdByAddress(account)),
-                        account: account,
+                        authAddress: account,
                         isTrustAdmin: false
                     });
                 });
