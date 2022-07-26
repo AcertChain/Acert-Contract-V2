@@ -1,4 +1,9 @@
 const hre = require("hardhat");
+const dotenv = require('dotenv');
+const {saveToJSON} = require("./utils");
+
+
+dotenv.config();
 
 // bsc
 // const cash20Name = "Galaxy Gem";
@@ -32,10 +37,20 @@ async function main() {
   const Mcontract = await Metaverse.deploy("Metaverse", "1.0", 0);
   await Mcontract.deployed();
 
+  saveToJSON("Metaverse", {
+    address: Mcontract.address,
+    deployer: deployer.address
+  })
+
   //deploy world
   const World = (await ethers.getContractFactory("World")).connect(deployer);
   const Wcontract = await World.deploy(Mcontract.address, "World", "1.0");
   await Wcontract.deployed();
+
+  saveToJSON("World", {
+    address: Wcontract.address,
+    deployer: deployer.address
+  })
 
   // register world
   await Mcontract.registerWorld(Wcontract.address, "", "", "", "");
@@ -45,15 +60,31 @@ async function main() {
   const Ccontract = await Cash20.deploy(cash20Name, cash20Symbol, "1.0", Wcontract.address);
   await Ccontract.deployed();
 
+  saveToJSON(cash20Name, {
+    address: Ccontract.address,
+    deployer: deployer.address
+  })
+
   //deploy Item721
   const Item721M = (await ethers.getContractFactory("Item721Mock")).connect(deployer);
   const IMcontract = await Item721M.deploy(item721Name, item721Symbol, "1.0", item721URI, Wcontract.address);
   await IMcontract.deployed();
 
+  saveToJSON(item721Name, {
+    address: IMcontract.address,
+    deployer: deployer.address
+  })
+
+
   // world register asset
   const Item721E = (await ethers.getContractFactory("Item721Mock")).connect(deployer);
   const IEcontract = await Item721E.deploy(item721NameE, item721SymbolE, "1.0", item721URIE, Wcontract.address);
   await IEcontract.deployed();
+
+  saveToJSON(item721NameE, {
+    address: IEcontract.address,
+    deployer: deployer.address
+  })
 
   await (await Wcontract.registerAsset(IMcontract.address, "")).wait();
   await (await Wcontract.registerAsset(IEcontract.address, "")).wait();
