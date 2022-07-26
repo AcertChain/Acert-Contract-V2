@@ -220,26 +220,17 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         return isBWO(_addr);
     }
 
-    function trustContract(uint256 _id, address _contract) public {
-        require(
-            getAddressById(_id) == msg.sender,
-            "World: sender not account owner"
-        );
-        _trustContract(_id, _contract);
+    function trustContract(address _contract) public returns (uint256) {
+        return _trustContract(msg.sender, _contract);
     }
 
     function trustContractBWO(
-        uint256 _id,
         address _contract,
         address sender,
         uint256 deadline,
         bytes memory signature
-    ) public {
+    ) public returns (uint256) {
         require(isBWO(msg.sender), "World: sender is not BWO");
-        require(
-            getAddressById(_id) == sender,
-            "World: sender not account owner"
-        );
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -250,7 +241,6 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
                         keccak256(
                             "BWO(uint256 id,address contract,address sender,uint256 nonce,uint256 deadline)"
                         ),
-                        _id,
                         _contract,
                         sender,
                         nonce,
@@ -261,14 +251,16 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
             signature
         );
 
-        _trustContract(_id, _contract);
-        emit TrustContractBWO(_id, _contract, sender, nonce);
+        uint256 accountId = _trustContract(sender, _contract);
+        emit TrustContractBWO(accountId, _contract, sender, nonce);
         _nonces[sender]++;
+        return accountId;
     }
 
-    function _trustContract(uint256 _id, address _contract) private {
-        _isTrustContractByAccountId[_id][_contract] = true;
-        emit TrustContract(_id, _contract);
+    function _trustContract(address _address, address _contract) private {
+        uint256 accountId = getOrCreateAccountId(_address);
+        _isTrustContractByAccountId[accountId][_contract] = true;
+        emit TrustContract(accountId, _contract);
     }
 
     function untrustContract(uint256 _id, address _contract) public {
@@ -322,25 +314,17 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         emit UntrustContract(_id, _contract);
     }
 
-    function trustWorld(uint256 _id) public {
-        require(
-            getAddressById(_id) == msg.sender,
-            "World: sender not account owner"
-        );
-        _trustWorld(_id);
+    function trustWorld() public returns (uint256) {
+        return _trustWorld(msg.sender);
     }
 
     function trustWorldBWO(
-        uint256 _id,
         address sender,
         uint256 deadline,
         bytes memory signature
-    ) public {
+    ) public returns (uint256) {
         require(isBWO(msg.sender), "World: sender is not BWO");
-        require(
-            getAddressById(_id) == sender,
-            "World: sender not account owner"
-        );
+
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -351,7 +335,6 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
                         keccak256(
                             "BWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"
                         ),
-                        _id,
                         sender,
                         nonce,
                         deadline
@@ -360,14 +343,18 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
             ),
             signature
         );
-        _trustWorld(_id);
-        emit TrustWorldBWO(_id, sender, nonce);
+        uint256 accountId = _trustWorld(sender);
+        emit TrustWorldBWO(accountId, sender, nonce);
         _nonces[sender]++;
+        return accountId;
     }
 
-    function _trustWorld(uint256 _id) private {
-        _isTrustWorld[_id] = true;
-        emit TrustWorld(_id);
+    function _trustWorld(address _address) private returns (uint256) {
+        uint256 accountId = getOrCreateAccountId(_address);
+
+        _isTrustWorld[accountId] = true;
+        emit TrustWorld(accountId);
+        return accountId;
     }
 
     function untrustWorld(uint256 _id) public {
