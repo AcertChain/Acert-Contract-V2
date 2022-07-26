@@ -386,8 +386,8 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
                     ownerId,
                     this.receiverId,
                     nonExistentTokenId, {
-                      from: owner
-                    },
+                    from: owner
+                  },
                   ),
                   'Item: operator query for nonexistent token',
                 );
@@ -508,7 +508,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
             await expectRevert(
-              this.token.safeMint(invalidReceiver.address, tokenId,'0x'),
+              this.token.safeMint(invalidReceiver.address, tokenId, '0x'),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -518,7 +518,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithMessage);
             await expectRevert(
-              this.token.safeMint(revertingReceiver.address, tokenId,'0x'),
+              this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
               'ERC721ReceiverMock: reverting',
             );
           });
@@ -528,7 +528,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
             await expectRevert(
-              this.token.safeMint(revertingReceiver.address, tokenId,'0x'),
+              this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -538,7 +538,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.Panic);
             await expectRevert.unspecified(
-              this.token.safeMint(revertingReceiver.address, tokenId,'0x'),
+              this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
             );
           });
         });
@@ -547,7 +547,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
           it('reverts', async function () {
             const nonReceiver = this.token;
             await expectRevert(
-              this.token.safeMint(nonReceiver.address, tokenId,'0x'),
+              this.token.safeMint(nonReceiver.address, tokenId, '0x'),
               'Item: transfer to non ERC721Receiver implementer',
             );
           });
@@ -673,8 +673,8 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       context('when the sender does not own the given token ID', function () {
         it('reverts', async function () {
           await expectRevert(this.token.approve(approved, tokenId, {
-              from: other
-            }),
+            from: other
+          }),
             'Item: approve caller is not owner nor approved for all');
         });
       });
@@ -685,8 +685,8 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
             from: owner
           });
           await expectRevert(this.token.approve(anotherApproved, tokenId, {
-              from: approved
-            }),
+            from: approved
+          }),
             'Item: approve caller is not owner nor approved for all');
         });
       });
@@ -710,8 +710,8 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       context('when the given token ID does not exist', function () {
         it('reverts', async function () {
           await expectRevert(this.token.approve(approved, nonExistentTokenId, {
-              from: operator
-            }),
+            from: operator
+          }),
             'Item: owner query for nonexistent token');
         });
       });
@@ -815,8 +815,8 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       context('when the operator is the owner', function () {
         it('reverts', async function () {
           await expectRevert(this.token.setApprovalForAllItem(ownerId, owner, true, {
-              from: owner
-            }),
+            from: owner
+          }),
             'Item: approve to caller');
         });
       });
@@ -954,7 +954,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       await this.token.mint(owner, secondTokenId);
 
       await this.world.addSafeContract(anotherApproved, "");
-      await this.world.trustWorld(ownerId, {
+      await this.world.trustWorld({
         from: owner
       });
     });
@@ -977,7 +977,7 @@ function shouldBehaveLikeItem721(errorPrefix, owner, approved, anotherApproved, 
       await this.token.mint(owner, secondTokenId);
 
       await this.world.addSafeContract(anotherApproved, "");
-      await this.world.trustContract(ownerId, anotherApproved, {
+      await this.world.trustContract(anotherApproved, {
         from: owner
       });
     });
@@ -1012,10 +1012,10 @@ function shouldBehaveLikeItem721IsTrust(owner, approved, operator, other, trust)
           from: trust
         }),
         'Transfer', {
-          from: owner,
-          to: other,
-          tokenId: tokenId
-        },
+        from: owner,
+        to: other,
+        tokenId: tokenId
+      },
       );
     });
   });
@@ -1026,10 +1026,10 @@ function shouldBehaveLikeItem721IsTrust(owner, approved, operator, other, trust)
           from: trust
         }),
         'TransferItem', {
-          from: ownerId,
-          to: otherId,
-          tokenId: tokenId
-        },
+        from: ownerId,
+        to: otherId,
+        tokenId: tokenId
+      },
       );
     });
   });

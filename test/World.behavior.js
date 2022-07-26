@@ -21,26 +21,26 @@ const ownerId = new BN(1);
 const deadline = new BN(parseInt(new Date().getTime() / 1000) + 36000);
 
 const EIP712Domain = [{
-        name: 'name',
-        type: 'string'
-    },
-    {
-        name: 'version',
-        type: 'string'
-    },
-    {
-        name: 'chainId',
-        type: 'uint256'
-    },
-    {
-        name: 'verifyingContract',
-        type: 'address'
-    },
+    name: 'name',
+    type: 'string'
+},
+{
+    name: 'version',
+    type: 'string'
+},
+{
+    name: 'chainId',
+    type: 'uint256'
+},
+{
+    name: 'verifyingContract',
+    type: 'address'
+},
 ];
 
 function shouldBehaveLikeWorld(owner) {
     context('World', function () {
-        beforeEach(async function () {});
+        beforeEach(async function () { });
         describe('基础view查询接口', function () {
             context('getTotalAccount', function () {
                 it('应该等于avatarMaxId+1', async function () {
@@ -72,7 +72,7 @@ function shouldBehaveLikeWorld(owner) {
 
 function shouldBehaveLikeWorldOperator(operator, owner) {
     context('World Operator', function () {
-        beforeEach(async function () {});
+        beforeEach(async function () { });
         describe('addOperator', function () {
             context('add zero address', function () {
                 it('World: zero address', async function () {
@@ -129,7 +129,7 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
 
 function shouldBehaveLikeWorldTrust(contract, account, operator) {
     context('Trust', function () {
-        beforeEach(async function () {});
+        beforeEach(async function () { });
         describe('addContract', function () {
             context('add zero address', function () {
                 it('revert', async function () {
@@ -178,7 +178,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                 it('account is trust World', async function () {
                     await this.world.getOrCreateAccountId(account);
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
-                    await this.world.trustWorld(accountId, {
+                    await this.world.trustWorld({
                         from: account
                     });
                     expect(await this.world.isTrustWorld(accountId)).to.equal(true);
@@ -196,14 +196,14 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                     await this.world.addOperator(operator)
                     const nonce = await this.world.getNonce(account);
                     const signature = signData(this.chainId, this.world.address, this.tokenName,
-                        accountW.getPrivateKey(), this.tokenVersion, accountId, account, nonce, deadline);
-                    await this.world.trustWorldBWO(accountId, account, deadline, signature, {
+                        accountW.getPrivateKey(), this.tokenVersion, account, nonce, deadline);
+                    await this.world.trustWorldBWO(account, deadline, signature, {
                         from: operator
                     });
                     expect(await this.world.isTrustWorld(accountId)).to.equal(true);
 
                     const nonce1 = await this.world.getNonce(account);
-                    const signature1 = signData(this.chainId, this.world.address, this.tokenName,
+                    const signature1 = signUnData(this.chainId, this.world.address, this.tokenName,
                         accountW.getPrivateKey(), this.tokenVersion, accountId, account, nonce1, deadline);
                     await this.world.untrustWorldBWO(accountId, account, deadline, signature1, {
                         from: operator
@@ -232,7 +232,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                 it('conrtact is safe contract and user trust world', async function () {
                     await this.world.getOrCreateAccountId(account);
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
-                    await this.world.trustWorld(accountId, {
+                    await this.world.trustWorld({
                         from: account
                     });
                     await this.world.addSafeContract(contract, "");
@@ -250,7 +250,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                     const accountId = new BN(await this.world.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
-                    expectEvent(await this.world.trustContract(accountId, contract, {
+                    expectEvent(await this.world.trustContract(contract, {
                         from: account
                     }), 'TrustContract', {
                         id: accountId,
@@ -274,11 +274,11 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                     await this.world.addOperator(operator)
                     const nonce = await this.world.getNonce(account);
                     const signature = signContractData(this.chainId, this.world.address, this.tokenName,
-                        accountW.getPrivateKey(), this.tokenVersion, accountId, contract, account, nonce, deadline);
+                        accountW.getPrivateKey(), this.tokenVersion, contract, account, nonce, deadline);
 
 
                     await this.world.addSafeContract(contract, "");
-                    expectEvent(await this.world.trustContractBWO(accountId, contract, account, deadline, signature, {
+                    expectEvent(await this.world.trustContractBWO(contract, account, deadline, signature, {
                         from: operator
                     }), 'TrustContractBWO', {
                         id: accountId,
@@ -289,7 +289,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
 
                     const nonce1 = await this.world.getNonce(account);
-                    const signature1 = signContractData(this.chainId, this.world.address, this.tokenName,
+                    const signature1 = signUnContractData(this.chainId, this.world.address, this.tokenName,
                         accountW.getPrivateKey(), this.tokenVersion, accountId, contract, account, nonce1, deadline);
 
 
@@ -310,7 +310,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
 
 function shouldBehaveLikeWorldAsset() {
     context('World Asset', function () {
-        beforeEach(async function () {});
+        beforeEach(async function () { });
         describe('registerAsset', function () {
             context('zero addres', function () {
                 it('revert', async function () {
@@ -386,14 +386,11 @@ function shouldBehaveLikeWorldAsset() {
 
 
 function signData(chainId, verifyingContract, name, key, version,
-    id, sender, nonce, deadline) {
+    sender, nonce, deadline) {
     const data = {
         types: {
             EIP712Domain,
-            BWO: [{
-                    name: 'id',
-                    type: 'uint256'
-                },
+            BWO: [
                 {
                     name: 'sender',
                     type: 'address'
@@ -406,6 +403,50 @@ function signData(chainId, verifyingContract, name, key, version,
                     name: 'deadline',
                     type: 'uint256'
                 },
+            ],
+        },
+        domain: {
+            name,
+            version,
+            chainId,
+            verifyingContract
+        },
+        primaryType: 'BWO',
+        message: {
+            sender,
+            nonce,
+            deadline
+        },
+    };
+
+    const signature = ethSigUtil.signTypedMessage(key, {
+        data
+    });
+
+    return signature;
+}
+
+function signUnData(chainId, verifyingContract, name, key, version, id,
+    sender, nonce, deadline) {
+    const data = {
+        types: {
+            EIP712Domain,
+            BWO: [{
+                name: 'id',
+                type: 'uint256'
+            },
+            {
+                name: 'sender',
+                type: 'address'
+            },
+            {
+                name: 'nonce',
+                type: 'uint256'
+            },
+            {
+                name: 'deadline',
+                type: 'uint256'
+            },
             ],
         },
         domain: {
@@ -429,16 +470,12 @@ function signData(chainId, verifyingContract, name, key, version,
 
     return signature;
 }
-
 function signContractData(chainId, verifyingContract, name, key, version,
-    id, contract, sender, nonce, deadline) {
+    contract, sender, nonce, deadline) {
     const data = {
         types: {
             EIP712Domain,
-            BWO: [{
-                    name: 'id',
-                    type: 'uint256'
-                },
+            BWO: [
                 {
                     name: 'contract',
                     type: 'address'
@@ -465,7 +502,6 @@ function signContractData(chainId, verifyingContract, name, key, version,
         },
         primaryType: 'BWO',
         message: {
-            id,
             contract,
             sender,
             nonce,
@@ -480,6 +516,55 @@ function signContractData(chainId, verifyingContract, name, key, version,
     return signature;
 }
 
+function signUnContractData(chainId, verifyingContract, name, key, version,
+    id, contract, sender, nonce, deadline) {
+    const data = {
+        types: {
+            EIP712Domain,
+            BWO: [{
+                name: 'id',
+                type: 'uint256'
+            },
+            {
+                name: 'contract',
+                type: 'address'
+            },
+            {
+                name: 'sender',
+                type: 'address'
+            },
+            {
+                name: 'nonce',
+                type: 'uint256'
+            },
+            {
+                name: 'deadline',
+                type: 'uint256'
+            },
+            ],
+        },
+        domain: {
+            name,
+            version,
+            chainId,
+            verifyingContract
+        },
+        primaryType: 'BWO',
+        message: {
+            id,
+            contract,
+            sender,
+            nonce,
+            deadline
+        },
+    };
+
+    const signature = ethSigUtil.signTypedMessage(key, {
+        data
+    });
+
+    return signature;
+}
 
 module.exports = {
     shouldBehaveLikeWorld,

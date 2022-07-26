@@ -239,7 +239,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 id,address contract,address sender,uint256 nonce,uint256 deadline)"
+                            "BWO(address contract,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         _contract,
                         sender,
@@ -257,8 +257,11 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         return accountId;
     }
 
-    function _trustContract(address _address, address _contract) private {
-        uint256 accountId = getOrCreateAccountId(_address);
+    function _trustContract(address _address, address _contract)
+        private
+        returns (uint256 accountId)
+    {
+        accountId = getOrCreateAccountId(_address);
         _isTrustContractByAccountId[accountId][_contract] = true;
         emit TrustContract(accountId, _contract);
     }
@@ -333,7 +336,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"
+                            "BWO(address sender,uint256 nonce,uint256 deadline)"
                         ),
                         sender,
                         nonce,
