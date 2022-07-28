@@ -503,10 +503,10 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         bytes32 digest,
         bytes memory signature
     ) internal view {
-        require(block.timestamp < deadline, "Metaverse: BWO call expired");
+        require(block.timestamp < deadline, "World: BWO call expired");
         require(
             signer == ECDSA.recover(digest, signature),
-            "Metaverse: recoverSig failed"
+            "World: recoverSig failed"
         );
     }
 }
