@@ -381,6 +381,30 @@ function shouldBehaveLikeWorldAsset() {
             });
         });
 
+        describe('update world', function () {
+            context('item update world ', function () {
+                it('update', async function () {
+                    await this.world.registerAsset(this.item.address, "test image")
+
+                    await this.item.updateWorld(this.newWorld.address)
+
+                    expect(await this.item.worldAddress()).to.equal(this.newWorld.address);
+
+                });
+            });
+
+            context('cash update world ', function () {
+                it('update', async function () {
+
+                    await this.world.registerAsset(this.cash.address, "test image")
+
+                    await this.cash.updateWorld(this.newWorld.address)
+
+                    expect(await this.cash.worldAddress()).to.equal(this.newWorld.address);
+
+                });
+            });
+        });
     });
 }
 

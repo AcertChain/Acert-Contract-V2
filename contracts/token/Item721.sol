@@ -22,6 +22,8 @@ contract Item721 is EIP712, ERC165, IItem721 {
     string private _symbol;
     // world addr
     address private _world;
+    // metadverse addr
+    address private _metadverse;
     // owner addr
     address private _owner;
     // tokenURI
@@ -62,7 +64,14 @@ contract Item721 is EIP712, ERC165, IItem721 {
         _symbol = symbol_;
         _tokenURI = tokenURI_;
         _world = world_;
+        _metadverse = IWorld(world_).getMetaverse();
         _owner = msg.sender;
+    }
+
+    function updateWorld(address world) public {
+        _onlyOwner();
+        require(_metadverse == IWorld(world).getMetaverse(),"Item: metaverse not match");
+        _world = world;
     }
 
     /**
@@ -211,7 +220,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
     }
 
     function setTokenURI(string memory uri) public {
-        require(_owner == msg.sender, "only owner");
+         _onlyOwner();
         _tokenURI = uri;
     }
 
@@ -757,6 +766,10 @@ contract Item721 is EIP712, ERC165, IItem721 {
         pure
     {
         require(_addr != address(0), _msg);
+    }
+
+    function _onlyOwner() internal view {
+         require(_owner == msg.sender, "Item: only owner");
     }
 
     function getNonce(address account)

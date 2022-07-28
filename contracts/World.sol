@@ -445,7 +445,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         return isTrust(_contract, _id);
     }
 
-    function getMetaverse() public view returns (address) {
+    function getMetaverse() public view override returns (address) {
         return _metaverse;
     }
 

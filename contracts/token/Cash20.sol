@@ -18,6 +18,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     string private _name;
     string private _symbol;
     address private _world;
+    address private _metadverse;
     address private _owner;
 
     constructor(
@@ -29,7 +30,14 @@ contract Cash20 is Context, EIP712, ICash20 {
         _name = name_;
         _symbol = symbol_;
         _world = world_;
+        _metadverse = IWorld(world_).getMetaverse();
         _owner = _msgSender();
+    }
+
+    function updateWorld(address world) public  {
+        require(_owner == msg.sender, "Item: only owner");
+        require(_metadverse == IWorld(world).getMetaverse(),"Item: metaverse not match");
+        _world = world;
     }
 
     /**

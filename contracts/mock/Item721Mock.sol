@@ -21,6 +21,10 @@ contract Item721Mock is Item721, Ownable {
         _mint(to, tokenId);
     }
 
+    function mintItem(uint256 to, uint256 tokenId) public onlyOwner {
+        _mintItem(to, tokenId);
+    }
+
     function safeMint(
         address to,
         uint256 tokenId,
