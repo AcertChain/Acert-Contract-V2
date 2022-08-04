@@ -18,16 +18,29 @@ dotenv.config();
 // const item721URIE = "https://moga.ggm.com/equipment";
 
 // heco
-const cash20Name = "Galaxy Gem";
-const cash20Symbol = "GGM";
+// const cash20Name = "Galaxy Gem";
+// const cash20Symbol = "GGM";
 
-const item721Name = "MOGA";
-const item721Symbol = "MOGA";
-const item721URI = "https://moga.taobaozx.net/moga/";
+// const item721Name = "MOGA";
+// const item721Symbol = "MOGA";
+// const item721URI = "https://moga.taobaozx.net/moga/";
 
-const item721NameE = "MOGA Equipment";
-const item721SymbolE = "EQPT";
-const item721URIE = "https://moga.taobaozx.net/equipment/";
+// const item721NameE = "MOGA Equipment";
+// const item721SymbolE = "EQPT";
+// const item721URIE = "https://moga.taobaozx.net/equipment/";
+
+
+// gaia
+const cash20Name = "Gaia Cash20";
+const cash20Symbol = "GG";
+
+const item721Name = "Gaia Item721";
+const item721Symbol = "GI";
+const item721URI = "";
+
+const item721NameE = "Gaia Item721E";
+const item721SymbolE = "GIE";
+const item721URIE = "";
 
 async function main() {
   // We get the contract to deploy
@@ -36,6 +49,9 @@ async function main() {
   const Metaverse = (await ethers.getContractFactory("Metaverse")).connect(deployer);
   const Mcontract = await Metaverse.deploy("Metaverse", "1.0", 0);
   await Mcontract.deployed();
+
+  let receipt =  await Mcontract.deployTransaction.wait();
+  console.log("Metaverse receipt",  receipt.blockNumber);
 
   saveToJSON("Metaverse", {
     address: Mcontract.address,
@@ -46,6 +62,9 @@ async function main() {
   const World = (await ethers.getContractFactory("World")).connect(deployer);
   const Wcontract = await World.deploy(Mcontract.address, "World", "1.0");
   await Wcontract.deployed();
+
+  receipt =  await Wcontract.deployTransaction.wait();
+  console.log("World receipt",  receipt.blockNumber);
 
   saveToJSON("World", {
     address: Wcontract.address,
@@ -60,6 +79,9 @@ async function main() {
   const Ccontract = await Cash20.deploy(cash20Name, cash20Symbol, "1.0", Wcontract.address);
   await Ccontract.deployed();
 
+  receipt =  await Ccontract.deployTransaction.wait();
+  console.log("Cash20 receipt",  receipt.blockNumber);
+
   saveToJSON(cash20Name, {
     address: Ccontract.address,
     deployer: deployer.address
@@ -69,6 +91,9 @@ async function main() {
   const Item721M = (await ethers.getContractFactory("Item721Mock")).connect(deployer);
   const IMcontract = await Item721M.deploy(item721Name, item721Symbol, "1.0", item721URI, Wcontract.address);
   await IMcontract.deployed();
+
+  receipt =  await IMcontract.deployTransaction.wait();
+  console.log("Item721M receipt",  receipt.blockNumber);
 
   saveToJSON(item721Name, {
     address: IMcontract.address,
@@ -80,6 +105,9 @@ async function main() {
   const Item721E = (await ethers.getContractFactory("Item721Mock")).connect(deployer);
   const IEcontract = await Item721E.deploy(item721NameE, item721SymbolE, "1.0", item721URIE, Wcontract.address);
   await IEcontract.deployed();
+
+  receipt =  await IEcontract.deployTransaction.wait();
+  console.log("Item721E receipt",  receipt.blockNumber);
 
   saveToJSON(item721NameE, {
     address: IEcontract.address,
