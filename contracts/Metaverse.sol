@@ -213,14 +213,6 @@ contract Metaverse is Ownable, EIP712 {
         }
     }
 
-    function getOrCreateAccountIdByWorld(address _address)
-        public
-        onlyWorld
-        returns (uint256 id)
-    {
-        return getOrCreateAccountId(_address);
-    }
-
     function createAccount(address _address, bool _isTrustAdmin)
         public
         virtual
@@ -392,11 +384,6 @@ contract Metaverse is Ownable, EIP712 {
         return _accountsById[_id]._isFreeze;
     }
 
-
-    function isFreezeByWorld(uint256 _id) public view onlyWorld returns (bool) {
-        return isFreeze(_id);
-    }
-
     function checkAddress(address _address, uint256 _id)
         public
         view
@@ -405,34 +392,12 @@ contract Metaverse is Ownable, EIP712 {
         return _accountsById[_id]._address == _address;
     }
 
-    function checkAddressByWorld(address _address, uint256 _id)
-        public
-        view
-        onlyWorld
-        returns (bool)
-    {
-        return checkAddress(_address, _id);
-    }
-
     function getIdByAddress(address _address) public view returns (uint256) {
         return _addressesToIds[_address];
     }
 
-    function getIdByAddressByWorld(address _address) public view onlyWorld returns (uint256) {
-        return getIdByAddress(_address);
-    }
-
     function getAddressById(uint256 _id) public view returns (address) {
         return _accountsById[_id]._address;
-    }
-
-    function getAddressByIdByWorld(uint256 _id)
-        public
-        view
-        onlyWorld
-        returns (address)
-    {
-        return getAddressById(_id);
     }
 
     function getAccountInfo(uint256 _id) public view returns (Account memory) {
@@ -447,7 +412,6 @@ contract Metaverse is Ownable, EIP712 {
         return _nonces[account];
     }
 
-    // for test
     function getChainId() external view returns (uint256) {
         return block.chainid;
     }
