@@ -455,7 +455,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (bool)
     {
-        return Metaverse(_metaverse).checkAddressByWorld(_address, _id);
+        return Metaverse(_metaverse).checkAddress(_address, _id);
     }
 
     function getAccountIdByAddress(address _address)
@@ -464,7 +464,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (uint256)
     {
-        return Metaverse(_metaverse).getIdByAddressByWorld(_address);
+        return Metaverse(_metaverse).getIdByAddress(_address);
     }
 
     function getAddressById(uint256 _id)
@@ -473,11 +473,11 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (address)
     {
-        return Metaverse(_metaverse).getAddressByIdByWorld(_id);
+        return Metaverse(_metaverse).getAddressById(_id);
     }
 
     function isFreeze(uint256 _id) public view override returns (bool) {
-        return Metaverse(_metaverse).isFreezeByWorld(_id);
+        return Metaverse(_metaverse).isFreeze(_id);
     }
 
     function getOrCreateAccountId(address _address)
@@ -485,7 +485,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (uint256 id)
     {
-        return Metaverse(_metaverse).getOrCreateAccountIdByWorld(_address);
+        return Metaverse(_metaverse).getOrCreateAccountId(_address);
     }
 
     function getNonce(address account) public view returns (uint256) {
