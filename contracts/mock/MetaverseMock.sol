@@ -91,7 +91,7 @@ contract MetaverseMock is Ownable, EIP712 {
             "Metaverse: world is exist"
         );
         require(
-            World(_world).getMetaverse() == address(this),
+            WorldMock(_world).getMetaverse() == address(this),
             "Metaverse: metaverse is not match"
         );
         metaStorage.add(_world);
