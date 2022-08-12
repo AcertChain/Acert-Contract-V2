@@ -37,8 +37,7 @@ contract WorldStorage is Ownable {
     address public world;
     address[] public assetAddresses;
 
-    constructor(address addr) {
-        world = addr;
+    constructor() {
         _owner = msg.sender;
     }
 
@@ -48,6 +47,7 @@ contract WorldStorage is Ownable {
     }
 
     function updateWorld(address addr) public onlyOwner {
+        require(addr != address(0));
         world = addr;
     }
 

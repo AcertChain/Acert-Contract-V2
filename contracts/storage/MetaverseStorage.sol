@@ -35,11 +35,9 @@ contract MetaverseStorage is Ownable {
     mapping(address => uint256) public nonces;
 
     uint256 public totalAccount;
-
     address public metaverse;
 
-    constructor(address addr) {
-        metaverse = addr;
+    constructor() {
         _owner = msg.sender;
     }
 
@@ -48,7 +46,7 @@ contract MetaverseStorage is Ownable {
     }
 
     modifier onlyMetaverse() {
-        require(metaverse == msg.sender);
+        require( metaverse == msg.sender);
         _;
     }
 
