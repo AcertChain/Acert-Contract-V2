@@ -9,12 +9,11 @@ import "../interfaces/ICash20.sol";
 import "./MetaverseMock.sol";
 import "../storage/WorldStorage.sol";
 import "../common/Ownable.sol";
-import "../common/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract WorldMock is IWorld, Ownable, Initializable, EIP712 {
+contract WorldMock is IWorld, Ownable,EIP712 {
     // event 注册Asset
     event RegisterAsset(
         address indexed asset,
@@ -427,10 +426,9 @@ contract WorldMock is IWorld, Ownable, Initializable, EIP712 {
 
     function checkAddress(
         address _address,
-        uint256 _id,
-        bool proxy
+        uint256 _id
     ) public view override returns (bool) {
-        return metaverse.checkAddress(_address, _id, proxy);
+        return metaverse.checkAddress(_address, _id);
     }
 
     function getAccountIdByAddress(address _address)

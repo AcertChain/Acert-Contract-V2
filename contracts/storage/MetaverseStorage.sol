@@ -23,7 +23,6 @@ contract MetaverseStorage is Ownable {
         bool isFreeze;
         uint256 id;
         address addr;
-        address proxy;
     }
 
     mapping(address => WorldInfo) public worldInfos;

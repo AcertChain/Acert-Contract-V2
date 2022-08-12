@@ -275,7 +275,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
         require(to != sender, "Item: approval to current owner");
-        _checkAddressProxy(sender, ownerOfItem(tokenId));
+        _checkAddress(sender, ownerOfItem(tokenId));
         _approve(to, tokenId);
         emit ApprovalItemBWO(to, tokenId, sender, nonce);
         _nonces[sender] += 1;
@@ -353,7 +353,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             ),
             signature
         );
-        _checkAddressProxy(sender, from);
+        _checkAddress(sender, from);
         _setApprovalForAllItem(from, to, approved);
         emit ApprovalForAllItemBWO(from, to, approved, sender, nonce);
         _nonces[sender] += 1;
@@ -457,7 +457,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        _checkAddressProxy(sender, from);
+        _checkAddress(sender, from);
         _transfer(from, to, tokenId);
         emit TransferItemBWO(from, to, tokenId, sender, nonce);
         _nonces[sender] += 1;
@@ -561,7 +561,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             signature
         );
 
-        _checkAddressProxy(sender, from);
+        _checkAddress(sender, from);
         _safeTransfer(from, to, tokenId, data);
         emit TransferItemBWO(from, to, tokenId, sender, nonce);
         _nonces[sender] += 1;
@@ -738,19 +738,11 @@ contract Item721 is EIP712, ERC165, IItem721 {
 
     function _checkAddress(address addr, uint256 id) internal view {
         require(
-            IWorld(_world).checkAddress(addr, id, false),
+            IWorld(_world).checkAddress(addr, id),
             "Item: not owner"
         );
     }
-
-    function _checkAddressProxy(address _addr, uint256 _id)
-        internal
-        view
-        returns (bool)
-    {
-        return IWorld(_world).checkAddress(_addr, _id, true);
-    }
-
+ 
     function _accountIsExist(uint256 _id) internal view {
         require(
             IWorld(_world).getAddressById(_id) != address(0),

@@ -167,7 +167,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         require(from != 0, "Cash: from is the zero Id");
         require(to != 0, "Cash: transfer to the zero Id");
         require(_isBWO(_msgSender()), "Cash: must be the world BWO");
-        require(_checkAddressProxy(sender, from), "Cash: not owner");
+        require(_checkAddress(sender, from), "Cash: not owner");
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -314,7 +314,7 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) public virtual override returns (bool) {
         require(spender != address(0), "Cash: approve to the zero address");
         require(_isBWO(_msgSender()), "Cash: must be the world BWO");
-        require(_checkAddressProxy(sender, ownerId), "Cash: not owner");
+        require(_checkAddress(sender, ownerId), "Cash: not owner");
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -549,15 +549,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         view
         returns (bool)
     {
-        return IWorld(_world).checkAddress(_addr, _id, false);
-    }
-
-    function _checkAddressProxy(address _addr, uint256 _id)
-        internal
-        view
-        returns (bool)
-    {
-        return IWorld(_world).checkAddress(_addr, _id, true);
+        return IWorld(_world).checkAddress(_addr, _id);
     }
 
     function _accountIsExist(uint256 _id) internal view returns (bool) {

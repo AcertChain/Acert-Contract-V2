@@ -7,8 +7,10 @@ import "./WorldMock.sol";
 import "../storage/MetaverseStorage.sol";
 import "../proxy/AuthProxy.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 contract MetaverseMock is Ownable, EIP712 {
+    using Address for address;
     event RegisterWorld(
         address indexed world,
         string name,
@@ -217,14 +219,7 @@ contract MetaverseMock is Ownable, EIP712 {
         emit addAuthProxy(_id, _address);
 
         metaStorage.addAccount(
-            MetaverseStorage.Account(
-                true,
-                _isTrustAdmin,
-                false,
-                _id,
-                _address,
-                address(authProxy)
-            )
+            MetaverseStorage.Account(true, _isTrustAdmin, false, _id, _address)
         );
         metaStorage.addAddressToId(_address, _id);
         emit CreateAccount(_id, _address, _isTrustAdmin);
@@ -300,10 +295,6 @@ contract MetaverseMock is Ownable, EIP712 {
             );
             metaStorage.deleteAddressToId(account.addr);
             metaStorage.addAddressToId(_newAddress, _id);
-            AuthProxy(account.proxy).addAddr(_newAddress);
-            emit addAuthProxy(account.id, _newAddress);
-            AuthProxy(account.proxy).removeAddr(account.addr);
-            emit removeAuthProxy(account.id, account.addr);
             account.addr = _newAddress;
         }
         account.isTrustAdmin = _isTrustAdmin;
@@ -373,10 +364,12 @@ contract MetaverseMock is Ownable, EIP712 {
     ) public {
         MetaverseStorage.Account memory account = getAccountInfo(id);
         require(account.isExist == true, "Metaverse: account is not exist");
-        AuthProxy authProxy = AuthProxy(account.proxy);
-        authProxy.addAddrBWO(addr, sender, deadline, signature);
-        emit addAuthProxy(id, addr);
-        emit addAuthProxyBWO(id, addr, sender, metaStorage.nonces(sender));
+        if (account.addr.isContract()) {
+            AuthProxy authProxy = AuthProxy(account.addr);
+            authProxy.addAddrBWO(addr, sender, deadline, signature);
+            emit addAuthProxy(id, addr);
+            emit addAuthProxyBWO(id, addr, sender, metaStorage.nonces(sender));
+        }
     }
 
     function removeAuthProxyAddr(
@@ -388,40 +381,43 @@ contract MetaverseMock is Ownable, EIP712 {
     ) public {
         MetaverseStorage.Account memory account = getAccountInfo(id);
         require(account.isExist == true, "Metaverse: account is not exist");
-        AuthProxy authProxy = AuthProxy(account.proxy);
-        authProxy.removeAddrBWO(addr, sender, deadline, signature);
-        emit removeAuthProxy(id, addr);
-        emit removeAuthProxyBWO(id, addr, sender, metaStorage.nonces(sender));
+        if (account.addr.isContract()) {
+            AuthProxy authProxy = AuthProxy(account.addr);
+            authProxy.removeAddrBWO(addr, sender, deadline, signature);
+            emit removeAuthProxy(id, addr);
+            emit removeAuthProxyBWO(
+                id,
+                addr,
+                sender,
+                metaStorage.nonces(sender)
+            );
+        }
     }
 
-    function addAuthProxyAddr(uint256 id, address addr) public {
-        require(isBWO(msg.sender), "Metaverse: sender is not BWO");
+    function proxy(
+        uint256 id,
+        address dest,
+        bytes memory data
+    ) public returns (bool success, bytes memory result) {
         MetaverseStorage.Account memory account = getAccountInfo(id);
         require(account.isExist == true, "Metaverse: account is not exist");
-        AuthProxy authProxy = AuthProxy(account.proxy);
-        authProxy.addAddr(addr);
-        emit addAuthProxy(id, addr);
-    }
-
-    function removeAuthProxyAddr(uint256 id, address addr) public {
-        MetaverseStorage.Account memory account = getAccountInfo(id);
-        require(account.isExist == true, "Metaverse: account is not exist");
-        AuthProxy authProxy = AuthProxy(account.proxy);
-        authProxy.removeAddr(addr);
-        emit removeAuthProxy(id, addr);
+        if (account.addr.isContract()) {
+            AuthProxy authProxy = AuthProxy(account.addr);
+            (success, result) = authProxy.proxy(dest, data);
+        }
     }
 
     function isFreeze(uint256 _id) public view returns (bool) {
         return getAccountInfo(_id).isFreeze;
     }
 
-    function checkAddress(
-        address _address,
-        uint256 _id,
-        bool _isProxy
-    ) public view returns (bool) {
-        if (_isProxy) {
-            return AuthProxy(getAccountInfo(_id).proxy).authAddresses(_address);
+    function checkAddress(address _address, uint256 _id)
+        public
+        view
+        returns (bool)
+    {
+        if (_address.isContract()) {
+            return AuthProxy(getAccountInfo(_id).addr).authAddresses(_address);
         } else {
             return getAddressById(_id) == _address;
         }

@@ -2,20 +2,21 @@
 pragma solidity ^0.8.0;
 
 import "../common/Ownable.sol";
-import "../storage/MetaverseStorage.sol";
+import "../mock/MetaverseMock.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract AuthProxy is Ownable, EIP712 {
     mapping(address => bool) public authAddresses;
-    MetaverseStorage public metaStorage;
+    MetaverseMock public metaverse;
 
     constructor(
         string memory name_,
         string memory version_,
-        address metaStorage_
+        address metaverse_
     ) EIP712(name_, version_) {
         _owner = msg.sender;
-        metaStorage = MetaverseStorage(metaStorage_);
+        metaverse = MetaverseMock(metaverse_);
+        authAddresses[metaverse_] = true;
     }
 
     function addAddrBWO(
@@ -28,7 +29,7 @@ contract AuthProxy is Ownable, EIP712 {
             authAddresses[sender],
             "AuthProxy: Only authorized address can add address"
         );
-        _recoverSig(addr,deadline,sender,signature);
+        _recoverSig(addr, deadline, sender, signature);
         authAddresses[addr] = true;
     }
 
@@ -42,7 +43,7 @@ contract AuthProxy is Ownable, EIP712 {
             authAddresses[sender],
             "AuthProxy: Only authorized address can add address"
         );
-        _recoverSig(addr,deadline,sender,signature);
+        _recoverSig(addr, deadline, sender, signature);
         delete authAddresses[addr];
     }
 
@@ -62,23 +63,37 @@ contract AuthProxy is Ownable, EIP712 {
     ) internal view {
         require(block.timestamp < deadline, "AuthProxy: BWO call expired");
 
-        uint256 nonce = metaStorage.nonces(signer);
+        uint256 nonce = metaverse.getNonce(signer);
         require(
-            signer == ECDSA.recover(_hashTypedDataV4(
-                keccak256(
-                    abi.encode(
+            signer ==
+                ECDSA.recover(
+                    _hashTypedDataV4(
                         keccak256(
-                            "BWO(address addr,address sender,uint256 nonce,uint256 deadline)"
-                        ),
-                        addr,
-                        signer,
-                        nonce,
-                        deadline
-                    )
-                )
-            )
-        , signature),
+                            abi.encode(
+                                keccak256(
+                                    "BWO(address addr,address sender,uint256 nonce,uint256 deadline)"
+                                ),
+                                addr,
+                                signer,
+                                nonce,
+                                deadline
+                            )
+                        )
+                    ),
+                    signature
+                ),
             "AuthProxy: recoverSig failed"
         );
+    }
+
+    function proxy(address dest, bytes memory data)
+        public
+        returns (bool success, bytes memory result)
+    {
+        require(
+            authAddresses[msg.sender] == true || msg.sender == _owner,
+            "Only the proxy registry may call this function"
+        );
+        (success, result) = dest.call(data);
     }
 }
