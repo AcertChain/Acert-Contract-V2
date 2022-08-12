@@ -2,16 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "./common/Ownable.sol";
-import "./World.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "../common/Ownable.sol";
+import "./WorldMock.sol";
+import "../storage/MetaverseStorage.sol";
+import "../proxy/AuthProxy.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract Metaverse is Ownable, EIP712 {
-    using EnumerableSet for EnumerableSet.AddressSet;
-
-    EnumerableSet.AddressSet private worlds;
-
+contract MetaverseMock is Ownable, EIP712 {
     event RegisterWorld(
         address indexed world,
         string name,
@@ -49,58 +46,36 @@ contract Metaverse is Ownable, EIP712 {
     event FreezeAccount(uint256 indexed id);
     event FreezeAccountBWO(uint256 indexed id, uint256 nonce);
     event UnFreezeAccount(uint256 indexed id);
+    event addAuthProxy(uint256 indexed id, address indexed proxy);
+    event addAuthProxyBWO(
+        uint256 indexed id,
+        address indexed addr,
+        address indexed sender,
+        uint256 nonce
+    );
+    event removeAuthProxy(uint256 indexed id, address indexed proxy);
+    event removeAuthProxyBWO(
+        uint256 indexed id,
+        address indexed addr,
+        address indexed sender,
+        uint256 nonce
+    );
 
-    mapping(address => WorldInfo) private worldInfos;
-
-    struct WorldInfo {
-        address world;
-        string name;
-        string icon;
-        string url;
-        string description;
-        bool isEnabled;
-    }
-
-    struct Account {
-        bool _isExist;
-        bool _isTrustAdmin;
-        bool _isFreeze;
-        uint256 _id;
-        address _address;
-    }
-
-    // Mapping from account ID to Account
-    mapping(uint256 => Account) private _accountsById;
-    // Mapping from adress to account ID
-    mapping(address => uint256) private _addressesToIds;
+    address public _admin;
+    uint256 public immutable _startId;
+    MetaverseStorage public metaStorage;
     // Mapping from address to operator
-    mapping(address => bool) private _isOperatorByAddress;
-
-    // nonce
-    mapping(address => uint256) private _nonces;
-
-    uint256 private _totalAccount;
-
-    address private _admin;
-
-    uint256 private immutable _startId;
+    mapping(address => bool) public isOperator;
 
     constructor(
         string memory name_,
         string memory version_,
-        uint256 startId_
+        uint256 startId_,
+        address metaStorage_
     ) EIP712(name_, version_) {
         _owner = msg.sender;
         _startId = startId_;
-    }
-
-    modifier onlyWorld() {
-        require(
-            worlds.contains(msg.sender),
-            "Metaverse: Only world can call this function"
-        );
-        require(worldInfos[msg.sender].isEnabled, "Metaverse: World is disabled");
-        _;
+        metaStorage = MetaverseStorage(metaStorage_);
     }
 
     function registerWorld(
@@ -111,29 +86,32 @@ contract Metaverse is Ownable, EIP712 {
         string calldata _description
     ) public onlyOwner {
         require(_world != address(0), "Metaverse: zero address");
-        require(worlds.contains(_world) == false, "Metaverse: world is exist");
+        require(
+            metaStorage.contains(_world) == false,
+            "Metaverse: world is exist"
+        );
         require(
             World(_world).getMetaverse() == address(this),
             "Metaverse: metaverse is not match"
         );
-        worlds.add(_world);
-        worldInfos[_world] = WorldInfo({
-            world: _world,
-            name: _name,
-            icon: _icon,
-            url: _url,
-            description: _description,
-            isEnabled: true
-        });
+        metaStorage.add(_world);
+        metaStorage.addWorldInfo(
+            MetaverseStorage.WorldInfo({
+                world: _world,
+                name: _name,
+                icon: _icon,
+                url: _url,
+                description: _description,
+                isEnabled: true
+            })
+        );
         emit RegisterWorld(_world, _name, _icon, _url, _description);
     }
 
     function disableWorld(address _world) public onlyOwner {
         require(_world != address(0), "Metaverse: zero address");
-        if (worlds.contains(_world)) {
-            worldInfos[_world].isEnabled = false;
-            emit DisableWorld(_world);
-        }
+        metaStorage.disableWorld(_world);
+        emit DisableWorld(_world);
     }
 
     function updateWorldInfo(
@@ -144,33 +122,35 @@ contract Metaverse is Ownable, EIP712 {
         string calldata _description
     ) public onlyOwner {
         require(_world != address(0), "Metaverse: zero address");
-        if (worlds.contains(_world)) {
-            worldInfos[_world].name = _name;
-            worldInfos[_world].icon = _icon;
-            worldInfos[_world].url = _url;
-            worldInfos[_world].description = _description;
-            emit UpdateWorld(_world, _name, _icon, _url, _description);
+        if (metaStorage.contains(_world)) {
+            MetaverseStorage.WorldInfo memory info = getWorldInfo(_world);
+            info.name = _name;
+            info.icon = _icon;
+            info.url = _url;
+            info.description = _description;
+            metaStorage.addWorldInfo(info);
         }
+        emit UpdateWorld(_world, _name, _icon, _url, _description);
     }
 
     function getWorldInfo(address _world)
         public
         view
-        returns (WorldInfo memory)
+        returns (MetaverseStorage.WorldInfo memory)
     {
-        return worldInfos[_world];
+        return metaStorage.getWorldInfo(_world);
     }
 
     function containsWorld(address _world) public view returns (bool) {
-        return worlds.contains(_world);
+        return metaStorage.contains(_world);
     }
 
     function getWorlds() public view returns (address[] memory) {
-        return worlds.values();
+        return metaStorage.values();
     }
 
     function getWorldCount() public view returns (uint256) {
-        return worlds.length();
+        return metaStorage.length();
     }
 
     function setAdmin(address _addr) public onlyOwner {
@@ -185,31 +165,27 @@ contract Metaverse is Ownable, EIP712 {
 
     function addOperator(address _operator) public onlyOwner {
         require(_operator != address(0), "Metaverse: zero address");
-        _isOperatorByAddress[_operator] = true;
+        isOperator[_operator] = true;
         emit AddOperator(_operator);
     }
 
     function removeOperator(address _operator) public onlyOwner {
-        delete _isOperatorByAddress[_operator];
+        delete isOperator[_operator];
         emit RemoveOperator(_operator);
     }
 
-    function isOperator(address _operator) public view returns (bool) {
-        return _isOperatorByAddress[_operator];
-    }
-
     function isBWO(address _addr) public view returns (bool) {
-        return _isOperatorByAddress[_addr] || _owner == _addr;
+        return isOperator[_addr] || _owner == _addr;
     }
 
     function getOrCreateAccountId(address _address)
         public
         returns (uint256 id)
     {
-        if (_addressesToIds[_address] == 0 && _address != address(0)) {
+        if (_address != address(0) && getIdByAddress(_address) == 0) {
             id = createAccount(_address, false);
         } else {
-            id = _addressesToIds[_address];
+            id = getIdByAddress(_address);
         }
     }
 
@@ -218,8 +194,8 @@ contract Metaverse is Ownable, EIP712 {
         virtual
         returns (uint256 id)
     {
-        _totalAccount++;
-        id = _totalAccount + _startId;
+        metaStorage.IncrementTotalAccount();
+        id = metaStorage.totalAccount() + _startId;
         _createAccount(id, _address, _isTrustAdmin);
     }
 
@@ -229,9 +205,28 @@ contract Metaverse is Ownable, EIP712 {
         bool _isTrustAdmin
     ) internal virtual {
         require(_address != address(0), "Metaverse: zero address");
-        require(_addressesToIds[_address] == 0, "Metaverse: address is exist");
-        _accountsById[_id] = Account(true, _isTrustAdmin, false, _id, _address);
-        _addressesToIds[_address] = _id;
+        require(getIdByAddress(_address) == 0, "Metaverse: address is exist");
+
+        AuthProxy authProxy = new AuthProxy(
+            "auth",
+            "v1.0",
+            address(metaStorage)
+        );
+
+        authProxy.addAddr(_address);
+        emit addAuthProxy(_id, _address);
+
+        metaStorage.addAccount(
+            MetaverseStorage.Account(
+                true,
+                _isTrustAdmin,
+                false,
+                _id,
+                _address,
+                address(authProxy)
+            )
+        );
+        metaStorage.addAddressToId(_address, _id);
         emit CreateAccount(_id, _address, _isTrustAdmin);
     }
 
@@ -240,15 +235,12 @@ contract Metaverse is Ownable, EIP712 {
         address _newAddress,
         bool _isTrustAdmin
     ) public {
-        Account storage account = _accountsById[_id];
+        MetaverseStorage.Account memory account = getAccountInfo(_id);
+        require(account.isExist == true, "Metaverse: account is not exist");
         require(
-            _accountsById[_id]._isExist == true,
-            "Metaverse: account is not exist"
-        );
-        require(
-            msg.sender == account._address ||
+            msg.sender == account.addr ||
                 (msg.sender == _admin &&
-                    (account._isTrustAdmin || account._isFreeze)),
+                    (account.isTrustAdmin || account.isFreeze)),
             "Metaverse: sender not owner or admin"
         );
         _changeAccount(_id, _newAddress, _isTrustAdmin);
@@ -263,14 +255,9 @@ contract Metaverse is Ownable, EIP712 {
         bytes memory signature
     ) public {
         require(isBWO(msg.sender), "Metaverse: sender is not BWO");
-        require(
-            _accountsById[_id]._isExist == true,
-            "Metaverse: account is not exist"
-        );
-        require(
-            _accountsById[_id]._address == sender,
-            "Metaverse: sender not owner"
-        );
+        MetaverseStorage.Account memory account = getAccountInfo(_id);
+        require(account.isExist == true, "Metaverse: account is not exist");
+        require(account.addr == sender, "Metaverse: sender not owner");
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -294,7 +281,7 @@ contract Metaverse is Ownable, EIP712 {
         );
         _changeAccount(_id, _newAddress, _isTrustAdmin);
         emit UpdateAccountBWO(_id, _newAddress, _isTrustAdmin, nonce);
-        _nonces[sender]++;
+        metaStorage.IncrementNonce(sender);
     }
 
     function _changeAccount(
@@ -303,33 +290,33 @@ contract Metaverse is Ownable, EIP712 {
         bool _isTrustAdmin
     ) private {
         require(_newAddress != address(0), "Metaverse: zero address");
-        Account storage account = _accountsById[_id];
-        require(account._isExist == true, "Metaverse: account is not exist");
+        MetaverseStorage.Account memory account = getAccountInfo(_id);
+        require(account.isExist == true, "Metaverse: account is not exist");
 
-        if (account._address != _newAddress) {
+        if (account.addr != _newAddress) {
             require(
-                _addressesToIds[_newAddress] == 0,
+                getIdByAddress(_newAddress) == 0,
                 "Metaverse: new address has been used"
             );
-            delete _addressesToIds[account._address];
-            _addressesToIds[_newAddress] = _id;
-            account._address = _newAddress;
+            metaStorage.deleteAddressToId(account.addr);
+            metaStorage.addAddressToId(_newAddress, _id);
+            AuthProxy(account.proxy).addAddr(_newAddress);
+            emit addAuthProxy(account.id, _newAddress);
+            AuthProxy(account.proxy).removeAddr(account.addr);
+            emit removeAuthProxy(account.id, account.addr);
+            account.addr = _newAddress;
         }
-        account._isTrustAdmin = _isTrustAdmin;
+        account.isTrustAdmin = _isTrustAdmin;
+        metaStorage.addAccount(account);
         emit UpdateAccount(_id, _newAddress, _isTrustAdmin);
     }
 
     function freezeAccount(uint256 _id) public {
-        require(
-            _accountsById[_id]._isExist == true,
-            "Metaverse: account is not exist"
-        );
-        require(
-            _accountsById[_id]._address == msg.sender,
-            "Metaverse: sender not owner"
-        );
-
-        _accountsById[_id]._isFreeze = true;
+        MetaverseStorage.Account memory account = getAccountInfo(_id);
+        require(account.isExist == true, "Metaverse: account is not exist");
+        require(account.addr == msg.sender, "Metaverse: sender not owner");
+        account.isFreeze = true;
+        metaStorage.addAccount(account);
         emit FreezeAccount(_id);
     }
 
@@ -340,14 +327,9 @@ contract Metaverse is Ownable, EIP712 {
         bytes memory signature
     ) public {
         require(isBWO(msg.sender), "Metaverse: sender is not BWO");
-        require(
-            _accountsById[_id]._isExist == true,
-            "Metaverse: account is not exist"
-        );
-        require(
-            _accountsById[_id]._address == sender,
-            "Metaverse: sender not owner"
-        );
+        MetaverseStorage.Account memory account = getAccountInfo(_id);
+        require(account.isExist == true, "Metaverse: account is not exist");
+        require(account.addr == sender, "Metaverse: sender not owner");
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -368,48 +350,105 @@ contract Metaverse is Ownable, EIP712 {
             signature
         );
 
-        _accountsById[_id]._isFreeze = true;
+        account.isFreeze = true;
+        metaStorage.addAccount(account);
         emit FreezeAccount(_id);
         emit FreezeAccountBWO(_id, nonce);
-        _nonces[sender]++;
+        metaStorage.IncrementNonce(sender);
     }
 
     function unfreezeAccount(uint256 _id) public {
         require(msg.sender == _admin, "Metaverse: sender is not admin");
-        _accountsById[_id]._isFreeze = false;
+        MetaverseStorage.Account memory account = getAccountInfo(_id);
+        account.isFreeze = false;
         emit UnFreezeAccount(_id);
     }
 
-    function isFreeze(uint256 _id) public view returns (bool) {
-        return _accountsById[_id]._isFreeze;
+    function addAuthProxyAddr(
+        uint256 id,
+        address addr,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public {
+        MetaverseStorage.Account memory account = getAccountInfo(id);
+        require(account.isExist == true, "Metaverse: account is not exist");
+        AuthProxy authProxy = AuthProxy(account.proxy);
+        authProxy.addAddrBWO(addr, sender, deadline, signature);
+        emit addAuthProxy(id, addr);
+        emit addAuthProxyBWO(id, addr, sender, metaStorage.nonces(sender));
     }
 
-    function checkAddress(address _address, uint256 _id)
-        public
-        view
-        returns (bool)
-    {
-        return _accountsById[_id]._address == _address;
+    function removeAuthProxyAddr(
+        uint256 id,
+        address addr,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public {
+        MetaverseStorage.Account memory account = getAccountInfo(id);
+        require(account.isExist == true, "Metaverse: account is not exist");
+        AuthProxy authProxy = AuthProxy(account.proxy);
+        authProxy.removeAddrBWO(addr, sender, deadline, signature);
+        emit removeAuthProxy(id, addr);
+        emit removeAuthProxyBWO(id, addr, sender, metaStorage.nonces(sender));
+    }
+
+    function addAuthProxyAddr(uint256 id, address addr) public {
+        require(isBWO(msg.sender), "Metaverse: sender is not BWO");
+        MetaverseStorage.Account memory account = getAccountInfo(id);
+        require(account.isExist == true, "Metaverse: account is not exist");
+        AuthProxy authProxy = AuthProxy(account.proxy);
+        authProxy.addAddr(addr);
+        emit addAuthProxy(id, addr);
+    }
+
+    function removeAuthProxyAddr(uint256 id, address addr) public {
+        MetaverseStorage.Account memory account = getAccountInfo(id);
+        require(account.isExist == true, "Metaverse: account is not exist");
+        AuthProxy authProxy = AuthProxy(account.proxy);
+        authProxy.removeAddr(addr);
+        emit removeAuthProxy(id, addr);
+    }
+
+    function isFreeze(uint256 _id) public view returns (bool) {
+        return getAccountInfo(_id).isFreeze;
+    }
+
+    function checkAddress(
+        address _address,
+        uint256 _id,
+        bool _isProxy
+    ) public view returns (bool) {
+        if (_isProxy) {
+            return AuthProxy(getAccountInfo(_id).proxy).authAddresses(_address);
+        } else {
+            return getAddressById(_id) == _address;
+        }
     }
 
     function getIdByAddress(address _address) public view returns (uint256) {
-        return _addressesToIds[_address];
+        return metaStorage.addressToId(_address);
     }
 
     function getAddressById(uint256 _id) public view returns (address) {
-        return _accountsById[_id]._address;
+        return getAccountInfo(_id).addr;
     }
 
-    function getAccountInfo(uint256 _id) public view returns (Account memory) {
-        return _accountsById[_id];
+    function getAccountInfo(uint256 _id)
+        public
+        view
+        returns (MetaverseStorage.Account memory account)
+    {
+        return metaStorage.getAccount(_id);
     }
 
     function getTotalAccount() public view returns (uint256) {
-        return _totalAccount;
+        return metaStorage.totalAccount();
     }
 
     function getNonce(address account) public view returns (uint256) {
-        return _nonces[account];
+        return metaStorage.nonces(account);
     }
 
     // for test

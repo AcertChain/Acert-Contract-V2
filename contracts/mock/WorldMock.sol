@@ -2,13 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "./interfaces/IWorld.sol";
-import "./interfaces/IWorldAsset.sol";
-import "./interfaces/IItem721.sol";
-import "./interfaces/ICash20.sol";
-import "./Metaverse.sol";
-import "./common/Ownable.sol";
-import "./common/Initializable.sol";
+import "../interfaces/IWorld.sol";
+import "../interfaces/IWorldAsset.sol";
+import "../interfaces/IItem721.sol";
+import "../interfaces/ICash20.sol";
+import "./MetaverseMock.sol";
+import "../storage/WorldStorage.sol";
+import "../common/Ownable.sol";
+import "../common/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -55,58 +56,30 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         address indexed sender,
         uint256 nonce
     );
-    // struct Asset
-    struct Asset {
-        bool _isExist;
-        bool _isEnabled;
-        address _contract;
-        string _name;
-        string _image;
-        IWorldAsset.ProtocolEnum _protocol;
-    }
-
-    // struct Contract
-    struct Contract {
-        bool _isExist;
-        address _contract;
-        string _name;
-    }
 
     // Mapping from address to operator
-    mapping(address => bool) private _isOperatorByAddress;
+    mapping(address => bool) public isOperator;
 
-    // Mapping from address to trust contract
-    mapping(address => Contract) private _safeContracts;
+    MetaverseMock public metaverse;
 
-    // Mapping from account Id to contract
-    mapping(uint256 => mapping(address => bool))
-        private _isTrustContractByAccountId;
-
-    mapping(uint256 => bool) private _isTrustWorld;
-
-    // Mapping from address to Asset
-    mapping(address => Asset) private _assets;
-
-    // nonce
-    mapping(address => uint256) private _nonces;
-
-    address[] private _assetAddresses;
-
-    address private _metaverse;
+    WorldStorage public worldStorage;
 
     // constructor
     constructor(
-        address metaverse,
+        address metaverse_,
+        address worldStorage_,
         string memory name_,
         string memory version_
     ) EIP712(name_, version_) {
+        metaverse = MetaverseMock(metaverse_);
         _owner = msg.sender;
-        _metaverse = metaverse;
+        worldStorage = WorldStorage(worldStorage_);
     }
 
     modifier onlyAsset() {
+        WorldStorage.Asset memory asset = worldStorage.getAsset(msg.sender);
         require(
-            _assets[msg.sender]._isExist && _assets[msg.sender]._isEnabled,
+            asset.isExist && asset.isEnabled,
             "World: asset is not exist or disabled"
         );
         _;
@@ -117,51 +90,53 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         onlyOwner
     {
         require(_contract != address(0), "World: zero address");
-        require(_assets[_contract]._isExist == false, "World: asset is exist");
+        require(
+            worldStorage.getAsset(_contract).isExist == false,
+            "World: asset is exist"
+        );
         require(
             address(this) == IWorldAsset(_contract).worldAddress(),
             "World: world address is not match"
         );
 
         string memory symbol = IWorldAsset(_contract).symbol();
-        IWorldAsset.ProtocolEnum _protocol = IWorldAsset(_contract).protocol();
-        _assets[_contract] = Asset(
-            true,
-            true,
-            _contract,
-            symbol,
-            _image,
-            _protocol
+        IWorldAsset.ProtocolEnum protocol = IWorldAsset(_contract).protocol();
+
+        worldStorage.addAsset(
+            WorldStorage.Asset(true, true, _contract, symbol, _image, protocol)
         );
-        _assetAddresses.push(_contract);
-        emit RegisterAsset(_contract, symbol, _image, _protocol);
+
+        worldStorage.addAssetAddress(_contract);
+        emit RegisterAsset(_contract, symbol, _image, protocol);
     }
 
     function updateAsset(address _contract, string calldata _image)
         public
         onlyOwner
     {
-        require(
-            _assets[_contract]._isExist == true,
-            "World: asset is not exist"
-        );
+        WorldStorage.Asset memory asset = worldStorage.getAsset(_contract);
+        require(asset.isExist == true, "World: asset is not exist");
 
-        _assets[_contract]._image = _image;
+        asset.image = _image;
+        worldStorage.addAsset(asset);
         emit UpdateAsset(_contract, _image);
     }
 
     function disableAsset(address _contract) public onlyOwner {
-        require(
-            _assets[_contract]._isExist == true,
-            "World: asset is not exist"
-        );
+        WorldStorage.Asset memory asset = worldStorage.getAsset(_contract);
+        require(asset.isExist == true, "World: asset is not exist");
 
-        _assets[_contract]._isEnabled = false;
+        asset.isEnabled = false;
+        worldStorage.addAsset(asset);
         emit DisableAsset(_contract);
     }
 
-    function getAsset(address _contract) public view returns (Asset memory) {
-        return _assets[_contract];
+    function getAsset(address _contract)
+        public
+        view
+        returns (WorldStorage.Asset memory)
+    {
+        return worldStorage.getAsset(_contract);
     }
 
     function addSafeContract(address _contract, string calldata _name)
@@ -169,44 +144,45 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         onlyOwner
     {
         require(_contract != address(0), "World: zero address");
-        _safeContracts[_contract] = Contract(true, _contract, _name);
+        worldStorage.addSafeContract(
+            WorldStorage.Contract(true, _contract, _name)
+        );
         emit AddSafeContract(_contract, _name);
     }
 
     function removeSafeContract(address _contract) public onlyOwner {
-        _safeContracts[_contract]._isExist == false;
+        WorldStorage.Contract memory safeContract = worldStorage
+            .getSafeContract(_contract);
+        safeContract.isExist = false;
+        worldStorage.addSafeContract(safeContract);
         emit RemoveSafeContract(_contract);
     }
 
     function isSafeContract(address _contract) public view returns (bool) {
-        return _safeContracts[_contract]._isExist;
+        return worldStorage.getSafeContract(_contract).isExist;
     }
 
     function getSafeContract(address _contract)
         public
         view
-        returns (Contract memory)
+        returns (WorldStorage.Contract memory)
     {
-        return _safeContracts[_contract];
+        return worldStorage.getSafeContract(_contract);
     }
 
     function addOperator(address _operator) public onlyOwner {
         require(_operator != address(0), "World: zero address");
-        _isOperatorByAddress[_operator] = true;
+        isOperator[_operator] = true;
         emit AddOperator(_operator);
     }
 
     function removeOperator(address _operator) public onlyOwner {
-        delete _isOperatorByAddress[_operator];
+        delete isOperator[_operator];
         emit RemoveOperator(_operator);
     }
 
-    function isOperator(address _operator) public view returns (bool) {
-        return _isOperatorByAddress[_operator];
-    }
-
     function isBWO(address _addr) public view virtual override returns (bool) {
-        return _isOperatorByAddress[_addr] || _owner == _addr;
+        return isOperator[_addr] || _owner == _addr;
     }
 
     function isBWOByAsset(address _addr)
@@ -253,7 +229,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
 
         uint256 accountId = _trustContract(sender, _contract);
         emit TrustContractBWO(accountId, _contract, sender, nonce);
-        _nonces[sender]++;
+        worldStorage.IncrementNonce(sender);
         return accountId;
     }
 
@@ -262,7 +238,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         returns (uint256 accountId)
     {
         accountId = getOrCreateAccountId(_address);
-        _isTrustContractByAccountId[accountId][_contract] = true;
+        worldStorage.trustContractByAccountId(accountId, _contract);
         emit TrustContract(accountId, _contract);
     }
 
@@ -309,11 +285,11 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
 
         _untrustContract(_id, _contract);
         emit UntrustContractBWO(_id, _contract, sender, nonce);
-        _nonces[sender]++;
+        worldStorage.IncrementNonce(sender);
     }
 
     function _untrustContract(uint256 _id, address _contract) private {
-        delete _isTrustContractByAccountId[_id][_contract];
+        worldStorage.untrustContractByAccountId(_id, _contract);
         emit UntrustContract(_id, _contract);
     }
 
@@ -348,14 +324,14 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         );
         uint256 accountId = _trustWorld(sender);
         emit TrustWorldBWO(accountId, sender, nonce);
-        _nonces[sender]++;
+        worldStorage.IncrementNonce(sender);
         return accountId;
     }
 
     function _trustWorld(address _address) private returns (uint256) {
         uint256 accountId = getOrCreateAccountId(_address);
 
-        _isTrustWorld[accountId] = true;
+        worldStorage.trustWorld(accountId);
         emit TrustWorld(accountId);
         return accountId;
     }
@@ -400,16 +376,16 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         );
         _untrustWorld(_id);
         emit UntrustWorldBWO(_id, sender, nonce);
-        _nonces[sender]++;
+        worldStorage.IncrementNonce(sender);
     }
 
     function _untrustWorld(uint256 _id) private {
-        delete _isTrustWorld[_id];
+        worldStorage.untrustWorld(_id);
         emit UntrustWorld(_id);
     }
 
     function isTrustWorld(uint256 _id) public view returns (bool _isTrust) {
-        return _isTrustWorld[_id];
+        return worldStorage.isTrustWorld(_id);
     }
 
     function isTrust(address _contract, uint256 _id)
@@ -420,8 +396,8 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         returns (bool _isTrust)
     {
         return
-            (_safeContracts[_contract]._isExist && _isTrustWorld[_id]) ||
-            _isTrustContractByAccountId[_id][_contract];
+            (isSafeContract(_contract) && isTrustWorld(_id)) ||
+            isTrustContract(_contract, _id);
     }
 
     function isTrustContract(address _contract, uint256 _id)
@@ -431,7 +407,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (bool _isTrust)
     {
-        return _isTrustContractByAccountId[_id][_contract];
+        return worldStorage.isTrustContractByAccountId(_id, _contract);
     }
 
     function isTrustByAsset(address _contract, uint256 _id)
@@ -446,16 +422,15 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
     }
 
     function getMetaverse() public view override returns (address) {
-        return _metaverse;
+        return address(metaverse);
     }
 
-    function checkAddress(address _address, uint256 _id)
-        public
-        view
-        override
-        returns (bool)
-    {
-        return Metaverse(_metaverse).checkAddress(_address, _id);
+    function checkAddress(
+        address _address,
+        uint256 _id,
+        bool proxy
+    ) public view override returns (bool) {
+        return metaverse.checkAddress(_address, _id, proxy);
     }
 
     function getAccountIdByAddress(address _address)
@@ -464,7 +439,7 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (uint256)
     {
-        return Metaverse(_metaverse).getIdByAddress(_address);
+        return metaverse.getIdByAddress(_address);
     }
 
     function getAddressById(uint256 _id)
@@ -473,11 +448,11 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (address)
     {
-        return Metaverse(_metaverse).getAddressById(_id);
+        return metaverse.getAddressById(_id);
     }
 
     function isFreeze(uint256 _id) public view override returns (bool) {
-        return Metaverse(_metaverse).isFreeze(_id);
+        return metaverse.isFreeze(_id);
     }
 
     function getOrCreateAccountId(address _address)
@@ -485,11 +460,11 @@ contract World is IWorld, Ownable, Initializable, EIP712 {
         override
         returns (uint256 id)
     {
-        return Metaverse(_metaverse).getOrCreateAccountId(_address);
+        return metaverse.getOrCreateAccountId(_address);
     }
 
     function getNonce(address account) public view returns (uint256) {
-        return _nonces[account];
+        return worldStorage.nonces(account);
     }
 
     // for test
