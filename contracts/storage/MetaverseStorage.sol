@@ -23,7 +23,6 @@ contract MetaverseStorage is Ownable {
         bool isFreeze;
         uint256 id;
         address addr;
-        address proxy;
     }
 
     mapping(address => WorldInfo) public worldInfos;
@@ -33,6 +32,10 @@ contract MetaverseStorage is Ownable {
     mapping(address => uint256) public addressToId;
     // nonce
     mapping(address => uint256) public nonces;
+
+    mapping(uint256 => mapping(address => bool)) public authProxies;
+
+    mapping(address => uint256) public authToAddress;
 
     uint256 public totalAccount;
     address public metaverse;
@@ -104,5 +107,15 @@ contract MetaverseStorage is Ownable {
 
     function getAccount(uint256 id) public view returns (Account memory) {
         return accounts[id];
+    }
+
+    function addAuthProxies(uint256 id, address  proxy) public onlyMetaverse {
+            authProxies[id][proxy] = true;
+            authToAddress[proxy] = id;
+    }
+
+    function deleteAuthProxies(uint256 id, address  proxy) public onlyMetaverse {
+            delete authProxies[id][proxy];
+            delete authToAddress[proxy];
     }
 }
