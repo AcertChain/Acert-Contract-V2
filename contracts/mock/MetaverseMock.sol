@@ -84,7 +84,7 @@ contract MetaverseMock is Ownable, EIP712 {
     ) public onlyOwner {
         checkAddressIsNotZero(_world);
         require(
-            metaStorage.contains(_world) == false,
+            containsWorld(_world) == false,
             "Metaverse: world is exist"
         );
         require(
@@ -119,7 +119,7 @@ contract MetaverseMock is Ownable, EIP712 {
         string calldata _description
     ) public onlyOwner {
         checkAddressIsNotZero(_world);
-        if (metaStorage.contains(_world)) {
+        if (containsWorld(_world)) {
             MetaverseStorage.WorldInfo memory info = getWorldInfo(_world);
             info.name = _name;
             info.icon = _icon;
@@ -334,6 +334,7 @@ contract MetaverseMock is Ownable, EIP712 {
         require(msg.sender == _admin, "Metaverse: sender is not admin");
         MetaverseStorage.Account memory account = getAccountInfo(_id);
         account.isFreeze = false;
+        metaStorage.addAccount(account);
         emit UnFreezeAccount(_id);
     }
 
@@ -416,7 +417,7 @@ contract MetaverseMock is Ownable, EIP712 {
         bool _isProxy
     ) public view returns (bool) {
         if (_isProxy) {
-            return metaStorage.authToAddress(_address) == _id || getAddressById(_id) == _address;
+            return  getAddressById(_id) == _address || metaStorage.authToAddress(_address) == _id ;
         } else {
             return getAddressById(_id) == _address;
         }

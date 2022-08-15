@@ -743,12 +743,11 @@ contract Item721 is EIP712, ERC165, IItem721 {
         );
     }
 
-    function _checkAddressProxy(address _addr, uint256 _id)
-        internal
-        view
-        returns (bool)
-    {
-        return IWorld(_world).checkAddress(_addr, _id, true);
+    function _checkAddressProxy(address _addr, uint256 _id) internal view {
+        require(
+            IWorld(_world).checkAddress(_addr, _id, true),
+            "Item: not owner or auth"
+        );
     }
 
     function _accountIsExist(uint256 _id) internal view {

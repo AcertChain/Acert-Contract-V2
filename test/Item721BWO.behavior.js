@@ -314,7 +314,7 @@ function shouldBehaveLikeItem721BWO() {
               transferFunction.call(this, owner, otherId, otherId, tokenId, signature, {
                 from: this.operator
               }),
-              'Item: not owner',
+              'Item: not owner or auth',
             );
           });
         });
@@ -324,7 +324,6 @@ function shouldBehaveLikeItem721BWO() {
             const nonce = await this.token.getNonce(other);
             let signature;
             if (data == null) {
-
               signature = signTrasferData(this.chainId, this.token.address, this.tokenName,
                 otherW.getPrivateKey(), this.tokenVersion, ownerId, otherId, tokenId, other,
                 deadline, nonce);

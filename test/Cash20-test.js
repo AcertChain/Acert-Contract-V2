@@ -18,8 +18,10 @@ const Wallet = require('ethereumjs-wallet').default;
 
 
 const Cash20 = artifacts.require('Cash20Mock');
-const World = artifacts.require('World');
-const Metaverse = artifacts.require('Metaverse');
+const World = artifacts.require('WorldMock');
+const WorldStorage = artifacts.require('WorldStorage');
+const Metaverse = artifacts.require('MetaverseMock');
+const MetaverseStorage = artifacts.require('MetaverseStorage');
 
 const {
   shouldBehaveLikeERC20,
@@ -41,7 +43,7 @@ const {
 
 contract('Cash20', function (accounts) {
   // deploy World contract
-  beforeEach(async function () {});
+  beforeEach(async function () { });
 
   const [initialHolder, recipient, anotherAccount] = accounts;
 
@@ -66,9 +68,15 @@ contract('Cash20', function (accounts) {
   const BWOReceiptkey = receiptWallet.getPrivateKey();
 
   beforeEach(async function () {
+    this.MetaverseStorage = await MetaverseStorage.new();
+    this.Metaverse = await Metaverse.new("metaverse", "1.0", 0, this.MetaverseStorage.address);
+    await this.MetaverseStorage.updateMetaverse(this.Metaverse.address);
 
-    this.Metaverse = await Metaverse.new("metaverse", "1.0", 0);
-    this.world = await World.new(this.Metaverse.address, "world", "1.0");
+    this.WorldStorage = await WorldStorage.new();
+    this.world = await World.new(this.Metaverse.address, this.WorldStorage.address, "world", "1.0");
+    await this.WorldStorage.updateWorld(this.world.address);
+
+
     this.token = await Cash20.new(name, symbol, version, this.world.address);
     // register world
     await this.Metaverse.registerWorld(this.world.address, "", "", "", "");
@@ -138,8 +146,8 @@ contract('Cash20', function (accounts) {
           it('reverts', async function () {
             await expectRevert(this.token.decreaseAllowance(
               spender, amount, {
-                from: initialHolder
-              }), 'Cash: decreased allowance below zero', );
+              from: initialHolder
+            }), 'Cash: decreased allowance below zero');
           });
         });
 
@@ -158,10 +166,10 @@ contract('Cash20', function (accounts) {
                 from: initialHolder
               }),
               'Approval', {
-                owner: initialHolder,
-                spender: spender,
-                value: new BN(0)
-              },
+              owner: initialHolder,
+              spender: spender,
+              value: new BN(0)
+            },
             );
           });
 
@@ -211,8 +219,8 @@ contract('Cash20', function (accounts) {
       it('reverts', async function () {
         await expectRevert(this.token.decreaseAllowance(
           spender, amount, {
-            from: initialHolder
-          }), 'Cash: decreased allowance below zero', );
+          from: initialHolder
+        }), 'Cash: decreased allowance below zero');
       });
     });
   });
@@ -230,10 +238,10 @@ contract('Cash20', function (accounts) {
               from: initialHolder
             }),
             'Approval', {
-              owner: initialHolder,
-              spender: spender,
-              value: amount
-            },
+            owner: initialHolder,
+            spender: spender,
+            value: amount
+          },
           );
         });
 
@@ -273,10 +281,10 @@ contract('Cash20', function (accounts) {
               from: initialHolder
             }),
             'Approval', {
-              owner: initialHolder,
-              spender: spender,
-              value: amount
-            },
+            owner: initialHolder,
+            spender: spender,
+            value: amount
+          },
           );
         });
 
@@ -348,9 +356,9 @@ contract('Cash20', function (accounts) {
         const event = expectEvent(
           this.receipt,
           'Transfer', {
-            from: ZERO_ADDRESS,
-            to: recipient
-          },
+          from: ZERO_ADDRESS,
+          to: recipient
+        },
         );
 
         expect(event.args.value).to.be.bignumber.equal(amount);
@@ -367,7 +375,7 @@ contract('Cash20', function (accounts) {
     describe('for a non zero account', function () {
       it('rejects burning more than balance', async function () {
         await expectRevert(this.token.burn(
-          initialHolder, initialSupply.addn(1)), 'Cash: burn amount exceeds balance', );
+          initialHolder, initialSupply.addn(1)), 'Cash: burn amount exceeds balance');
       });
 
       const describeBurn = function (description, amount) {
@@ -391,9 +399,9 @@ contract('Cash20', function (accounts) {
             const event = expectEvent(
               this.receipt,
               'Transfer', {
-                from: initialHolder,
-                to: ZERO_ADDRESS
-              },
+              from: initialHolder,
+              to: ZERO_ADDRESS
+            },
             );
 
             expect(event.args.value).to.be.bignumber.equal(amount);
@@ -433,9 +441,9 @@ contract('Cash20', function (accounts) {
         const event = expectEvent(
           this.receipt,
           'TransferCash', {
-            from: new BN(0),
-            to: recipientId
-          },
+          from: new BN(0),
+          to: recipientId
+        },
         );
 
         expect(event.args.value).to.be.bignumber.equal(amount);
@@ -452,7 +460,7 @@ contract('Cash20', function (accounts) {
     describe('for a non zero account', function () {
       it('rejects burning more than balance', async function () {
         await expectRevert(this.token.burnCash(
-          initialHolderId, initialSupply.addn(1)), 'Cash: burn amount exceeds balance', );
+          initialHolderId, initialSupply.addn(1)), 'Cash: burn amount exceeds balance');
       });
 
       const describeBurn = function (description, amount) {
@@ -476,9 +484,9 @@ contract('Cash20', function (accounts) {
             const event = expectEvent(
               this.receipt,
               'TransferCash', {
-                from: initialHolderId,
-                to: new BN(0)
-              },
+              from: initialHolderId,
+              to: new BN(0)
+            },
             );
 
             expect(event.args.value).to.be.bignumber.equal(amount);
