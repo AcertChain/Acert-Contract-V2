@@ -19,21 +19,21 @@ const {
 const deadline = new BN(parseInt(new Date().getTime() / 1000) + 36000);
 
 const EIP712Domain = [{
-        name: 'name',
-        type: 'string'
-    },
-    {
-        name: 'version',
-        type: 'string'
-    },
-    {
-        name: 'chainId',
-        type: 'uint256'
-    },
-    {
-        name: 'verifyingContract',
-        type: 'address'
-    },
+    name: 'name',
+    type: 'string'
+},
+{
+    name: 'version',
+    type: 'string'
+},
+{
+    name: 'chainId',
+    type: 'uint256'
+},
+{
+    name: 'verifyingContract',
+    type: 'address'
+},
 ];
 
 const {
@@ -51,7 +51,7 @@ contract('Metaverse', function (accounts) {
         this.tokenName = "metaverse";
         this.tokenVersion = "1.0";
         this.MetaverseStorage = await MetaverseStorage.new();
-        this.Metaverse = await Metaverse.new(this.tokenName, this.tokenVersion, 0,this.MetaverseStorage.address);
+        this.Metaverse = await Metaverse.new(this.tokenName, this.tokenVersion, 0, this.MetaverseStorage.address);
         this.chainId = await this.Metaverse.getChainId();
         await this.MetaverseStorage.updateMetaverse(this.Metaverse.address);
 
@@ -73,12 +73,12 @@ contract('Metaverse', function (accounts) {
                 expectRevert(
                     await this.Metaverse.registerWorld(this.world.address, "1", "2", "3", "4"),
                     'AddWorld', {
-                        world: this.world.address,
-                        name: "1",
-                        icon: "2",
-                        url: "3",
-                        description: "4"
-                    },
+                    world: this.world.address,
+                    name: "1",
+                    icon: "2",
+                    url: "3",
+                    description: "4"
+                },
                 );
             });
 
@@ -99,11 +99,11 @@ contract('Metaverse', function (accounts) {
             //             world: this.world.address
             //         },
             //     );
-                
+
             //     await expectRevert(
             //         this.world.isFreeze(1), 'Metaverse: World is disabled',
             //     );
-                
+
             // });
 
         });
@@ -120,12 +120,12 @@ contract('Metaverse', function (accounts) {
                 expectRevert(
                     await this.Metaverse.updateWorldInfo(this.world.address, "1", "2", "3", "4"),
                     'UpdateWorld', {
-                        world: this.world.address,
-                        name: "1",
-                        icon: "2",
-                        url: "3",
-                        description: "4"
-                    },
+                    world: this.world.address,
+                    name: "1",
+                    icon: "2",
+                    url: "3",
+                    description: "4"
+                },
                 );
             });
 
@@ -143,8 +143,8 @@ contract('Metaverse', function (accounts) {
                 expectRevert(
                     await this.Metaverse.setAdmin(admin),
                     'SetAdmin', {
-                        admin
-                    },
+                    admin
+                },
                 );
             });
         });
@@ -161,8 +161,8 @@ contract('Metaverse', function (accounts) {
                 expectRevert(
                     await this.Metaverse.addOperator(operator),
                     'AddOperator', {
-                        operator
-                    },
+                    operator
+                },
                 );
             });
         });
@@ -174,8 +174,8 @@ contract('Metaverse', function (accounts) {
                 expectRevert(
                     await this.Metaverse.removeOperator(operator),
                     'RemoveOperator', {
-                        operator
-                    },
+                    operator
+                },
                 );
             });
         });
@@ -271,7 +271,7 @@ contract('Metaverse', function (accounts) {
             context('create account ', function () {
                 it('id expect 11', async function () {
                     this.newMetaverseStorage = await MetaverseStorage.new();
-                    this.newMetaverse = await Metaverse.new(this.tokenName, this.tokenVersion, 10,this.newMetaverseStorage.address);
+                    this.newMetaverse = await Metaverse.new(this.tokenName, this.tokenVersion, 10, this.newMetaverseStorage.address);
                     this.newMetaverseStorage.updateMetaverse(this.newMetaverse.address)
                     const [account] = accounts;
                     await this.newMetaverse.getOrCreateAccountId(account)
@@ -396,6 +396,46 @@ contract('Metaverse', function (accounts) {
             });
 
         });
+
+        describe('addAuthProxyAddrBWO and signRemoveAuthProxyAddrBWO', function () {
+            it('return event', async function () {
+                const accountW = Wallet.generate();
+                const account = accountW.getChecksumAddressString();
+                await this.Metaverse.getOrCreateAccountId(account)
+                const accountId = new BN(await this.Metaverse.getIdByAddress(account));
+                const [authAccount] = accounts;
+
+
+                const nonce = await this.Metaverse.getNonce(account);
+                const signature = signAddAuthProxyAddrBWO(this.chainId, this.Metaverse.address, this.tokenName,
+                    accountW.getPrivateKey(), this.tokenVersion, accountId, authAccount, account, nonce, deadline);
+
+
+
+                expectEvent(await this.Metaverse.addAuthProxyAddrBWO(accountId, authAccount, account, deadline, signature), 'AddAuthProxyBWO', {
+                    id: accountId,
+                    addr: authAccount,
+                    sender: account
+                });
+
+                expect(await this.Metaverse.authToAddress(authAccount)).to.bignumber.equal(new BN(1));
+
+
+                const nonce1 = await this.Metaverse.getNonce(account);
+                const signature1 = signAddAuthProxyAddrBWO(this.chainId, this.Metaverse.address, this.tokenName,
+                    accountW.getPrivateKey(), this.tokenVersion, accountId, authAccount, account, nonce1, deadline);
+
+                expectEvent(await this.Metaverse.removeAuthProxyAddrBWO(accountId, authAccount, account, deadline, signature1), 'RemoveAuthProxyBWO', {
+                    id: accountId,
+                    addr: authAccount,
+                    sender: account
+                });
+
+                expect(await this.Metaverse.authToAddress(authAccount)).to.bignumber.equal(new BN(0));
+
+            });
+
+        });
     });
 });
 
@@ -405,21 +445,21 @@ function signFreezeAccountData(chainId, verifyingContract, name, key, version,
         types: {
             EIP712Domain,
             BWO: [{
-                    name: 'id',
-                    type: 'uint256'
-                },
-                {
-                    name: 'sender',
-                    type: 'address'
-                },
-                {
-                    name: 'nonce',
-                    type: 'uint256'
-                },
-                {
-                    name: 'deadline',
-                    type: 'uint256'
-                },
+                name: 'id',
+                type: 'uint256'
+            },
+            {
+                name: 'sender',
+                type: 'address'
+            },
+            {
+                name: 'nonce',
+                type: 'uint256'
+            },
+            {
+                name: 'deadline',
+                type: 'uint256'
+            },
             ],
         },
         domain: {
@@ -450,29 +490,29 @@ function signChangeAccountData(chainId, verifyingContract, name, key, version,
         types: {
             EIP712Domain,
             BWO: [{
-                    name: 'id',
-                    type: 'uint256'
-                },
-                {
-                    name: 'new',
-                    type: 'address'
-                },
-                {
-                    name: 'isTrustAdmin',
-                    type: 'bool'
-                },
-                {
-                    name: 'sender',
-                    type: 'address'
-                },
-                {
-                    name: 'nonce',
-                    type: 'uint256'
-                },
-                {
-                    name: 'deadline',
-                    type: 'uint256'
-                },
+                name: 'id',
+                type: 'uint256'
+            },
+            {
+                name: 'new',
+                type: 'address'
+            },
+            {
+                name: 'isTrustAdmin',
+                type: 'bool'
+            },
+            {
+                name: 'sender',
+                type: 'address'
+            },
+            {
+                name: 'nonce',
+                type: 'uint256'
+            },
+            {
+                name: 'deadline',
+                type: 'uint256'
+            },
             ],
         },
         domain: {
@@ -498,3 +538,102 @@ function signChangeAccountData(chainId, verifyingContract, name, key, version,
 
     return signature;
 }
+
+function signAddAuthProxyAddrBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
+    const data = {
+        types: {
+            EIP712Domain,
+            BWO: [{
+                name: 'id',
+                type: 'uint256'
+            },
+            {
+                name: 'addr',
+                type: 'address'
+            },
+            {
+                name: 'sender',
+                type: 'address'
+            },
+            {
+                name: 'nonce',
+                type: 'uint256'
+            },
+            {
+                name: 'deadline',
+                type: 'uint256'
+            },
+            ],
+        },
+        domain: {
+            name,
+            version,
+            chainId,
+            verifyingContract
+        },
+        primaryType: 'BWO',
+        message: {
+            id,
+            addr,
+            sender,
+            nonce,
+            deadline
+        },
+    };
+
+    const signature = ethSigUtil.signTypedMessage(key, {
+        data
+    });
+
+    return signature;
+}
+
+function signRemoveAuthProxyAddrBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
+    const data = {
+        types: {
+            EIP712Domain,
+            BWO: [{
+                name: 'id',
+                type: 'uint256'
+            },
+            {
+                name: 'addr',
+                type: 'address'
+            },
+            {
+                name: 'sender',
+                type: 'address'
+            },
+            {
+                name: 'nonce',
+                type: 'uint256'
+            },
+            {
+                name: 'deadline',
+                type: 'uint256'
+            },
+            ],
+        },
+        domain: {
+            name,
+            version,
+            chainId,
+            verifyingContract
+        },
+        primaryType: 'BWO',
+        message: {
+            id,
+            addr,
+            sender,
+            nonce,
+            deadline
+        },
+    };
+
+    const signature = ethSigUtil.signTypedMessage(key, {
+        data
+    });
+
+    return signature;
+}
+

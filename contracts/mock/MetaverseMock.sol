@@ -45,13 +45,13 @@ contract MetaverseMock is Ownable, EIP712 {
     event FreezeAccount(uint256 indexed id);
     event FreezeAccountBWO(uint256 indexed id, uint256 nonce);
     event UnFreezeAccount(uint256 indexed id);
-    event addAuthProxyBWO(
+    event AddAuthProxyBWO(
         uint256 indexed id,
         address indexed addr,
         address indexed sender,
         uint256 nonce
     );
-    event removeAuthProxyBWO(
+    event RemoveAuthProxyBWO(
         uint256 indexed id,
         address indexed addr,
         address indexed sender,
@@ -355,8 +355,9 @@ contract MetaverseMock is Ownable, EIP712 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(address addr,address sender,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"
                         ),
+                        id,
                         addr,
                         sender,
                         nonce,
@@ -368,7 +369,7 @@ contract MetaverseMock is Ownable, EIP712 {
         );
 
         metaStorage.addAuthProxies(id, addr);
-        emit addAuthProxyBWO(id, addr, sender, metaStorage.nonces(sender));
+        emit AddAuthProxyBWO(id, addr, sender, metaStorage.nonces(sender));
     }
 
     function removeAuthProxyAddrBWO(
@@ -392,8 +393,9 @@ contract MetaverseMock is Ownable, EIP712 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(address addr,address sender,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"
                         ),
+                        id,
                         addr,
                         sender,
                         nonce,
@@ -404,7 +406,7 @@ contract MetaverseMock is Ownable, EIP712 {
             signature
         );
         metaStorage.deleteAuthProxies(id, addr);
-        emit removeAuthProxyBWO(id, addr, sender, metaStorage.nonces(sender));
+        emit RemoveAuthProxyBWO(id, addr, sender, metaStorage.nonces(sender));
     }
 
     function isFreeze(uint256 _id) public view returns (bool) {
@@ -447,12 +449,16 @@ contract MetaverseMock is Ownable, EIP712 {
         return metaStorage.nonces(account);
     }
 
+    function authToAddress(address _address) public view returns (uint256) {
+        return metaStorage.authToAddress(_address);
+    }
+
     // for test
     function getChainId() external view returns (uint256) {
         return block.chainid;
     }
 
-    function checkAddressIsUsed(address _address) internal view {
+    function checkAddressIsUsed(address _address) public view {
         require(
             getIdByAddress(_address) == 0,
             "Metaverse: new address has been used"
