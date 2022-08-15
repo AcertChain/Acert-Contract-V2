@@ -11,6 +11,10 @@ const {
   shouldBehaveLikeItem721BWO,
 } = require('./Item721BWO.behavior');
 
+const {
+  shouldBehaveLikeItem721ProxyBWO,
+} = require('./Item721BWO.proxy');
+
 const Item721 = artifacts.require('Item721Mock');
 const World = artifacts.require('WorldMock');
 const WorldStorage = artifacts.require('WorldStorage');
@@ -53,4 +57,5 @@ contract('Item721', function (accounts) {
   shouldBehaveLikeItem721('Item', ...accounts);
   shouldBehaveLikeERC721('Item', ...accounts);
   shouldBehaveLikeERC721Metadata('Item', name, symbol, ...accounts);
+  shouldBehaveLikeItem721ProxyBWO();
 });

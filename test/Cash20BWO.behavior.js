@@ -164,6 +164,7 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
       },
     );
   });
+
 }
 
 function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balance, key, transfer) {
@@ -483,8 +484,6 @@ function signTransferData(chainId, verifyingContract, name, key, version,
 
   return signature;
 }
-
-
 
 module.exports = {
   shouldBehaveLikeCash20BWO,
