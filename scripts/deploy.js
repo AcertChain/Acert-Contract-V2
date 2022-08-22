@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 const dotenv = require('dotenv');
-const {saveToJSON} = require("./utils");
+const { saveToJSON } = require("./utils");
 
 
 dotenv.config();
@@ -23,18 +23,30 @@ const cash20Symbol = "GGM";
 
 const item721Name = "MOGA";
 const item721Symbol = "MOGA";
-const item721URI = "https://moga.taobaozx.net/moga/";
+const item721URI = "https://mintinfo.playmonstergalaxy.com/json/moga/";
 
 const item721NameE = "MOGA Equipment";
 const item721SymbolE = "EQPT";
-const item721URIE = "https://moga.taobaozx.net/equipment/";
+const item721URIE = "https://mintinfo.playmonstergalaxy.com/json/equipment/";
+
 
 async function main() {
   // We get the contract to deploy
   const [deployer] = await ethers.getSigners();
+  // deploy Metaverse Storage
+  const MetaverseStorage = (await ethers.getContractFactory("MetaverseStorage")).connect(deployer);
+  const MScontract = await MetaverseStorage.deploy();
+  await MScontract.deployed();
+
+  saveToJSON("MetaverseStorage", {
+    address: MScontract.address,
+    deployer: deployer.address
+  })
+
+
   //deploy Metaverse 
-  const Metaverse = (await ethers.getContractFactory("Metaverse")).connect(deployer);
-  const Mcontract = await Metaverse.deploy("Metaverse", "1.0", 0);
+  const Metaverse = (await ethers.getContractFactory("MetaverseMock")).connect(deployer);
+  const Mcontract = await Metaverse.deploy("Metaverse", "1.0", 0, MScontract.address);
   await Mcontract.deployed();
 
   saveToJSON("Metaverse", {
@@ -42,9 +54,21 @@ async function main() {
     deployer: deployer.address
   })
 
+  await (await MScontract.updateMetaverse(Mcontract.address)).wait();
+
+  //deploy world storage
+  const WorldStorage = (await ethers.getContractFactory("WorldStorage")).connect(deployer);
+  const WScontract = await WorldStorage.deploy();
+  await WScontract.deployed();
+
+  saveToJSON("WorldStorage", {
+    address: WScontract.address,
+    deployer: deployer.address
+  })
+
   //deploy world
-  const World = (await ethers.getContractFactory("World")).connect(deployer);
-  const Wcontract = await World.deploy(Mcontract.address, "World", "1.0");
+  const World = (await ethers.getContractFactory("WorldMock")).connect(deployer);
+  const Wcontract = await World.deploy(Mcontract.address, WScontract.address, "World", "1.0");
   await Wcontract.deployed();
 
   saveToJSON("World", {
@@ -52,8 +76,10 @@ async function main() {
     deployer: deployer.address
   })
 
+
+  await (await WScontract.updateWorld(Wcontract.address)).wait()
   // register world
-  await Mcontract.registerWorld(Wcontract.address, "", "", "", "");
+  await (await Mcontract.registerWorld(Wcontract.address, "", "", "", "")).wait();
 
   //deploy cash20
   const Cash20 = (await ethers.getContractFactory("Cash20Mock")).connect(deployer);

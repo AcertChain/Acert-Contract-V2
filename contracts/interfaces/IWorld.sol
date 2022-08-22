@@ -6,7 +6,7 @@ interface IWorld {
         external
         returns (uint256 id);
 
-    function checkAddress(address _address, uint256 _id)
+    function checkAddress(address _address, uint256 _id,bool proxy)
         external
         view
         returns (bool);

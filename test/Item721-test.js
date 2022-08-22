@@ -11,9 +11,15 @@ const {
   shouldBehaveLikeItem721BWO,
 } = require('./Item721BWO.behavior');
 
+const {
+  shouldBehaveLikeItem721ProxyBWO,
+} = require('./Item721BWO.proxy');
+
 const Item721 = artifacts.require('Item721Mock');
-const World = artifacts.require('World');
-const Metaverse = artifacts.require('Metaverse');
+const World = artifacts.require('WorldMock');
+const WorldStorage = artifacts.require('WorldStorage');
+const Metaverse = artifacts.require('MetaverseMock');
+const MetaverseStorage = artifacts.require('MetaverseStorage');
 
 contract('Item721', function (accounts) {
   const name = 'Non Fungible Token';
@@ -24,8 +30,14 @@ contract('Item721', function (accounts) {
   const [op] = accounts;
 
   beforeEach(async function () {
-    this.Metaverse = await Metaverse.new("metaverse", "1.0", 0);
-    this.world = await World.new(this.Metaverse.address, "world", "1.0");
+    this.MetaverseStorage = await MetaverseStorage.new();
+    this.Metaverse = await Metaverse.new("metaverse", "1.0", 0,this.MetaverseStorage.address);
+    await this.MetaverseStorage.updateMetaverse(this.Metaverse.address);
+
+    this.WorldStorage = await WorldStorage.new();
+    this.world = await World.new(this.Metaverse.address,this.WorldStorage.address, "world", "1.0");
+    await this.WorldStorage.updateWorld(this.world.address);
+
     this.token = await Item721.new(name, symbol, version, "testURI", this.world.address);
     this.chainId = await this.token.getChainId();
     this.tokenName = name;
@@ -45,4 +57,5 @@ contract('Item721', function (accounts) {
   shouldBehaveLikeItem721('Item', ...accounts);
   shouldBehaveLikeERC721('Item', ...accounts);
   shouldBehaveLikeERC721Metadata('Item', name, symbol, ...accounts);
+  shouldBehaveLikeItem721ProxyBWO();
 });

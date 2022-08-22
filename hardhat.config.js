@@ -35,7 +35,17 @@ module.exports = {
     output: 'docs',
     pages: 'files',
   },
-  solidity: "0.8.4",
+  solidity: {
+    compilers: [{
+      version: "0.8.4",
+      // settings: {
+      //   optimizer: {
+      //     enabled: true,
+      //     runs: 20000
+      //   }
+      // },
+    }]
+  },
   networks: {
     test: {
       url: process.env.URL,
