@@ -253,8 +253,23 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
+        approveItemBWOParamsVerify(to, tokenId, sender, deadline, signature);
+        _approve(to, tokenId);
+        emit ApprovalItemBWO(to, tokenId, sender, getNonce(sender));
+        _nonces[sender] += 1;
+    }
+
+    function approveItemBWOParamsVerify(
+        address to,
+        uint256 tokenId,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
         _isBWO(msg.sender);
-        uint256 nonce = _nonces[sender];
+        require(to != sender, "Item: approval to current owner");
+        _checkAddressProxy(sender, ownerOfItem(tokenId));
+        uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
             sender,
@@ -274,11 +289,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             ),
             signature
         );
-        require(to != sender, "Item: approval to current owner");
-        _checkAddressProxy(sender, ownerOfItem(tokenId));
-        _approve(to, tokenId);
-        emit ApprovalItemBWO(to, tokenId, sender, nonce);
-        _nonces[sender] += 1;
+        return true;
     }
 
     function _approve(address to, uint256 tokenId) internal virtual {
@@ -330,9 +341,31 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        _isBWO(msg.sender);
 
-        uint256 nonce = _nonces[sender];
+        setApprovalForAllItemBWOParamsVerify(
+            from,
+            to,
+            approved,
+            sender,
+            deadline,
+            signature
+        );
+        _setApprovalForAllItem(from, to, approved);
+        emit ApprovalForAllItemBWO(from, to, approved, sender, getNonce(sender));
+        _nonces[sender] += 1;
+    }
+
+    function setApprovalForAllItemBWOParamsVerify(
+        uint256 from,
+        address to,
+        bool approved,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
+        _isBWO(msg.sender);
+        _checkAddressProxy(sender, from);
+        uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
             sender,
@@ -353,10 +386,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             ),
             signature
         );
-        _checkAddressProxy(sender, from);
-        _setApprovalForAllItem(from, to, approved);
-        emit ApprovalForAllItemBWO(from, to, approved, sender, nonce);
-        _nonces[sender] += 1;
+        return true;
     }
 
     function _setApprovalForAllItem(
@@ -433,9 +463,30 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        _isBWO(msg.sender);
+        transferFromItemBWOParamsVerify(
+            from,
+            to,
+            tokenId,
+            sender,
+            deadline,
+            signature
+        );
+        _transfer(from, to, tokenId);
+        emit TransferItemBWO(from, to, tokenId, sender, getNonce(sender));
+        _nonces[sender] += 1;
+    }
 
-        uint256 nonce = _nonces[sender];
+    function transferFromItemBWOParamsVerify(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
+        _isBWO(msg.sender);
+        _checkAddressProxy(sender, from);
+        uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
             sender,
@@ -456,11 +507,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             ),
             signature
         );
-
-        _checkAddressProxy(sender, from);
-        _transfer(from, to, tokenId);
-        emit TransferItemBWO(from, to, tokenId, sender, nonce);
-        _nonces[sender] += 1;
+        return true;
     }
 
     function _transfer(
@@ -537,8 +584,32 @@ contract Item721 is EIP712, ERC165, IItem721 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
+        safeTransferFromItemBWOParamsVerify(
+            from,
+            to,
+            tokenId,
+            data,
+            sender,
+            deadline,
+            signature
+        );
+        _safeTransfer(from, to, tokenId, data);
+        emit TransferItemBWO(from, to, tokenId, sender, getNonce(sender));
+        _nonces[sender] += 1;
+    }
+
+    function safeTransferFromItemBWOParamsVerify(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        bytes memory data,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
         _isBWO(msg.sender);
-        uint256 nonce = _nonces[sender];
+        _checkAddressProxy(sender, from);
+        uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
             sender,
@@ -560,11 +631,7 @@ contract Item721 is EIP712, ERC165, IItem721 {
             ),
             signature
         );
-
-        _checkAddressProxy(sender, from);
-        _safeTransfer(from, to, tokenId, data);
-        emit TransferItemBWO(from, to, tokenId, sender, nonce);
-        _nonces[sender] += 1;
+        return true;
     }
 
     function _safeTransfer(

@@ -205,6 +205,19 @@ contract WorldMock is IWorld, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public returns (uint256) {
+        trustContractBWOParamsVerify(_contract, sender, deadline, signature);
+        uint256 accountId = _trustContract(sender, _contract);
+        emit TrustContractBWO(accountId, _contract, sender, getNonce(sender));
+        worldStorage.IncrementNonce(sender);
+        return accountId;
+    }
+
+    function trustContractBWOParamsVerify(
+        address _contract,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
         require(isBWO(msg.sender), "World: sender is not BWO");
         uint256 nonce = getNonce(sender);
         _recoverSig(
@@ -225,11 +238,7 @@ contract WorldMock is IWorld, Ownable, EIP712 {
             ),
             signature
         );
-
-        uint256 accountId = _trustContract(sender, _contract);
-        emit TrustContractBWO(accountId, _contract, sender, nonce);
-        worldStorage.IncrementNonce(sender);
-        return accountId;
+        return true;
     }
 
     function _trustContract(address _address, address _contract)
@@ -256,6 +265,26 @@ contract WorldMock is IWorld, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
+        untrustContractBWOParamsVerify(
+            _id,
+            _contract,
+            sender,
+            deadline,
+            signature
+        );
+
+        _untrustContract(_id, _contract);
+        emit UntrustContractBWO(_id, _contract, sender, getNonce(sender));
+        worldStorage.IncrementNonce(sender);
+    }
+
+    function untrustContractBWOParamsVerify(
+        uint256 _id,
+        address _contract,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
         require(isBWO(msg.sender), "World: sender is not BWO");
         require(
             getAddressById(_id) == sender,
@@ -281,10 +310,7 @@ contract WorldMock is IWorld, Ownable, EIP712 {
             ),
             signature
         );
-
-        _untrustContract(_id, _contract);
-        emit UntrustContractBWO(_id, _contract, sender, nonce);
-        worldStorage.IncrementNonce(sender);
+        return true;
     }
 
     function _untrustContract(uint256 _id, address _contract) private {
@@ -301,8 +327,19 @@ contract WorldMock is IWorld, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public returns (uint256) {
-        require(isBWO(msg.sender), "World: sender is not BWO");
+        trustWorldBWOParamsVerify(sender, deadline, signature);
+        uint256 accountId = _trustWorld(sender);
+        emit TrustWorldBWO(accountId, sender, getNonce(sender));
+        worldStorage.IncrementNonce(sender);
+        return accountId;
+    }
 
+    function trustWorldBWOParamsVerify(
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
+        require(isBWO(msg.sender), "World: sender is not BWO");
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -321,10 +358,7 @@ contract WorldMock is IWorld, Ownable, EIP712 {
             ),
             signature
         );
-        uint256 accountId = _trustWorld(sender);
-        emit TrustWorldBWO(accountId, sender, nonce);
-        worldStorage.IncrementNonce(sender);
-        return accountId;
+        return true;
     }
 
     function _trustWorld(address _address) private returns (uint256) {
@@ -349,6 +383,18 @@ contract WorldMock is IWorld, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
+        untrustWorldBWOParamsVerify(_id, sender, deadline, signature);
+        _untrustWorld(_id);
+        emit UntrustWorldBWO(_id, sender, getNonce(sender));
+        worldStorage.IncrementNonce(sender);
+    }
+
+    function untrustWorldBWOParamsVerify(
+        uint256 _id,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
         require(isBWO(msg.sender), "World: sender is not BWO");
         require(
             getAddressById(_id) == sender,
@@ -373,9 +419,7 @@ contract WorldMock is IWorld, Ownable, EIP712 {
             ),
             signature
         );
-        _untrustWorld(_id);
-        emit UntrustWorldBWO(_id, sender, nonce);
-        worldStorage.IncrementNonce(sender);
+        return true;
     }
 
     function _untrustWorld(uint256 _id) private {

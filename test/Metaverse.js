@@ -420,7 +420,7 @@ contract('Metaverse', function (accounts) {
 
 
                 const nonce1 = await this.Metaverse.getNonce(account);
-                const signature1 = removeAuthProxyAddrBWO(this.chainId, this.Metaverse.address, this.tokenName,
+                const signature1 = signRemoveAuthProxyAddrBWO (this.chainId, this.Metaverse.address, this.tokenName,
                     accountW.getPrivateKey(), this.tokenVersion, accountId, authAccount, account, nonce1, deadline);
 
                 expectEvent(await this.Metaverse.removeAuthProxyAddrBWO(accountId, authAccount, account, deadline, signature1), 'RemoveAuthProxyBWO', {

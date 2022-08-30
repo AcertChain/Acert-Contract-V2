@@ -163,10 +163,32 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
+        transferCashBWOParamsVerify(
+            from,
+            to,
+            amount,
+            sender,
+            deadline,
+            signature
+        );
+        _transferCash(from, to, amount);
+        emit TransferCashBWO(from, to, amount, sender, _nonces[sender]);
+        _nonces[sender] += 1;
+        return true;
+    }
+
+    function transferCashBWOParamsVerify(
+        uint256 from,
+        uint256 to,
+        uint256 amount,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
+        require(_isBWO(_msgSender()), "Cash: must be the world BWO");
         require(sender != address(0), "Cash: sender is the zero address");
         require(from != 0, "Cash: from is the zero Id");
         require(to != 0, "Cash: transfer to the zero Id");
-        require(_isBWO(_msgSender()), "Cash: must be the world BWO");
         require(_checkAddressProxy(sender, from), "Cash: not owner");
         uint256 nonce = _nonces[sender];
         _recoverSig(
@@ -189,9 +211,6 @@ contract Cash20 is Context, EIP712, ICash20 {
             ),
             signature
         );
-        _transferCash(from, to, amount);
-        emit TransferCashBWO(from, to, amount, sender, nonce);
-        _nonces[sender] += 1;
         return true;
     }
 
@@ -312,8 +331,30 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
-        require(spender != address(0), "Cash: approve to the zero address");
+        approveCashBWOParamsVerify(
+            ownerId,
+            spender,
+            amount,
+            sender,
+            deadline,
+            signature
+        );
+        _approveId(ownerId, spender, amount);
+        emit ApprovalCashBWO(ownerId, spender, amount, sender, _nonces[sender]);
+        _nonces[sender] += 1;
+        return true;
+    }
+
+    function approveCashBWOParamsVerify(
+        uint256 ownerId,
+        address spender,
+        uint256 amount,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
         require(_isBWO(_msgSender()), "Cash: must be the world BWO");
+        require(spender != address(0), "Cash: approve to the zero address");
         require(_checkAddressProxy(sender, ownerId), "Cash: not owner");
         uint256 nonce = _nonces[sender];
         _recoverSig(
@@ -336,10 +377,6 @@ contract Cash20 is Context, EIP712, ICash20 {
             ),
             signature
         );
-
-        _approveId(ownerId, spender, amount);
-        emit ApprovalCashBWO(ownerId, spender, amount, sender, nonce);
-        _nonces[sender] += 1;
         return true;
     }
 
