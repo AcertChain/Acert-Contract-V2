@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "../common/Ownable.sol";
-import "./WorldMock.sol";
+import "./MogaWorld.sol";
 import "../storage/MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract MetaverseMock is Ownable, EIP712 {
+contract MogaMetaverse is Ownable, EIP712 {
     event RegisterWorld(
         address indexed world,
         string name,
@@ -85,7 +85,7 @@ contract MetaverseMock is Ownable, EIP712 {
         checkAddressIsNotZero(_world);
         require(containsWorld(_world) == false, "Metaverse: world is exist");
         require(
-            WorldMock(_world).getMetaverse() == address(this),
+            MogaWorld(_world).getMetaverse() == address(this),
             "Metaverse: metaverse is not match"
         );
         metaStorage.add(_world);

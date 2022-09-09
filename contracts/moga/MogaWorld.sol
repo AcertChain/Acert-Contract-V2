@@ -6,14 +6,14 @@ import "../interfaces/IWorld.sol";
 import "../interfaces/IWorldAsset.sol";
 import "../interfaces/IItem721.sol";
 import "../interfaces/ICash20.sol";
-import "./MetaverseMock.sol";
+import "./MogaMetaverse.sol";
 import "../storage/WorldStorage.sol";
 import "../common/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract WorldMock is IWorld, Ownable, EIP712 {
+contract MogaWorld is IWorld, Ownable, EIP712 {
     // event 注册Asset
     event RegisterAsset(
         address indexed asset,
@@ -59,7 +59,7 @@ contract WorldMock is IWorld, Ownable, EIP712 {
     // Mapping from address to operator
     mapping(address => bool) public isOperator;
 
-    MetaverseMock public metaverse;
+    MogaMetaverse public metaverse;
 
     WorldStorage public worldStorage;
 
@@ -70,7 +70,7 @@ contract WorldMock is IWorld, Ownable, EIP712 {
         string memory name_,
         string memory version_
     ) EIP712(name_, version_) {
-        metaverse = MetaverseMock(metaverse_);
+        metaverse = MogaMetaverse(metaverse_);
         _owner = msg.sender;
         worldStorage = WorldStorage(worldStorage_);
     }

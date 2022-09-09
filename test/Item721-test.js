@@ -16,9 +16,9 @@ const {
 } = require('./Item721BWO.proxy');
 
 const Item721 = artifacts.require('Item721Mock');
-const World = artifacts.require('WorldMock');
+const World = artifacts.require('MogaWorld');
 const WorldStorage = artifacts.require('WorldStorage');
-const Metaverse = artifacts.require('MetaverseMock');
+const Metaverse = artifacts.require('MogaMetaverse');
 const MetaverseStorage = artifacts.require('MetaverseStorage');
 
 contract('Item721', function (accounts) {

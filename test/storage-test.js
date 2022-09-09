@@ -11,9 +11,9 @@ const {
 
 const Cash20 = artifacts.require('Cash20Mock');
 const Item721 = artifacts.require('Item721Mock');
-const World = artifacts.require('WorldMock');
+const World = artifacts.require('MogaWorld');
 const WorldStorage = artifacts.require('WorldStorage');
-const Metaverse = artifacts.require('MetaverseMock');
+const Metaverse = artifacts.require('MogaMetaverse');
 const MetaverseStorage = artifacts.require('MetaverseStorage');
 
 contract('World', function (accounts) {

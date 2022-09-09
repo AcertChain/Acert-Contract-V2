@@ -45,7 +45,7 @@ async function main() {
 
 
   //deploy Metaverse 
-  const Metaverse = (await ethers.getContractFactory("MetaverseMock")).connect(deployer);
+  const Metaverse = (await ethers.getContractFactory("MogaMetaverse")).connect(deployer);
   const Mcontract = await Metaverse.deploy("Metaverse", "1.0", 0, MScontract.address);
   await Mcontract.deployed();
 
@@ -67,7 +67,7 @@ async function main() {
   })
 
   //deploy world
-  const World = (await ethers.getContractFactory("WorldMock")).connect(deployer);
+  const World = (await ethers.getContractFactory("MogaWorld")).connect(deployer);
   const Wcontract = await World.deploy(Mcontract.address, WScontract.address, "World", "1.0");
   await Wcontract.deployed();
 
