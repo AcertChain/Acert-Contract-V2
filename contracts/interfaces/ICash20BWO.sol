@@ -5,7 +5,7 @@ interface ICash20BWO {
     event TransferCashBWO(
         uint256 indexed from,
         uint256 indexed to,
-        uint256 amount,
+        uint256 value,
         address indexed sender,
         uint256 nonce
     );
