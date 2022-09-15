@@ -31,12 +31,12 @@ contract MogaMetaverse is Ownable, EIP712 {
         address indexed accountAddress,
         bool isTrustAdmin
     );
-    event UpdateAccount(
+    event ChangeAccount(
         uint256 indexed id,
         address indexed newAddress,
         bool isTrustAdmin
     );
-    event UpdateAccountBWO(
+    event ChangeAccountBWO(
         uint256 indexed id,
         address indexed newAddress,
         bool isTrustAdmin,
@@ -240,7 +240,7 @@ contract MogaMetaverse is Ownable, EIP712 {
             signature
         );
         _changeAccount(_id, _newAddress, _isTrustAdmin);
-        emit UpdateAccountBWO(
+        emit ChangeAccountBWO(
             _id,
             _newAddress,
             _isTrustAdmin,
@@ -299,7 +299,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         }
         account.isTrustAdmin = _isTrustAdmin;
         metaStorage.addAccount(account);
-        emit UpdateAccount(_id, _newAddress, _isTrustAdmin);
+        emit ChangeAccount(_id, _newAddress, _isTrustAdmin);
     }
 
     function freezeAccount(uint256 _id) public {
