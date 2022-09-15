@@ -104,10 +104,10 @@ function shouldBehaveLikeItem721ProxyBWO() {
       // add proxy
 
       const nonce = await this.Metaverse.getNonce(owner);
-      const signature = signAddAuthProxyAddrBWO(this.chainId, this.Metaverse.address, "metaverse", 
+      const signature = signaddAuthAddressBWO(this.chainId, this.Metaverse.address, "metaverse", 
       ownerW.getPrivateKey(), "1.0", ownerId, authAccount, owner, nonce, deadline);
 
-      await this.Metaverse.addAuthProxyAddrBWO(ownerId, authAccount, owner, deadline, signature)
+      await this.Metaverse.addAuthAddressBWO(ownerId, authAccount, owner, deadline, signature)
 
     });
 
@@ -1155,7 +1155,7 @@ function signSafeTrasferData(chainId, verifyingContract, name, key, version, fro
   return signature;
 }
 
-function signAddAuthProxyAddrBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
+function signaddAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
   const data = {
     types: {
       EIP712Domain,

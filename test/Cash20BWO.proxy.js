@@ -52,10 +52,10 @@ function shouldBehaveLikeCash20ProxyBWO(errorPrefix, initialSupply, initialHolde
       this.authAccount = this.accountW.getChecksumAddressString();
 
       const nonce = await this.Metaverse.getNonce(initialHolder);
-      const signature = signAddAuthProxyAddrBWO(this.chainId, this.Metaverse.address, "metaverse", 
+      const signature = signaddAuthAddressBWO(this.chainId, this.Metaverse.address, "metaverse", 
         BWOKey, "1.0", initialHolderId, this.authAccount, initialHolder, nonce, deadline);
 
-      await this.Metaverse.addAuthProxyAddrBWO(initialHolderId, this.authAccount, initialHolder, deadline, signature)
+      await this.Metaverse.addAuthAddressBWO(initialHolderId, this.authAccount, initialHolder, deadline, signature)
     });
 
     it('approveCashBWO proxy', async function () {
@@ -205,7 +205,7 @@ function signTransferData(chainId, verifyingContract, name, key, version,
   return signature;
 }
 
-function signAddAuthProxyAddrBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
+function signaddAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
   const data = {
     types: {
       EIP712Domain,
@@ -254,7 +254,7 @@ function signAddAuthProxyAddrBWO(chainId, verifyingContract, name, key, version,
   return signature;
 }
 
-function signRemoveAuthProxyAddrBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
+function signremoveAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
   const data = {
     types: {
       EIP712Domain,

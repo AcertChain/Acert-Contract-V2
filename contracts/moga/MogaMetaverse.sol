@@ -28,7 +28,7 @@ contract MogaMetaverse is Ownable, EIP712 {
     event RemoveOperator(address indexed operator);
     event CreateAccount(
         uint256 indexed id,
-        address indexed authAddress,
+        address indexed accountAddress,
         bool isTrustAdmin
     );
     event UpdateAccount(
@@ -47,13 +47,13 @@ contract MogaMetaverse is Ownable, EIP712 {
     event UnFreezeAccount(uint256 indexed id);
     event AddAuthProxyBWO(
         uint256 indexed id,
-        address indexed addr,
+        address indexed authAddress,
         address indexed sender,
         uint256 nonce
     );
     event RemoveAuthProxyBWO(
         uint256 indexed id,
-        address indexed addr,
+        address indexed authAddress,
         address indexed sender,
         uint256 nonce
     );
@@ -258,9 +258,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         bytes memory signature
     ) public view returns (bool) {
         checkBWO(msg.sender);
-        MetaverseStorage.Account memory account = getAccountInfo(_id);
-        require(account.isExist == true, "Metaverse: account is not exist");
-        require(account.addr == sender, "Metaverse: sender not owner");
+        checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -335,9 +333,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         bytes memory signature
     ) public view returns (bool) {
         checkBWO(msg.sender);
-        MetaverseStorage.Account memory account = getAccountInfo(_id);
-        require(account.isExist == true, "Metaverse: account is not exist");
-        require(account.addr == sender, "Metaverse: sender not owner");
+        checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -368,20 +364,20 @@ contract MogaMetaverse is Ownable, EIP712 {
         emit UnFreezeAccount(_id);
     }
 
-    function addAuthProxyAddrBWO(
+    function addAuthAddressBWO(
         uint256 id,
         address addr,
         address sender,
         uint256 deadline,
         bytes memory signature
     ) public {
-        addAuthProxyAddrBWOParamsVerfiy(id, addr, sender, deadline, signature);
-
+        addAuthAddressBWOParamsVerfiy(id, addr, sender, deadline, signature);
         metaStorage.addAuthProxies(id, addr);
+
         emit AddAuthProxyBWO(id, addr, sender, getNonce(sender));
     }
 
-    function addAuthProxyAddrBWOParamsVerfiy(
+    function addAuthAddressBWOParamsVerfiy(
         uint256 id,
         address addr,
         address sender,
@@ -390,6 +386,10 @@ contract MogaMetaverse is Ownable, EIP712 {
     ) public view returns (bool) {
         checkBWO(msg.sender);
         checkAddressIsUsed(addr);
+        require(
+            checkAddress(sender, id, true),
+            "Metaverse: sender is not owner or auth"
+        );
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -413,26 +413,20 @@ contract MogaMetaverse is Ownable, EIP712 {
         return true;
     }
 
-    function removeAuthProxyAddrBWO(
+    function removeAuthAddressBWO(
         uint256 id,
         address addr,
         address sender,
         uint256 deadline,
         bytes memory signature
     ) public {
-        removeAuthProxyAddrBWOParamsVerify(
-            id,
-            addr,
-            sender,
-            deadline,
-            signature
-        );
+        removeAuthAddressBWOParamsVerify(id, addr, sender, deadline, signature);
 
         metaStorage.deleteAuthProxies(id, addr);
         emit RemoveAuthProxyBWO(id, addr, sender, getNonce(sender));
     }
 
-    function removeAuthProxyAddrBWOParamsVerify(
+    function removeAuthAddressBWOParamsVerify(
         uint256 id,
         address addr,
         address sender,
@@ -440,6 +434,10 @@ contract MogaMetaverse is Ownable, EIP712 {
         bytes memory signature
     ) public view returns (bool) {
         checkBWO(msg.sender);
+        require(
+            checkAddress(sender, id, true),
+            "Metaverse: sender is not owner or auth"
+        );
         require(authToAddress(addr) == id, "Metaverse: auth proxy not exist");
         uint256 nonce = metaStorage.nonces(sender);
         _recoverSig(
@@ -532,6 +530,12 @@ contract MogaMetaverse is Ownable, EIP712 {
 
     function checkBWO(address addr) internal view {
         require(isBWO(addr), "Metaverse: address is not BWO");
+    }
+
+    function checkSender(uint256 accountId, address sender) internal view {
+        MetaverseStorage.Account memory account = getAccountInfo(accountId);
+        require(account.isExist == true, "Metaverse: account is not exist");
+        require(account.addr == sender, "Metaverse: sender not owner");
     }
 
     function _recoverSig(

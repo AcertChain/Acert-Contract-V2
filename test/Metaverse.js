@@ -397,7 +397,7 @@ contract('Metaverse', function (accounts) {
 
         });
 
-        describe('addAuthProxyAddrBWO and signRemoveAuthProxyAddrBWO', function () {
+        describe('addAuthAddressBWO and signremoveAuthAddressBWO', function () {
             it('return event', async function () {
                 const accountW = Wallet.generate();
                 const account = accountW.getChecksumAddressString();
@@ -407,10 +407,10 @@ contract('Metaverse', function (accounts) {
 
 
                 const nonce = await this.Metaverse.getNonce(account);
-                const signature = signAddAuthProxyAddrBWO(this.chainId, this.Metaverse.address, this.tokenName,
+                const signature = signaddAuthAddressBWO(this.chainId, this.Metaverse.address, this.tokenName,
                     accountW.getPrivateKey(), this.tokenVersion, accountId, authAccount, account, nonce, deadline);
 
-                expectEvent(await this.Metaverse.addAuthProxyAddrBWO(accountId, authAccount, account, deadline, signature), 'AddAuthProxyBWO', {
+                expectEvent(await this.Metaverse.addAuthAddressBWO(accountId, authAccount, account, deadline, signature), 'AddAuthProxyBWO', {
                     id: accountId,
                     addr: authAccount,
                     sender: account
@@ -420,10 +420,10 @@ contract('Metaverse', function (accounts) {
 
 
                 const nonce1 = await this.Metaverse.getNonce(account);
-                const signature1 = signRemoveAuthProxyAddrBWO (this.chainId, this.Metaverse.address, this.tokenName,
+                const signature1 = signremoveAuthAddressBWO (this.chainId, this.Metaverse.address, this.tokenName,
                     accountW.getPrivateKey(), this.tokenVersion, accountId, authAccount, account, nonce1, deadline);
 
-                expectEvent(await this.Metaverse.removeAuthProxyAddrBWO(accountId, authAccount, account, deadline, signature1), 'RemoveAuthProxyBWO', {
+                expectEvent(await this.Metaverse.removeAuthAddressBWO(accountId, authAccount, account, deadline, signature1), 'RemoveAuthProxyBWO', {
                     id: accountId,
                     addr: authAccount,
                     sender: account
@@ -537,7 +537,7 @@ function signChangeAccountData(chainId, verifyingContract, name, key, version,
     return signature;
 }
 
-function signAddAuthProxyAddrBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
+function signaddAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
     const data = {
         types: {
             EIP712Domain,
@@ -586,7 +586,7 @@ function signAddAuthProxyAddrBWO(chainId, verifyingContract, name, key, version,
     return signature;
 }
 
-function signRemoveAuthProxyAddrBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
+function signremoveAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
     const data = {
         types: {
             EIP712Domain,
