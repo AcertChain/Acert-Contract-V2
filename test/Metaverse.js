@@ -40,7 +40,7 @@ const {
     ZERO_ADDRESS
 } = constants;
 
-const World = artifacts.require('MogaWorld');
+const World = artifacts.require('MonsterGalaxy');
 const WorldStorage = artifacts.require('WorldStorage');
 const Metaverse = artifacts.require('MogaMetaverse');
 const MetaverseStorage = artifacts.require('MetaverseStorage');
@@ -222,7 +222,7 @@ contract('Metaverse', function (accounts) {
                     const [account] = accounts;
                     expectEvent(await this.Metaverse.getOrCreateAccountId(account), 'CreateAccount', {
                         id: new BN(await this.Metaverse.getIdByAddress(account)),
-                        authAddress: account,
+                        accountAddress: account,
                         isTrustAdmin: false
                     });
                 });
@@ -299,7 +299,7 @@ contract('Metaverse', function (accounts) {
                     const accountId = new BN(await this.Metaverse.getIdByAddress(account));
                     expectEvent(await this.Metaverse.changeAccount(accountId, newAccount, true, {
                         from: account
-                    }), 'UpdateAccount', {
+                    }), 'ChangeAccount', {
                         id: accountId,
                         newAddress: newAccount,
                         isTrustAdmin: true
@@ -321,7 +321,7 @@ contract('Metaverse', function (accounts) {
 
                     expectEvent(await this.Metaverse.changeAccountBWO(accountId, newAccount, true, account, deadline, signature, {
                         from: operator
-                    }), 'UpdateAccountBWO', {
+                    }), 'ChangeAccountBWO', {
                         id: accountId,
                         newAddress: newAccount,
                         isTrustAdmin: true
@@ -410,9 +410,9 @@ contract('Metaverse', function (accounts) {
                 const signature = signaddAuthAddressBWO(this.chainId, this.Metaverse.address, this.tokenName,
                     accountW.getPrivateKey(), this.tokenVersion, accountId, authAccount, account, nonce, deadline);
 
-                expectEvent(await this.Metaverse.addAuthAddressBWO(accountId, authAccount, account, deadline, signature), 'AddAuthProxyBWO', {
+                expectEvent(await this.Metaverse.addAuthAddressBWO(accountId, authAccount, account, deadline, signature), 'AddAuthAddressBWO', {
                     id: accountId,
-                    addr: authAccount,
+                    authAddress: authAccount,
                     sender: account
                 });
 
@@ -423,9 +423,9 @@ contract('Metaverse', function (accounts) {
                 const signature1 = signremoveAuthAddressBWO (this.chainId, this.Metaverse.address, this.tokenName,
                     accountW.getPrivateKey(), this.tokenVersion, accountId, authAccount, account, nonce1, deadline);
 
-                expectEvent(await this.Metaverse.removeAuthAddressBWO(accountId, authAccount, account, deadline, signature1), 'RemoveAuthProxyBWO', {
+                expectEvent(await this.Metaverse.removeAuthAddressBWO(accountId, authAccount, account, deadline, signature1), 'RemoveAuthAddressBWO', {
                     id: accountId,
-                    addr: authAccount,
+                    authAddress: authAccount,
                     sender: account
                 });
 

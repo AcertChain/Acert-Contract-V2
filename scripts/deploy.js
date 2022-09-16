@@ -67,7 +67,7 @@ async function main() {
   })
 
   //deploy world
-  const World = (await ethers.getContractFactory("MogaWorld")).connect(deployer);
+  const World = (await ethers.getContractFactory("MonsterGalaxy")).connect(deployer);
   const Wcontract = await World.deploy(Mcontract.address, WScontract.address, "World", "1.0");
   await Wcontract.deployed();
 

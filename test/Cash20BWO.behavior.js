@@ -200,7 +200,7 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balan
           'TransferCashBWO', {
             from,
             to,
-            amount: amount,
+            value: amount,
             sender: web3.utils.toChecksumAddress(spender),
             nonce: nonce,
           },
@@ -229,7 +229,7 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balan
           'TransferCashBWO', {
             from,
             to,
-            amount: amount,
+            value: amount,
             sender: web3.utils.toChecksumAddress(spender),
             nonce: nonce,
           },

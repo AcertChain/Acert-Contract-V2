@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract MogaWorld is IWorld, Ownable, EIP712 {
+contract MonsterGalaxy is IWorld, Ownable, EIP712 {
     // event 注册Asset
     event RegisterAsset(
         address indexed asset,

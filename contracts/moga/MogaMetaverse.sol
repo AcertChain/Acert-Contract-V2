@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "../common/Ownable.sol";
-import "./MogaWorld.sol";
+import "./MonsterGalaxy.sol";
 import "../storage/MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
@@ -45,13 +45,13 @@ contract MogaMetaverse is Ownable, EIP712 {
     event FreezeAccount(uint256 indexed id);
     event FreezeAccountBWO(uint256 indexed id, uint256 nonce);
     event UnFreezeAccount(uint256 indexed id);
-    event AddAuthProxyBWO(
+    event AddAuthAddressBWO(
         uint256 indexed id,
         address indexed authAddress,
         address indexed sender,
         uint256 nonce
     );
-    event RemoveAuthProxyBWO(
+    event RemoveAuthAddressBWO(
         uint256 indexed id,
         address indexed authAddress,
         address indexed sender,
@@ -85,7 +85,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         checkAddressIsNotZero(_world);
         require(containsWorld(_world) == false, "Metaverse: world is exist");
         require(
-            MogaWorld(_world).getMetaverse() == address(this),
+            MonsterGalaxy(_world).getMetaverse() == address(this),
             "Metaverse: metaverse is not match"
         );
         metaStorage.add(_world);
@@ -374,7 +374,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         addAuthAddressBWOParamsVerfiy(id, addr, sender, deadline, signature);
         metaStorage.addAuthProxies(id, addr);
 
-        emit AddAuthProxyBWO(id, addr, sender, getNonce(sender));
+        emit AddAuthAddressBWO(id, addr, sender, getNonce(sender));
     }
 
     function addAuthAddressBWOParamsVerfiy(
@@ -423,7 +423,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         removeAuthAddressBWOParamsVerify(id, addr, sender, deadline, signature);
 
         metaStorage.deleteAuthProxies(id, addr);
-        emit RemoveAuthProxyBWO(id, addr, sender, getNonce(sender));
+        emit RemoveAuthAddressBWO(id, addr, sender, getNonce(sender));
     }
 
     function removeAuthAddressBWOParamsVerify(

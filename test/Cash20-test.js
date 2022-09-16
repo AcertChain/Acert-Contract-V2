@@ -18,7 +18,7 @@ const Wallet = require('ethereumjs-wallet').default;
 
 
 const Cash20 = artifacts.require('Cash20Mock');
-const World = artifacts.require('MogaWorld');
+const World = artifacts.require('MonsterGalaxy');
 const WorldStorage = artifacts.require('WorldStorage');
 const Metaverse = artifacts.require('MogaMetaverse');
 const MetaverseStorage = artifacts.require('MetaverseStorage');
