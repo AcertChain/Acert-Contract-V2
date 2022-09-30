@@ -17,42 +17,37 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
     // event 注册Asset
     event RegisterAsset(
         address indexed asset,
-        string name,
-        string image,
         IWorldAsset.ProtocolEnum protocol
     );
 
-    event UpdateAsset(address indexed asset, string image);
     event DisableAsset(address indexed asset);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
+ 
     event AddSafeContract(address indexed safeContract, string name);
     event RemoveSafeContract(address indexed safeContract);
-    event TrustContract(uint256 indexed id, address indexed safeContract);
-    event UntrustContract(uint256 indexed id, address indexed safeContract);
-    event TrustWorld(uint256 indexed id);
-    event UntrustWorld(uint256 indexed id);
-    event TrustContractBWO(
-        uint256 indexed id,
-        address indexed safeContract,
-        address indexed sender,
+ 
+     event AddTrustContract(
+        uint256 indexed accountId,
+        address indexed Contract,
+        bool isBWO,
+        address indexed Sender,
         uint256 nonce
     );
-    event UntrustContractBWO(
-        uint256 indexed id,
-        address indexed safeContract,
-        address indexed sender,
+ 
+     event RemoveTrustContract(
+        uint256 indexed accountId,
+        address indexed Contract,
+        bool isBWO,
+        address indexed Sender,
         uint256 nonce
     );
 
-    event TrustWorldBWO(
-        uint256 indexed id,
-        address indexed sender,
-        uint256 nonce
-    );
-    event UntrustWorldBWO(
-        uint256 indexed id,
-        address indexed sender,
+     event TrustWorld(
+        uint256 indexed accountId,
+        bool isTrustWorld,
+        bool isBWO,
+        address indexed Sender,
         uint256 nonce
     );
 
@@ -84,107 +79,79 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         _;
     }
 
-    function registerAsset(address _contract, string calldata _image)
+    function registerAsset(address _address)
         public
         onlyOwner
     {
-        require(_contract != address(0), "World: zero address");
+        require(_address != address(0), "World: zero address");
         require(
-            worldStorage.getAsset(_contract).isExist == false,
-            "World: asset is exist"
-        );
-        require(
-            address(this) == IWorldAsset(_contract).worldAddress(),
+            address(this) == IWorldAsset(_address).worldAddress(),
             "World: world address is not match"
         );
-
-        string memory symbol = IWorldAsset(_contract).symbol();
-        IWorldAsset.ProtocolEnum protocol = IWorldAsset(_contract).protocol();
-
-        worldStorage.addAsset(
-            WorldStorage.Asset(true, true, _contract, symbol, _image, protocol)
+        require(
+            worldStorage.getAsset(_address).isExist == false,
+            "World: asset is exist"
         );
 
-        worldStorage.addAssetAddress(_contract);
-        emit RegisterAsset(_contract, symbol, _image, protocol);
+        worldStorage.setAsset(_address);
+        emit RegisterAsset(_address, protocol);
     }
 
-    function updateAsset(address _contract, string calldata _image)
-        public
-        onlyOwner
-    {
-        WorldStorage.Asset memory asset = worldStorage.getAsset(_contract);
-        require(asset.isExist == true, "World: asset is not exist");
-
-        asset.image = _image;
-        worldStorage.addAsset(asset);
-        emit UpdateAsset(_contract, _image);
-    }
-
-    function disableAsset(address _contract) public onlyOwner {
-        WorldStorage.Asset memory asset = worldStorage.getAsset(_contract);
-        require(asset.isExist == true, "World: asset is not exist");
-
-        asset.isEnabled = false;
-        worldStorage.addAsset(asset);
+    function disableAsset(address _address) public onlyOwner {
+        worldStorage.updateAsset(_address, false);
         emit DisableAsset(_contract);
     }
 
-    function getAsset(address _contract)
+    function getAsset(address _address)
         public
         view
         returns (WorldStorage.Asset memory)
     {
-        return worldStorage.getAsset(_contract);
+        return worldStorage.getAsset(_address);
     }
 
-    function addSafeContract(address _contract, string calldata _name)
+    function addSafeContract(address _address, string calldata _name)
         public
         onlyOwner
     {
-        require(_contract != address(0), "World: zero address");
-        worldStorage.addSafeContract(
-            WorldStorage.Contract(true, _contract, _name)
-        );
-        emit AddSafeContract(_contract, _name);
+        require(_address != address(0), "World: zero address");
+        worldStorage.addSafeContract(_address, _name);
+        emit AddSafeContract(_address, _name);
     }
 
-    function removeSafeContract(address _contract) public onlyOwner {
-        WorldStorage.Contract memory safeContract = worldStorage
-            .getSafeContract(_contract);
-        safeContract.isExist = false;
-        worldStorage.addSafeContract(safeContract);
-        emit RemoveSafeContract(_contract);
+    function removeSafeContract(address _address) public onlyOwner {
+        worldStorage.removeSafeContract(_address);
+        emit RemoveSafeContract(_address);
     }
 
-    function isSafeContract(address _contract) public view returns (bool) {
-        return worldStorage.getSafeContract(_contract).isExist;
+    function isSafeContract(address _address) public view returns (bool) {
+        return worldStorage.getSafeContract(_address).isExist;
     }
 
-    function getSafeContract(address _contract)
+    function getSafeContract(address _address)
         public
         view
         returns (WorldStorage.Contract memory)
     {
-        return worldStorage.getSafeContract(_contract);
+        return worldStorage.getSafeContract(_address);
     }
 
-    function addOperator(address _operator) public onlyOwner {
-        require(_operator != address(0), "World: zero address");
-        isOperator[_operator] = true;
-        emit AddOperator(_operator);
+    function addOperator(address _address) public onlyOwner {
+        require(_address != address(0), "World: zero address");
+        isOperator[_address] = true;
+        emit AddOperator(_address);
     }
 
-    function removeOperator(address _operator) public onlyOwner {
-        delete isOperator[_operator];
-        emit RemoveOperator(_operator);
+    function removeOperator(address _address) public onlyOwner {
+        delete _address[_operator];
+        emit RemoveOperator(_address);
     }
 
-    function isBWO(address _addr) public view virtual override returns (bool) {
-        return isOperator[_addr] || _owner == _addr;
+    function checkBWO(address _address) public view virtual override returns (bool) {
+        return isOperator[_addr] || _owner == _address;
     }
 
-    function isBWOByAsset(address _addr)
+    function isBWOByAsset(address _address)
         public
         view
         virtual
@@ -192,33 +159,40 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         onlyAsset
         returns (bool)
     {
-        return isBWO(_addr);
+        return checkBWO(_address);
     }
 
-    function trustContract(address _contract) public returns (uint256) {
-        return _trustContract(msg.sender, _contract);
+    function trustContract(
+        uint256 _id, 
+        address _address, 
+        bool _isTrustContract
+    ) public {
+        checkSender(_id, msg.sender);
+        _trustContract(_id, _address, _isTrustContract, false, msg.sender);
     }
 
     function trustContractBWO(
-        address _contract,
+        uint256 _id,
+        address _address, 
+        bool _isTrustContract,
         address sender,
         uint256 deadline,
         bytes memory signature
-    ) public returns (uint256) {
-        trustContractBWOParamsVerify(_contract, sender, deadline, signature);
-        uint256 accountId = _trustContract(sender, _contract);
-        emit TrustContractBWO(accountId, _contract, sender, getNonce(sender));
-        worldStorage.IncrementNonce(sender);
-        return accountId;
+    ) public {
+        checkBWO(msg.sender);
+        trustContractBWOParamsVerify(_id, _address, _isTrustContract, sender, deadline, signature);
+        _trustContract(_id, _address, _isTrustContract, true, sender);
     }
 
     function trustContractBWOParamsVerify(
-        address _contract,
+        uint256 _id,
+        address _address,
+        bool _isTrustContract,
         address sender,
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
-        require(isBWO(msg.sender), "World: sender is not BWO");
+        checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -229,7 +203,9 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
                         keccak256(
                             "BWO(address contract,address sender,uint256 nonce,uint256 deadline)"
                         ),
-                        _contract,
+                        _id,
+                        _address,
+                        _isTrustContract,
                         sender,
                         nonce,
                         deadline
@@ -241,105 +217,47 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         return true;
     }
 
-    function _trustContract(address _address, address _contract)
-        private
-        returns (uint256 accountId)
-    {
-        accountId = getOrCreateAccountId(_address);
-        worldStorage.trustContractByAccountId(accountId, _contract);
-        emit TrustContract(accountId, _contract);
-    }
-
-    function untrustContract(uint256 _id, address _contract) public {
-        require(
-            getAddressById(_id) == msg.sender,
-            "World: sender not account owner"
-        );
-        _untrustContract(_id, _contract);
-    }
-
-    function untrustContractBWO(
+    function _trustContract(
         uint256 _id,
-        address _contract,
+        address _address,
+        bool _isTrustContract,
+        bool _isBWO,
+        address _sender
+    ) private {
+        accountId = getOrCreateAccountId(_address);
+        worldStorage.setTrustContractByAccountId(_id, _address, _isTrustContract);
+        emit TrustContract(_id, _address, _isTrustContract, _isBWO, _sender, getNonce(_sender));
+        worldStorage.IncrementNonce(_sender);
+    }
+
+    function trustWorld(
+        uint256 _id,
+        bool _isTrustWorld
+    ) public {
+        checkSender(_id, msg.sender);
+        _trustAdmin(_id, _isTrustWorld, false, msg.sender);
+    }
+
+    function trustWorldBWO(
+        uint256 _id,
+        bool _isTrustWorld,
         address sender,
         uint256 deadline,
         bytes memory signature
     ) public {
-        untrustContractBWOParamsVerify(
-            _id,
-            _contract,
-            sender,
-            deadline,
-            signature
-        );
-
-        _untrustContract(_id, _contract);
-        emit UntrustContractBWO(_id, _contract, sender, getNonce(sender));
-        worldStorage.IncrementNonce(sender);
-    }
-
-    function untrustContractBWOParamsVerify(
-        uint256 _id,
-        address _contract,
-        address sender,
-        uint256 deadline,
-        bytes memory signature
-    ) public view returns (bool) {
-        require(isBWO(msg.sender), "World: sender is not BWO");
-        require(
-            getAddressById(_id) == sender,
-            "World: sender not account owner"
-        );
-        uint256 nonce = getNonce(sender);
-        _recoverSig(
-            deadline,
-            sender,
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256(
-                            "BWO(uint256 id,address contract,address sender,uint256 nonce,uint256 deadline)"
-                        ),
-                        _id,
-                        _contract,
-                        sender,
-                        nonce,
-                        deadline
-                    )
-                )
-            ),
-            signature
-        );
-        return true;
-    }
-
-    function _untrustContract(uint256 _id, address _contract) private {
-        worldStorage.untrustContractByAccountId(_id, _contract);
-        emit UntrustContract(_id, _contract);
-    }
-
-    function trustWorld() public returns (uint256) {
-        return _trustWorld(msg.sender);
-    }
-
-    function trustWorldBWO(
-        address sender,
-        uint256 deadline,
-        bytes memory signature
-    ) public returns (uint256) {
-        trustWorldBWOParamsVerify(sender, deadline, signature);
-        uint256 accountId = _trustWorld(sender);
-        emit TrustWorldBWO(accountId, sender, getNonce(sender));
-        worldStorage.IncrementNonce(sender);
-        return accountId;
+        checkBWO(msg.sender);
+        trustWorldBWOParamsVerify(_id, _isTrustWorld, sender, deadline, signature);
+        _trustWorld(_id, _isTrustWorld, true, sender);
     }
 
     function trustWorldBWOParamsVerify(
+        uint256 _id,
+        bool _isTrustWorld,
         address sender,
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
-        require(isBWO(msg.sender), "World: sender is not BWO");
+        checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -350,67 +268,8 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
                         keccak256(
                             "BWO(address sender,uint256 nonce,uint256 deadline)"
                         ),
-                        sender,
-                        nonce,
-                        deadline
-                    )
-                )
-            ),
-            signature
-        );
-        return true;
-    }
-
-    function _trustWorld(address _address) private returns (uint256) {
-        uint256 accountId = getOrCreateAccountId(_address);
-
-        worldStorage.trustWorld(accountId);
-        emit TrustWorld(accountId);
-        return accountId;
-    }
-
-    function untrustWorld(uint256 _id) public {
-        require(
-            getAddressById(_id) == msg.sender,
-            "World: sender not account owner"
-        );
-        _untrustWorld(_id);
-    }
-
-    function untrustWorldBWO(
-        uint256 _id,
-        address sender,
-        uint256 deadline,
-        bytes memory signature
-    ) public {
-        untrustWorldBWOParamsVerify(_id, sender, deadline, signature);
-        _untrustWorld(_id);
-        emit UntrustWorldBWO(_id, sender, getNonce(sender));
-        worldStorage.IncrementNonce(sender);
-    }
-
-    function untrustWorldBWOParamsVerify(
-        uint256 _id,
-        address sender,
-        uint256 deadline,
-        bytes memory signature
-    ) public view returns (bool) {
-        require(isBWO(msg.sender), "World: sender is not BWO");
-        require(
-            getAddressById(_id) == sender,
-            "World: sender not account owner"
-        );
-        uint256 nonce = getNonce(sender);
-        _recoverSig(
-            deadline,
-            sender,
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256(
-                            "BWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"
-                        ),
                         _id,
+                        _isTrustWorld,
                         sender,
                         nonce,
                         deadline
@@ -422,16 +281,23 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         return true;
     }
 
-    function _untrustWorld(uint256 _id) private {
-        worldStorage.untrustWorld(_id);
-        emit UntrustWorld(_id);
+    function _trustWorld(
+        uint256 _id,
+        bool _isTrustWorld,
+        bool _isBWO,
+        address _sender
+    ) private {
+
+        worldStorage.setTrustWorld(_id, _isTrustWorld);
+        emit TrustWorld(_id, _address, _isTrustWorld, _isBWO, _sender, getNonce(_sender));
+        worldStorage.IncrementNonce(_sender);
     }
 
     function isTrustWorld(uint256 _id) public view returns (bool _isTrust) {
         return worldStorage.isTrustWorld(_id);
     }
 
-    function isTrust(address _contract, uint256 _id)
+    function isTrust(address _address, uint256 _id)
         public
         view
         virtual
@@ -439,21 +305,21 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         returns (bool _isTrust)
     {
         return
-            (isSafeContract(_contract) && isTrustWorld(_id)) ||
-            isTrustContract(_contract, _id);
+            (isSafeContract(_address) && isTrustWorld(_id)) ||
+            isTrustContract(_address, _id);
     }
 
-    function isTrustContract(address _contract, uint256 _id)
+    function isTrustContract(address _address, uint256 _id)
         public
         view
         virtual
         override
         returns (bool _isTrust)
     {
-        return worldStorage.isTrustContractByAccountId(_id, _contract);
+        return worldStorage.isTrustContractByAccountId(_id, _address);
     }
 
-    function isTrustByAsset(address _contract, uint256 _id)
+    function isTrustByAsset(address _address, uint256 _id)
         public
         view
         virtual
@@ -461,19 +327,15 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         onlyAsset
         returns (bool _isTrust)
     {
-        return isTrust(_contract, _id);
+        return isTrust(_address, _id);
     }
 
     function getMetaverse() public view override returns (address) {
         return address(metaverse);
     }
 
-    function checkAddress(
-        address _address,
-        uint256 _id,
-        bool proxy
-    ) public view override returns (bool) {
-        return metaverse.checkAddress(_address, _id, proxy);
+    function checkSender(uint256 _id, address _sender) public {
+        return metaverse.checkSender(_id, _address);
     }
 
     function getAccountIdByAddress(address _address)
@@ -482,7 +344,7 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         override
         returns (uint256)
     {
-        return metaverse.getIdByAddress(_address);
+        return metaverse.getAccountIdByAddress(_address);
     }
 
     function getAddressById(uint256 _id)
@@ -506,8 +368,8 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         return metaverse.getOrCreateAccountId(_address);
     }
 
-    function getNonce(address account) public view returns (uint256) {
-        return worldStorage.nonces(account);
+    function getNonce(address _address) public view returns (uint256) {
+        return worldStorage.nonces(_address);
     }
 
     // for test

@@ -10,8 +10,6 @@ contract WorldStorage is Ownable {
         bool isExist;
         bool isEnabled;
         address addr;
-        string name;
-        string image;
         IWorldAsset.ProtocolEnum _protocol;
     }
 
@@ -35,7 +33,6 @@ contract WorldStorage is Ownable {
     mapping(address => uint256) public nonces;
 
     address public world;
-    address[] public assetAddresses;
 
     constructor() {
         _owner = msg.sender;
@@ -46,58 +43,51 @@ contract WorldStorage is Ownable {
         _;
     }
 
-    function updateWorld(address addr) public onlyOwner {
-        require(addr != address(0));
-        world = addr;
+    function updateWorld(address _address) public onlyOwner {
+        require(_address != address(0));
+        world = _address;
     }
 
-    function IncrementNonce(address sender) public onlyWorld {
-        nonces[sender]++;
+    function IncrementNonce(address _sender) public onlyWorld {
+        nonces[_sender]++;
     }
 
-    function getAsset(address addr) public view returns (Asset memory) {
-        return assets[addr];
+    function getAsset(address _address) public view returns (Asset memory) {
+        return assets[_address];
     }
 
-    function addAsset(Asset memory asset) public onlyWorld {
-        assets[asset.addr] = asset;
+    function setAsset(address _address) public onlyWorld {
+        IWorldAsset.ProtocolEnum protocol = IWorldAsset(_address).protocol();
+        assets[_address] = Asset(true, true, _address, protocol);
     }
 
-    function addAssetAddress(address addr) public onlyWorld {
-        assetAddresses.push(addr);
+    function updateAsset(address _address, _enabled) public onlyWorld {
+        require(assets[_address].isExist == true, "World: asset is not exist");
+        assets[_address].isEnabled = _enabled;
     }
 
-    function addSafeContract(Contract memory _contract) public onlyWorld {
-        safeContracts[_contract.addr] = _contract;
+    function addSafeContract(address _address, string calldata _name) public onlyWorld {
+        safeContracts[_contract.addr] = Contract(_address, _name);
     }
 
-    function getSafeContract(address addr)
-        public
-        view
-        returns (Contract memory)
+    function removeSafeContract(address _address) public onlyWorld {
+        require(safeContracts[_address].isExist == true, "World: safeContract is not exist");
+        safeContracts[_contract.addr].isExist = false;
+    }
+
+    function getSafeContract(address _address) public view returns (Contract memory)
     {
-        return safeContracts[addr];
+        return safeContracts[_address];
     }
 
-    function trustContractByAccountId(uint256 _accountId, address _addr)
-        public
-        onlyWorld
-    {
-        isTrustContractByAccountId[_accountId][_addr] = true;
-    }
-
-    function untrustContractByAccountId(uint256 _accountId, address _addr)
+    function setTrustContractByAccountId(uint256 _accountId, address _address, bool _isTrustContract)
         public
         onlyWorld
     {
-        isTrustContractByAccountId[_accountId][_addr] = false;
+        isTrustContractByAccountId[_accountId][_address] = _isTrustContract;
     }
 
-    function trustWorld(uint256 _accountId) public onlyWorld {
-        isTrustWorld[_accountId] = true;
-    }
-
-    function untrustWorld(uint256 _accountId) public onlyWorld {
-        isTrustWorld[_accountId] = false;
+    function setTrustWorld(uint256 _accountId, bool _isTrustWorld) public onlyWorld {
+        isTrustWorld[_accountId] = _isTrustWorld;
     }
 }

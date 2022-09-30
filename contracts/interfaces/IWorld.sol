@@ -6,7 +6,7 @@ interface IWorld {
         external
         returns (uint256 id);
 
-    function checkAddress(address _address, uint256 _id,bool proxy)
+    function checkSender(uint256 _id, address _address)
         external
         view
         returns (bool);
@@ -21,24 +21,24 @@ interface IWorld {
         view
         returns (uint256 _id);
 
-    function isBWO(address _contract) external view returns (bool _isBWO);
+    function checkBWO(address _address) external view returns (bool _isBWO);
 
-    function isTrust(address _contract, uint256 _id)
+    function isTrust(address _address, uint256 _id)
         external
         view
         returns (bool _isTrust);
 
-    function isTrustContract(address _contract, uint256 _id)
+    function isTrustContract(address _address, uint256 _id)
         external
         view
         returns (bool _isTrust);
 
-    function isBWOByAsset(address _contract)
+    function isBWOByAsset(address _address)
         external
         view
         returns (bool _isBWO);
 
-    function isTrustByAsset(address _contract, uint256 _id)
+    function isTrustByAsset(address _address, uint256 _id)
         external
         view
         returns (bool _isTrust);
