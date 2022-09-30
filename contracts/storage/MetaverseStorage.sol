@@ -10,10 +10,6 @@ contract MetaverseStorage is Ownable {
 
     struct WorldInfo {
         address world;
-        string name;
-        string icon;
-        string url;
-        string description;
         bool isEnabled;
     }
 
@@ -33,11 +29,10 @@ contract MetaverseStorage is Ownable {
     // nonce
     mapping(address => uint256) public nonces;
 
-    mapping(uint256 => mapping(address => bool)) public authProxies;
+    mapping(uint256 => mapping(address => bool)) public authAddress;
 
     mapping(address => uint256) public authToAddress;
 
-    uint256 public totalAccount;
     address public metaverse;
 
     constructor() {
@@ -53,10 +48,6 @@ contract MetaverseStorage is Ownable {
         _;
     }
 
-    function IncrementTotalAccount() public onlyMetaverse {
-        totalAccount++;
-    }
-
     function IncrementNonce(address sender) public onlyMetaverse {
         nonces[sender]++;
     }
@@ -68,6 +59,7 @@ contract MetaverseStorage is Ownable {
     function add(address addr) public onlyMetaverse {
         if (!worlds.contains(addr)) {
             worlds.add(addr);
+            worldInfos[addr] = WorldInfo(_world, true);
         }
     }
 
@@ -77,10 +69,6 @@ contract MetaverseStorage is Ownable {
 
     function length() public view returns (uint256) {
         return worlds.length();
-    }
-
-    function addWorldInfo(WorldInfo calldata info) public onlyMetaverse {
-        worldInfos[info.world] = info;
     }
 
     function disableWorld(address addr) public onlyMetaverse {
@@ -97,7 +85,7 @@ contract MetaverseStorage is Ownable {
         delete addressToId[addr];
     }
 
-    function addAccount(Account calldata account) public onlyMetaverse {
+    function setAccount(Account calldata account) public onlyMetaverse {
         accounts[account.id] = account;
     }
 
@@ -109,13 +97,17 @@ contract MetaverseStorage is Ownable {
         return accounts[id];
     }
 
-    function addAuthProxies(uint256 id, address  proxy) public onlyMetaverse {
-            authProxies[id][proxy] = true;
-            authToAddress[proxy] = id;
+    function getAuthAddress(uint256 id) public view returns (address memory) {
+        return authAddress[id];
     }
 
-    function deleteAuthProxies(uint256 id, address  proxy) public onlyMetaverse {
-            delete authProxies[id][proxy];
-            delete authToAddress[proxy];
+    function addAuthAddress(uint256 id, address  addr) public onlyMetaverse {
+            authAddress[id][addr] = true;
+            authToAddress[addr] = id;
+    }
+
+    function removeAuthAddress(uint256 id, address  addr) public onlyMetaverse {
+            delete authAddress[id][addr];
+            delete authToAddress[addr];
     }
 }
