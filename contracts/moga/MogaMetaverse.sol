@@ -129,18 +129,6 @@ contract MogaMetaverse is Ownable, EIP712 {
         emit RemoveOperator(_operator);
     }
 
-    function getOrCreateAccountId(address _address)
-        public
-        returns (uint256 id)
-    {
-        checkAddressIsNotZero(_address);
-        if (getAccountIdByAddress(_address) == 0) {
-            id = createAccount(_address, false);
-        } else {
-            id = getAccountIdByAddress(_address);
-        }
-    }
-
     function createAccount(address _address, bool _isTrustAdmin)
         public
         virtual
@@ -446,18 +434,6 @@ contract MogaMetaverse is Ownable, EIP712 {
         metaStorage.IncrementNonce(_sender);
     }
 
-    function isFreeze(uint256 _id) public view returns (bool) {
-        return getAccountInfo(_id).isFreeze;
-    }
-
-    function getAccountIdByAddress(address _address) public view returns (uint256) {
-        return metaStorage.addressToId(_address);
-    }
-
-    function getAddressByAccountId(uint256 _id) public view returns (address) {
-        return getAccountInfo(_id).addr;
-    }
-
     function getAccountInfo(uint256 _id)
         public
         view
@@ -472,40 +448,78 @@ contract MogaMetaverse is Ownable, EIP712 {
         returns (address)
     {
         return metaStorage.getAuthAddress(_id);
-    }
-
-    function getNonce(address _address) public view returns (uint256) {
-        return metaStorage.nonces(_address);
+        // todo 似乎有用
     }
 
     function authToAddress(address _address) public view returns (uint256) {
         return metaStorage.authToAddress(_address);
+        // todo 似乎没用
     }
 
-    // for test
-    function getChainId() external view returns (uint256) {
-        return block.chainid;
+    /**
+     * @dev See {IMetaverse-accountIsExist}.
+     */
+    function accountIsExist(uint256 _id) internal view returns (bool) {
+        return getAccountInfo(_id).isExist;
     }
 
-    function checkAddressIsNotUsed(address _address) internal pure {
-        require(
-            getAccountIdByAddress(_address) == 0,
-            "Metaverse: new address has been used"
-        );
+    /**
+     * @dev See {IMetaverse-isFreeze}.
+     */
+    function isFreeze(uint256 _id) public view returns (bool) {
+        return getAccountInfo(_id).isFreeze;
     }
 
-    function checkAddressIsNotZero(address _address) internal pure {
-        require(_address != address(0), "Metaverse: address is zero");
+    /**
+     * @dev See {IMetaverse-getOrCreateAccountId}.
+     */
+    function getOrCreateAccountId(address _address)
+        public
+        returns (uint256 id)
+    {
+        checkAddressIsNotZero(_address);
+        if (getAccountIdByAddress(_address) == 0) {
+            id = createAccount(_address, false);
+        } else {
+            id = getAccountIdByAddress(_address);
+        }
+    }
+
+    /**
+     * @dev See {IMetaverse-getAccountIdByAddress}.
+     */
+    function getAccountIdByAddress(address _address) public view returns (uint256) {
+        return metaStorage.addressToId(_address);
+    }
+
+    /**
+     * @dev See {IMetaverse-getAddressByAccountId}.
+     */
+    function getAddressByAccountId(uint256 _id) public view returns (address) {
+        return getAccountInfo(_id).addr;
+    }
+
+    /**
+     * @dev See {IMetaverse-checkSender}.
+     */
+    function checkSender(uint256 _id, address _sender) public {
+        MetaverseStorage.Account memory account = getAccountInfo(_id);
+        require(account.isExist == true, "Metaverse: account is not exist");
+        require(account.addr == _sender, "Metaverse: sender not owner");
+        // todo 还没有改AuthAddress的逻辑
     }
 
     function checkBWO(address _address) internal view {
         require((isOperator[_address] || _owner == _address), "Metaverse: address is not BWO");
     }
 
-    function checkSender(uint256 _id, address _sender) public {
-        MetaverseStorage.Account memory account = getAccountInfo(_id);
-        require(account.isExist == true, "Metaverse: account is not exist");
-        require(account.addr == _sender, "Metaverse: sender not owner");
+    function getNonce(address _address) public view returns (uint256) {
+        return metaStorage.nonces(_address);
+    }
+    
+    // for test
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
     }
 
     function _recoverSig(
@@ -519,5 +533,16 @@ contract MogaMetaverse is Ownable, EIP712 {
             signer == ECDSA.recover(digest, signature),
             "Metaverse: recoverSig failed"
         );
+    }
+
+    function checkAddressIsNotUsed(address _address) internal pure {
+        require(
+            getAccountIdByAddress(_address) == 0,
+            "Metaverse: new address has been used"
+        );
+    }
+
+    function checkAddressIsNotZero(address _address) internal pure {
+        require(_address != address(0), "Metaverse: address is zero");
     }
 }

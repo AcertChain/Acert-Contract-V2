@@ -2,16 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import "../token/Cash20.sol";
+import "../token/Asset20.sol";
 import "../common/Ownable.sol";
-
-contract Cash20Mock is Cash20, Ownable {
+contract GGMToken is Asset20, Ownable {
     constructor(
         string memory name,
         string memory symbol,
         string memory version,
         address world
-    )  Cash20(name, symbol, version, world) {
+    )  Asset20(name, symbol, version, world) {
         _owner = msg.sender;
     }
 

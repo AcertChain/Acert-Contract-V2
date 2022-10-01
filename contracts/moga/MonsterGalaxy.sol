@@ -3,10 +3,9 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "../interfaces/IWorld.sol";
-import "../interfaces/IWorldAsset.sol";
-import "../interfaces/IItem721.sol";
-import "../interfaces/ICash20.sol";
-import "./MogaMetaverse.sol";
+import "../interfaces/IMetaverse.sol";
+import "../interfaces/IAsset721.sol";
+import "../interfaces/IAsset20.sol";
 import "../storage/WorldStorage.sol";
 import "../common/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -54,8 +53,9 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
     // Mapping from address to operator
     mapping(address => bool) public isOperator;
 
-    MogaMetaverse public metaverse;
+    string private _name;
 
+    IMetaverse public metaverse;
     WorldStorage public worldStorage;
 
     // constructor
@@ -65,8 +65,9 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         string memory name_,
         string memory version_
     ) EIP712(name_, version_) {
-        metaverse = MogaMetaverse(metaverse_);
+        metaverse = IMetaverse(metaverse_);
         _owner = msg.sender;
+        _name = name_;
         worldStorage = WorldStorage(worldStorage_);
     }
 
@@ -77,6 +78,10 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
             "World: asset is not exist or disabled"
         );
         _;
+    }
+
+    function name() public view returns (string memory) {
+        return _name;
     }
 
     function registerAsset(address _address)
@@ -147,27 +152,12 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         emit RemoveOperator(_address);
     }
 
-    function checkBWO(address _address) public view virtual override returns (bool) {
-        return isOperator[_addr] || _owner == _address;
-    }
-
-    function isBWOByAsset(address _address)
-        public
-        view
-        virtual
-        override
-        onlyAsset
-        returns (bool)
-    {
-        return checkBWO(_address);
-    }
-
     function trustContract(
         uint256 _id, 
         address _address, 
         bool _isTrustContract
     ) public {
-        checkSender(_id, msg.sender);
+        metaverse.checkSender(_id, msg.sender);
         _trustContract(_id, _address, _isTrustContract, false, msg.sender);
     }
 
@@ -192,7 +182,7 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
-        checkSender(_id, sender);
+        metaverse.checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -224,7 +214,7 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         bool _isBWO,
         address _sender
     ) private {
-        accountId = getOrCreateAccountId(_address);
+        accountId = metaverse.getOrCreateAccountId(_address);
         worldStorage.setTrustContractByAccountId(_id, _address, _isTrustContract);
         emit TrustContract(_id, _address, _isTrustContract, _isBWO, _sender, getNonce(_sender));
         worldStorage.IncrementNonce(_sender);
@@ -234,7 +224,7 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         uint256 _id,
         bool _isTrustWorld
     ) public {
-        checkSender(_id, msg.sender);
+        metaverse.checkSender(_id, msg.sender);
         _trustAdmin(_id, _isTrustWorld, false, msg.sender);
     }
 
@@ -257,7 +247,7 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
-        checkSender(_id, sender);
+        metaverse.checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -293,11 +283,17 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         worldStorage.IncrementNonce(_sender);
     }
 
-    function isTrustWorld(uint256 _id) public view returns (bool _isTrust) {
+    /**
+     * @dev See {IWorld-isTrustWorld}.
+     */
+    function isTrustWorld(uint256 _id) public view returns (bool _isTrustWorld) {
         return worldStorage.isTrustWorld(_id);
     }
 
-    function isTrust(address _address, uint256 _id)
+    /**
+     * @dev See {IWorld-isTrust}.
+     */
+    function isTrust(address _contract, uint256 _id)
         public
         view
         virtual
@@ -305,20 +301,40 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         returns (bool _isTrust)
     {
         return
-            (isSafeContract(_address) && isTrustWorld(_id)) ||
-            isTrustContract(_address, _id);
+            (isSafeContract(_contract) && isTrustWorld(_id)) ||
+            isTrustContract(_contract, _id);
     }
 
-    function isTrustContract(address _address, uint256 _id)
+    /**
+     * @dev See {IWorld-isTrustContract}.
+     */
+    function isTrustContract(address _contract, uint256 _id)
         public
         view
         virtual
         override
-        returns (bool _isTrust)
+        returns (bool _isTrustContract)
     {
-        return worldStorage.isTrustContractByAccountId(_id, _address);
+        return worldStorage.isTrustContractByAccountId(_id, _contract);
     }
 
+    /**
+     * @dev See {IWorld-isBWOByAsset}.
+     */
+    function checkBWOByAsset(address _address)
+        public
+        view
+        virtual
+        override
+        onlyAsset
+        returns (bool)
+    {
+        return checkBWO(_address);
+    }
+
+    /**
+     * @dev See {IWorld-isTrustByAsset}.
+     */
     function isTrustByAsset(address _address, uint256 _id)
         public
         view
@@ -330,42 +346,15 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         return isTrust(_address, _id);
     }
 
+    /**
+     * @dev See {IWorld-getMetaverse}.
+     */
     function getMetaverse() public view override returns (address) {
         return address(metaverse);
     }
 
-    function checkSender(uint256 _id, address _sender) public {
-        return metaverse.checkSender(_id, _address);
-    }
-
-    function getAccountIdByAddress(address _address)
-        public
-        view
-        override
-        returns (uint256)
-    {
-        return metaverse.getAccountIdByAddress(_address);
-    }
-
-    function getAddressById(uint256 _id)
-        public
-        view
-        override
-        returns (address)
-    {
-        return metaverse.getAddressById(_id);
-    }
-
-    function isFreeze(uint256 _id) public view override returns (bool) {
-        return metaverse.isFreeze(_id);
-    }
-
-    function getOrCreateAccountId(address _address)
-        public
-        override
-        returns (uint256 id)
-    {
-        return metaverse.getOrCreateAccountId(_address);
+    function checkBWO(address _address) public view virtual override returns (bool) {
+        return isOperator[_addr] || _owner == _address;
     }
 
     function getNonce(address _address) public view returns (uint256) {

@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import "../token/Item721.sol";
+import "../token/Asset721.sol";
 import "../common/Ownable.sol";
 
-contract Item721Mock is Item721, Ownable {
+contract MogaNFT is Asset721, Ownable {
 
     constructor(
         string memory name,
@@ -13,7 +13,7 @@ contract Item721Mock is Item721, Ownable {
         string memory version,
         string memory tokenURI,
         address world
-    ) Item721(name, symbol, version, tokenURI, world) {
+    ) Asset721(name, symbol, version, tokenURI, world) {
         _owner = msg.sender;
     }
 

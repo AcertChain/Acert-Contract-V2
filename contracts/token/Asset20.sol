@@ -2,14 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "../interfaces/ICash20.sol";
+import "../interfaces/IAsset20.sol";
 import "../interfaces/IWorld.sol";
-import "../interfaces/IWorldAsset.sol";
+import "../interfaces/IMetaverse.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract Cash20 is Context, EIP712, ICash20 {
+contract Asset20 is Context, EIP712, IAsset20 {
     mapping(uint256 => uint256) private _balancesById;
     mapping(uint256 => mapping(address => uint256)) private _allowancesById;
     mapping(address => uint256) private _nonces;
@@ -21,6 +21,9 @@ contract Cash20 is Context, EIP712, ICash20 {
     address private _metadverse;
     address private _owner;
 
+    IWorld public world;
+    IMetaverse public metaverse;
+
     constructor(
         string memory name_,
         string memory symbol_,
@@ -30,17 +33,21 @@ contract Cash20 is Context, EIP712, ICash20 {
         _name = name_;
         _symbol = symbol_;
         _world = world_;
-        _metadverse = IWorld(world_).getMetaverse();
+        world = IWorld(world_);
+        _metadverse = world.getMetaverse();
+        metaverse = IMetaverse(_metadverse);
         _owner = _msgSender();
     }
 
-    function updateWorld(address world) public {
-        require(_owner == msg.sender, "Item: only owner");
+    function updateWorld(address _address) public {
+        require(_owner == _msgSender(), "Item: only owner");
         require(
-            _metadverse == IWorld(world).getMetaverse(),
+            _metadverse == IWorld(_address).getMetaverse(),
             "Item: metaverse not match"
         );
-        _world = world;
+        _world = _address;
+        world = IWorld(_address);
+
     }
 
     /**
@@ -76,6 +83,18 @@ contract Cash20 is Context, EIP712, ICash20 {
     }
 
     /**
+     * @dev See {IAsset-protocol}.
+     */
+    function protocol()
+        external
+        pure
+        virtual
+        returns (IWorldAsset.ProtocolEnum)
+    {
+        return IWorldAsset.ProtocolEnum.ASSET20;
+    }
+
+    /**
      * @dev See {IERC20-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
@@ -92,13 +111,13 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        return _balancesById[_getAccountIdByAddress(account)];
+        return _balancesById[metaverse.getAccountIdByAddress(account)];
     }
 
     /**
-     * @dev See {ICash-balanceOfCash}.
+     * @dev See {IAsset-balanceOf}.
      */
-    function balanceOfCash(uint256 account)
+    function balanceOf(uint256 account)
         public
         view
         virtual
@@ -122,99 +141,11 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (bool)
     {
-        _transfer(_msgSender(), to, amount);
+        _transfer(_msgSender(), to, amount, _msgSender());
         return true;
     }
 
-    /**
-     * @dev See {ICash-transferCash}.
-     */
-    function transferCash(
-        uint256 from,
-        uint256 to,
-        uint256 amount
-    ) public virtual override returns (bool) {
-        require(from != 0, "Cash: from is the zero Id");
-        require(to != 0, "Cash: transfer to the zero Id");
-        if (_isTrust(_msgSender(), from)) {
-            _transferCash(from, to, amount);
-            return true;
-        }
-        if (_checkAddress(_msgSender(), from)) {
-            _transferCash(from, to, amount);
-            return true;
-        }
-        uint256 currentAllowance = allowanceCash(from, _msgSender());
-        if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "Cash: insufficient allowance");
-            unchecked {
-                _approveId(from, _msgSender(), currentAllowance - amount);
-            }
-        }
-        _transferCash(from, to, amount);
-        return true;
-    }
-
-    function transferCashBWO(
-        uint256 from,
-        uint256 to,
-        uint256 amount,
-        address sender,
-        uint256 deadline,
-        bytes memory signature
-    ) public virtual override returns (bool) {
-        transferCashBWOParamsVerify(
-            from,
-            to,
-            amount,
-            sender,
-            deadline,
-            signature
-        );
-        _transferCash(from, to, amount);
-        emit TransferCashBWO(from, to, amount, sender, _nonces[sender]);
-        _nonces[sender] += 1;
-        return true;
-    }
-
-    function transferCashBWOParamsVerify(
-        uint256 from,
-        uint256 to,
-        uint256 amount,
-        address sender,
-        uint256 deadline,
-        bytes memory signature
-    ) public view returns (bool) {
-        require(_isBWO(_msgSender()), "Cash: must be the world BWO");
-        require(sender != address(0), "Cash: sender is the zero address");
-        require(from != 0, "Cash: from is the zero Id");
-        require(to != 0, "Cash: transfer to the zero Id");
-        require(_checkAddressProxy(sender, from), "Cash: not owner");
-        uint256 nonce = _nonces[sender];
-        _recoverSig(
-            deadline,
-            sender,
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256(
-                            "BWO(uint256 from,uint256 to,uint256 value,address sender,uint256 nonce,uint256 deadline)"
-                        ),
-                        from,
-                        to,
-                        amount,
-                        sender,
-                        nonce,
-                        deadline
-                    )
-                )
-            ),
-            signature
-        );
-        return true;
-    }
-
-    /**
+   /**
      * @dev See {IERC20-transferFrom}.
      *
      * Emits an {Approval} event indicating the updated allowance. This is not
@@ -237,12 +168,12 @@ contract Cash20 is Context, EIP712, ICash20 {
     ) public virtual override returns (bool) {
         uint256 currentAllowance = allowance(from, _msgSender());
         if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "Cash: insufficient allowance");
+            require(currentAllowance >= amount, "Asset20: insufficient allowance");
             unchecked {
-                _approve(from, _msgSender(), currentAllowance - amount);
+                 _approveId(metaverse.getAccountIdByAddress(from), _msgSender(), currentAllowance - amount, false, _msgSender());
             }
         }
-        _transfer(from, to, amount);
+        _transfer(from, to, amount, _msgSender());
         return true;
     }
 
@@ -263,29 +194,116 @@ contract Cash20 is Context, EIP712, ICash20 {
     function _transfer(
         address from,
         address to,
-        uint256 amount
+        uint256 amount,
+        address sender
     ) internal virtual {
-        require(from != address(0), "Cash: transfer from the zero address");
-        require(to != address(0), "Cash: transfer to the zero address");
+        require(from != address(0), "Asset20: transfer from the zero address");
+        if (to == address(0)) {
+            _burn(metaverse.getAccountIdByAddress(to), amount);
+        } else {
+            _transferAsset(metaverse.getAccountIdByAddress(from), metaverse.getAccountIdByAddress(to), amount, false, sender, from, to);
+        }
 
-        _transferCash(_getIdByAddress(from), _getIdByAddress(to), amount);
     }
 
-    function _transferCash(
-        uint256 from,
-        uint256 to,
+    /**
+     * @dev See {IAsset-transferFrom}.
+     */
+    function transferFrom(
+        uint256 fromAccount,
+        uint256 toAccount,
         uint256 amount
-    ) internal virtual {
-        require(!_isFreeze(from), "Cash: transfer from is frozen");
-        require(_accountIsExist(to), "Cash: to account is not exist");
-        uint256 fromBalance = _balancesById[from];
-        require(fromBalance >= amount, "Cash: transfer amount exceeds balance");
-        unchecked {
-            _balancesById[from] = fromBalance - amount;
+    ) public virtual override returns (bool) {
+        if (metaverse.getAccountIdByAddress(_msgSender()) != fromAccount) {
+            uint256 currentAllowance = allowance(fromAccount, _msgSender());
+            if (currentAllowance != type(uint256).max) {
+                require(currentAllowance >= amount, "Asset20: insufficient allowance");
+                unchecked {
+                    _approveId(fromAccount, _msgSender(), currentAllowance - amount, false, _msgSender());
+                }
+            }
         }
-        _balancesById[to] += amount;
-        emit TransferCash(from, to, amount);
-        emit Transfer(_getAddressById(from), _getAddressById(to), amount);
+        _transferAsset(fromAccount, toAccount, amount, true, _msgSender(), metaverse.getAddressByAccountId(fromAccount), metaverse.getOrCreateAccountId(toAccount));
+        return true;
+    }
+
+    /**
+     * @dev See {IAsset-transferBWO}.
+     */
+    function transferBWO(
+        uint256 fromAccount,
+        uint256 toAccount,
+        uint256 amount,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public virtual override returns (bool) {
+        world.checkBWOByAsset(_msgSender());
+        transferBWOParamsVerify(
+            fromAccount,
+            toAccount,
+            amount,
+            sender,
+            deadline,
+            signature
+        );
+        _transferAsset(fromAccount, toAccount, amount, true, sender, metaverse.getAddressByAccountId(fromAccount), metaverse.getAddressByAccountId(toAccount));
+        return true;
+    }
+
+    function transferBWOParamsVerify(
+        uint256 fromAccount,
+        uint256 toAccount,
+        uint256 amount,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
+        metaverse.checkSender(fromAccount, sender);
+        uint256 nonce = _nonces[sender];
+        _recoverSig(
+            deadline,
+            sender,
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "BWO(uint256 fromAccount,uint256 toAccount,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
+                        ),
+                        fromAccount,
+                        toAccount,
+                        amount,
+                        sender,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
+        );
+        return true;
+    }
+
+    function _transferAsset(
+        uint256 fromAccount,
+        uint256 toAccount,
+        uint256 amount,
+        bool _isBWO,
+        address _sender,
+        address _fromAddr,
+        address _toAddr
+    ) internal virtual {
+        require(!metaverse.isFreeze(fromAccount), "Asset20: transfer from is frozen");
+        require(metaverse.accountIsExist(toAccount), "Asset20: to account is not exist");
+        uint256 fromBalance = _balancesById[fromAccount];
+        require(fromBalance >= amount, "Asset20: transfer amount exceeds balance");
+        unchecked {
+            _balancesById[fromAccount] = fromBalance - amount;
+        }
+        _balancesById[toAccount] += amount;
+        emit Transfer(_fromAddr, _toAddr, amount);
+        emit Transfer(fromAccount, toAccount, amount, isBWO, _sender, getNonce(_sender));
+        _nonces[_sender] += 1;
     }
 
     /**
@@ -304,26 +322,29 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (bool)
     {
-        _approve(_msgSender(), spender, amount);
+        _approveId(metaverse.getOrCreateAccountId(_msgSender()), spender, amount, false, _msgSender());
         return true;
     }
 
     /**
-     * @dev See {IERC20-approveCash}.
+     * @dev See {IAsset20-approve}.
      */
-    function approveCash(
+    function approve(
         uint256 ownerId,
         address spender,
         uint256 amount
     ) public virtual override returns (bool) {
-        require(spender != address(0), "Cash: approve to the zero address");
-        require(_checkAddress(_msgSender(), ownerId), "Cash: not owner");
+        require(spender != address(0), "Asset20: approve to the zero address");
+        metaverse.checkSender(ownerId, _msgSender());
 
-        _approveId(ownerId, spender, amount);
+        _approveId(ownerId, spender, amount, false, _msgSender());
         return true;
     }
 
-    function approveCashBWO(
+    /**
+     * @dev See {IAsset20-approveBWO}.
+     */
+    function approveBWO(
         uint256 ownerId,
         address spender,
         uint256 amount,
@@ -331,7 +352,8 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
-        approveCashBWOParamsVerify(
+        world.checkBWOByAsset(_msgSender());
+        approveBWOParamsVerify(
             ownerId,
             spender,
             amount,
@@ -339,13 +361,11 @@ contract Cash20 is Context, EIP712, ICash20 {
             deadline,
             signature
         );
-        _approveId(ownerId, spender, amount);
-        emit ApprovalCashBWO(ownerId, spender, amount, sender, _nonces[sender]);
-        _nonces[sender] += 1;
+        _approveId(ownerId, spender, amount, true, sender);
         return true;
     }
 
-    function approveCashBWOParamsVerify(
+    function approveBWOParamsVerify(
         uint256 ownerId,
         address spender,
         uint256 amount,
@@ -353,9 +373,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
-        require(_isBWO(_msgSender()), "Cash: must be the world BWO");
-        require(spender != address(0), "Cash: approve to the zero address");
-        require(_checkAddressProxy(sender, ownerId), "Cash: not owner");
+        checkSender(ownerId, sender);
         uint256 nonce = _nonces[sender];
         _recoverSig(
             deadline,
@@ -379,7 +397,7 @@ contract Cash20 is Context, EIP712, ICash20 {
         );
         return true;
     }
-
+    
     /**
      * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
      *
@@ -390,42 +408,23 @@ contract Cash20 is Context, EIP712, ICash20 {
      *
      * Requirements:
      *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual {
-        require(owner != address(0), "Cash: approve from the zero address");
-        _approveId(_getIdByAddress(owner), spender, amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {ApprovalCash} event.
-     *
-     * Requirements:
-     *
      * - `owner` cannot be the zero .
      * - `spender` cannot be the zero .
      */
     function _approveId(
         uint256 ownerId,
         address spender,
-        uint256 amount
+        uint256 amount,
+        bool _isBWO,
+        address _sender
     ) internal virtual {
-        require(ownerId != 0, "Cash: approve from the zero Id");
-        require(!_isFreeze(ownerId), "Cash: approve owner is frozen");
-        require(spender != address(0), "Cash: approve to the zero address");
+        require(!metaverse.isFreeze(ownerId), "Asset20: approve owner is frozen");
+        require(spender != address(0), "Asset20: approve to the zero address");
         _allowancesById[ownerId][spender] = amount;
-        emit ApprovalCash(ownerId, spender, amount);
-        emit Approval(_getAddressById(ownerId), spender, amount);
+        emit Approval(sender, spender, amount);
+        emit Approval(ownerId, spender, amount, _isBWO, _sender, getNonce(_sender));
+        _nonces[_sender] += 1;
+
     }
 
     /**
@@ -438,23 +437,23 @@ contract Cash20 is Context, EIP712, ICash20 {
         override
         returns (uint256)
     {
-        return allowanceCash(_getAccountIdByAddress(owner), spender);
+        return allowance(metaverse.getAccountIdByAddress(owner), spender);
     }
 
     /**
-     * @dev See {IERC20-allowanceCash}.
+     * @dev See {IAsset20-allowance}.
      */
-    function allowanceCash(uint256 owner, address spender)
+    function allowance(uint256 ownerId, address spender)
         public
         view
         virtual
         override
         returns (uint256)
     {
-        if (_isTrust(spender, owner)) {
+        if (world.isTrustByAsset(spender, ownerId)) {
             return type(uint256).max;
         }
-        return _allowancesById[owner][spender];
+        return _allowancesById[ownerId][spender];
     }
 
     /**
@@ -474,8 +473,9 @@ contract Cash20 is Context, EIP712, ICash20 {
         virtual
         returns (bool)
     {
-        address owner = _msgSender();
-        _approve(owner, spender, allowance(owner, spender) + addedValue);
+        uint256 ownerId = metaverse.getOrCreateAccountId(_msgSender());
+        uint256 currentAllowance = _allowancesById[ownerId][spender];
+        _approveId(ownerId, spender, currentAllowance + addedValue, false, _msgSender());
         return true;
     }
 
@@ -498,15 +498,13 @@ contract Cash20 is Context, EIP712, ICash20 {
         virtual
         returns (bool)
     {
-        address owner = _msgSender();
-        uint256 currentAllowance = allowance(owner, spender);
+        uint256 ownerId = metaverse.getOrCreateAccountId(_msgSender());
+        uint256 currentAllowance = _allowancesById[ownerId][spender];
         require(
             currentAllowance >= subtractedValue,
-            "Cash: decreased allowance below zero"
+            "Asset20: decreased allowance below zero"
         );
-        unchecked {
-            _approve(owner, spender, currentAllowance - subtractedValue);
-        }
+        _approveId(ownerId, spender, currentAllowance - subtractedValue, false, _msgSender());
 
         return true;
     }
@@ -520,19 +518,20 @@ contract Cash20 is Context, EIP712, ICash20 {
      *
      * - `account` cannot be the zero address.
      */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "Cash: mint to the zero address");
-        _mintCash(_getIdByAddress(account), amount);
+    function _mint(address _address, uint256 amount) internal virtual {
+        require(_address != address(0), "Asset20: mint to the zero address");
+        _mint(metaverse.getOrCreateAccountId(_address), amount);
     }
 
-    function _mintCash(uint256 accountId, uint256 amount) internal virtual {
-        require(accountId != 0, "Cash: mint to the zero Id");
-        require(_accountIsExist(accountId), "Cash: to account is not exist");
+    function _mint(uint256 accountId, uint256 amount) internal virtual {
+        require(accountId != 0, "Asset20: mint to the zero Id");
+        require(metaverse.accountIsExist(accountId), "Asset20: to account is not exist");
 
         _totalSupply += amount;
         _balancesById[accountId] += amount;
-        emit TransferCash(0, accountId, amount);
-        emit Transfer(address(0), _getAddressById(accountId), amount);
+        emit Transfer(address(0), metaverse.getAddressByAccountId(accountId), amount);
+        emit Transfer(0, accountId, amount, false, _msgSender(), getNonce(_msgSender()));
+        _nonces[_msgSender()] += 1;
     }
 
     /**
@@ -546,75 +545,25 @@ contract Cash20 is Context, EIP712, ICash20 {
      * - `account` cannot be the zero address.
      * - `account` must have at least `amount` tokens.
      */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "Cash: burn from the zero address");
-        _burnCash(_getIdByAddress(account), amount);
+    function _burn(address _address, uint256 amount) internal virtual {
+        require(_address != address(0), "Asset20: burn from the zero address");
+        _burn(metaverse.getAddressByAccountId(_address), amount);
     }
 
-    function _burnCash(uint256 accountId, uint256 amount) internal virtual {
-        require(accountId != 0, "Cash: burn from the zero Id");
-        require(_accountIsExist(accountId), "Cash: to account is not exist");
+    function _burn(uint256 accountId, uint256 amount) internal virtual {
+        require(accountId != 0, "Asset20: burn from the zero Id");
+        require(metaverse.accountIsExist(accountId), "Asset20: to account is not exist");
+
         uint256 accountBalance = _balancesById[accountId];
-        require(accountBalance >= amount, "Cash: burn amount exceeds balance");
+        require(accountBalance >= amount, "Asset20: burn amount exceeds balance");
         unchecked {
             _balancesById[accountId] = accountBalance - amount;
         }
         _totalSupply -= amount;
 
-        emit TransferCash(accountId, 0, amount);
-        emit Transfer(_getAddressById(accountId), address(0), amount);
-    }
-
-    function _getAccountIdByAddress(address addr)
-        internal
-        view
-        returns (uint256)
-    {
-        return IWorld(_world).getAccountIdByAddress(addr);
-    }
-
-    function _getIdByAddress(address addr) internal returns (uint256) {
-        return IWorld(_world).getOrCreateAccountId(addr);
-    }
-
-    function _getAddressById(uint256 id) internal view returns (address) {
-        return IWorld(_world).getAddressById(id);
-    }
-
-    function _checkAddress(address _addr, uint256 _id)
-        internal
-        view
-        returns (bool)
-    {
-        return IWorld(_world).checkAddress(_addr, _id, false);
-    }
-
-    function _checkAddressProxy(address _addr, uint256 _id)
-        internal
-        view
-        returns (bool)
-    {
-        return IWorld(_world).checkAddress(_addr, _id, true);
-    }
-
-    function _accountIsExist(uint256 _id) internal view returns (bool) {
-        return IWorld(_world).getAddressById(_id) != address(0);
-    }
-
-    function _isBWO(address _add) internal view returns (bool) {
-        return IWorld(_world).isBWOByAsset(_add);
-    }
-
-    function _isTrust(address _contract, uint256 _id)
-        internal
-        view
-        returns (bool)
-    {
-        return IWorld(_world).isTrustByAsset(_contract, _id);
-    }
-
-    function _isFreeze(uint256 _id) internal view returns (bool) {
-        return IWorld(_world).isFreeze(_id);
+        emit Transfer(metaverse.getAddressByAccountId(accountId), address(0), amount);
+        emit Transfer(accountId, 0, amount, false, _msgSender(), getNonce(_msgSender()));
+        _nonces[_msgSender()] += 1;
     }
 
     function getNonce(address account)
@@ -627,29 +576,16 @@ contract Cash20 is Context, EIP712, ICash20 {
         return _nonces[account];
     }
 
-    function worldAddress() external view virtual override returns (address) {
-        return _world;
-    }
-
-    function protocol()
-        external
-        pure
-        virtual
-        returns (IWorldAsset.ProtocolEnum)
-    {
-        return IWorldAsset.ProtocolEnum.CASH20;
-    }
-
     function _recoverSig(
         uint256 deadline,
         address signer,
         bytes32 digest,
         bytes memory signature
     ) internal view {
-        require(block.timestamp < deadline, "Cash: BWO call expired");
+        require(block.timestamp < deadline, "Asset20: BWO call expired");
         require(
             signer == ECDSA.recover(digest, signature),
-            "Cash: recoverSig failed"
+            "Asset20: recoverSig failed"
         );
     }
 }
