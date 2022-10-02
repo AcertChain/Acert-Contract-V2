@@ -15,7 +15,8 @@ interface IAsset721 is IERC721Metadata, IAsset {
     );
 
     event Approval(
-        address indexed to,
+        uint256 indexed ownerId,
+        address indexed spender,
         uint256 indexed tokenId,
         bool isBWO,
         address indexed sender,
@@ -36,7 +37,7 @@ interface IAsset721 is IERC721Metadata, IAsset {
         view
         returns (uint256 balance);
 
-    function ownerOf(uint256 tokenId) external view returns (uint256 account);
+    function ownerAccountOf(uint256 tokenId) external view returns (uint256 account);
 
     function transferFrom(
         uint256 from,
@@ -71,8 +72,7 @@ interface IAsset721 is IERC721Metadata, IAsset {
     ) external;
 
     function approve(
-        uint256 from,
-        address to,
+        address spender,
         uint256 tokenId
     ) external;
 
