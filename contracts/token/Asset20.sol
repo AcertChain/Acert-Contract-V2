@@ -199,7 +199,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
     ) internal virtual {
         require(from != address(0), "Asset20: transfer from the zero address");
         if (to == address(0)) {
-            _burn(metaverse.getAccountIdByAddress(to), amount);
+            _burn(metaverse.getAccountIdByAddress(from), amount);
         } else {
             _transferAsset(metaverse.getAccountIdByAddress(from), metaverse.getOrCreateAccountId(to), amount, false, sender, from, to);
         }
@@ -223,7 +223,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
                 }
             }
         }
-        _transferAsset(fromAccount, toAccount, amount, true, _msgSender(), metaverse.getAddressByAccountId(fromAccount), metaverse.getOrCreateAccountId(toAccount));
+        _transferAsset(fromAccount, toAccount, amount, true, _msgSender(), metaverse.getAddressByAccountId(fromAccount), metaverse.getAddressByAccountId(toAccount));
         return true;
     }
 
@@ -293,8 +293,11 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         address _fromAddr,
         address _toAddr
     ) internal virtual {
-        require(!metaverse.isFreeze(fromAccount), "Asset20: transfer from is frozen");
+        require(!metaverse.isFreeze(fromAccount), "Asset20: transfer from frozen account");
         require(metaverse.accountIsExist(toAccount), "Asset20: to account is not exist");
+        _checkIdIsNotZero(to, "Asset20: transfer to the zero id");
+        _accountIsExist(to);
+        
         uint256 fromBalance = _balancesById[fromAccount];
         require(fromBalance >= amount, "Asset20: transfer amount exceeds balance");
         unchecked {
