@@ -10,6 +10,7 @@ contract MetaverseStorage is Ownable {
 
     struct WorldInfo {
         address world;
+        string name;
         bool isEnabled;
     }
 
@@ -29,7 +30,7 @@ contract MetaverseStorage is Ownable {
     // nonce
     mapping(address => uint256) public nonces;
 
-    mapping(uint256 => mapping(address => bool)) public authAddress;
+    mapping(uint256 => EnumerableSet.AddressSet) private authAddress;
 
     mapping(address => uint256) public authToAddress;
 
@@ -56,10 +57,10 @@ contract MetaverseStorage is Ownable {
         return worlds.contains(addr);
     }
 
-    function add(address addr) public onlyMetaverse {
+    function add(address addr,string calldata name) public onlyMetaverse {
         if (!worlds.contains(addr)) {
             worlds.add(addr);
-            worldInfos[addr] = WorldInfo(_world, true);
+            worldInfos[addr] = WorldInfo(addr,name, true);
         }
     }
 
@@ -97,17 +98,21 @@ contract MetaverseStorage is Ownable {
         return accounts[id];
     }
 
-    function getAuthAddress(uint256 id) public view returns (address memory) {
-        return authAddress[id];
+    function AuthAddressContains(address addr) public view returns (bool) {
+        return authAddress[authToAddress[msg.sender]].contains(addr);
+    }
+
+    function getAuthAddress(uint256 id) public view returns (address[] memory) {
+        return authAddress[id].values();
     }
 
     function addAuthAddress(uint256 id, address  addr) public onlyMetaverse {
-            authAddress[id][addr] = true;
+            authAddress[id].add(addr);
             authToAddress[addr] = id;
     }
 
     function removeAuthAddress(uint256 id, address  addr) public onlyMetaverse {
-            delete authAddress[id][addr];
+            authAddress[id].remove(addr);
             delete authToAddress[addr];
     }
 }

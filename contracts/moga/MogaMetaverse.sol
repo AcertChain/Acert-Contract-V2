@@ -8,10 +8,7 @@ import "../storage/MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract MogaMetaverse is Ownable, EIP712 {
-    event RegisterWorld(
-        address indexed world,
-        string name
-    );
+    event RegisterWorld(address indexed world, string name);
     event DisableWorld(address indexed world);
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
@@ -52,8 +49,8 @@ contract MogaMetaverse is Ownable, EIP712 {
         uint256 nonce
     );
 
-    address public _admin;
-    uint256 public immutable _startId;
+    address public admin;
+    uint256 public immutable startId;
     MetaverseStorage public metaStorage;
     uint256 public totalAccount;
 
@@ -67,18 +64,18 @@ contract MogaMetaverse is Ownable, EIP712 {
         address metaStorage_
     ) EIP712(name_, version_) {
         _owner = msg.sender;
-        _startId = startId_;
+        startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
     }
 
-    function registerWorld(address _world) public onlyOwner {
+    function registerWorld(address _world, string calldata _name) public onlyOwner {
         checkAddressIsNotZero(_world);
         require(containsWorld(_world) == false, "Metaverse: world is exist");
         require(
             MonsterGalaxy(_world).getMetaverse() == address(this),
             "Metaverse: metaverse is not match"
         );
-        metaStorage.add(_world);
+        metaStorage.add(_world,_name);
         emit RegisterWorld(_world, _name);
     }
 
@@ -110,12 +107,8 @@ contract MogaMetaverse is Ownable, EIP712 {
 
     function setAdmin(address _address) public onlyOwner {
         checkAddressIsNotZero(_address);
-        _admin = _address;
+        admin = _address;
         emit SetAdmin(_address);
-    }
-
-    function getAdmin() public view returns (address) {
-        return _admin;
     }
 
     function addOperator(address _operator) public onlyOwner {
@@ -136,20 +129,16 @@ contract MogaMetaverse is Ownable, EIP712 {
     {
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
-
         totalAccount++;
-        id = totalAccount + _startId;
+        id = totalAccount + startId;
         metaStorage.setAccount(
             MetaverseStorage.Account(true, _isTrustAdmin, false, id, _address)
         );
-        metaStorage.addAddressToId(_address, _id);
+        metaStorage.addAddressToId(_address, id);
         emit CreateAccount(id, _address, _isTrustAdmin);
-   }
+    }
 
-    function trustAdmin(
-        uint256 _id,
-        bool _isTrustAdmin
-    ) public {
+    function trustAdmin(uint256 _id, bool _isTrustAdmin) public {
         checkSender(_id, msg.sender);
         _trustAdmin(_id, _isTrustAdmin, false, msg.sender);
     }
@@ -162,7 +151,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         bytes memory signature
     ) public {
         checkBWO(msg.sender);
-        changeAccountBWOParamsVerify(
+        trustAdminBWOParamsVerify(
             _id,
             _isTrustAdmin,
             sender,
@@ -213,19 +202,13 @@ contract MogaMetaverse is Ownable, EIP712 {
         require(account.isExist == true, "Metaverse: account is not exist");
         account.isTrustAdmin = _isTrustAdmin;
         metaStorage.setAccount(account);
-        emit TrustAdmin(
-            _id,
-            _isTrustAdmin,
-            _isBWO,
-            _sender,
-            getNonce(_sender)
-        );        
+        emit TrustAdmin(_id, _isTrustAdmin, _isBWO, _sender, getNonce(_sender));
         metaStorage.IncrementNonce(_sender);
     }
 
     function freezeAccount(uint256 _id) public {
         MetaverseStorage.Account memory account = getAccountInfo(_id);
-        if (msg.sender == _admin && getAccountIdByAddress(msg.sender != _id)) {
+        if (msg.sender == admin && getAccountIdByAddress(msg.sender != _id)) {
             require(
                 (account.isTrustAdmin),
                 "Metaverse: admin does not have permission to freeze the account"
@@ -275,8 +258,9 @@ contract MogaMetaverse is Ownable, EIP712 {
         );
         return true;
     }
+
     function _freezeAccount(
-        uint256 _id, 
+        uint256 _id,
         bool _isBWO,
         address _sender
     ) private {
@@ -287,31 +271,19 @@ contract MogaMetaverse is Ownable, EIP712 {
         );
         account.isFreeze = true;
         metaStorage.setAccount(account);
-        emit FreezeAccount(
-            _id,
-            _isBWO,
-            _sender,
-            getNonce(_sender)
-        );        
+        emit FreezeAccount(_id, _isBWO, _sender, getNonce(_sender));
         metaStorage.IncrementNonce(_sender);
     }
 
     function unfreezeAccount(uint256 _id) public {
-        require(msg.sender == _admin, "Metaverse: sender is not admin");
+        require(msg.sender == admin, "Metaverse: sender is not admin");
         MetaverseStorage.Account memory account = getAccountInfo(_id);
-        require(
-            account.isFreeze,
-            "Metaverse: The accounts were not frozen"
-        );
+        require(account.isFreeze, "Metaverse: The accounts were not frozen");
         account.isFreeze = false;
         emit UnFreezeAccount(_id);
-
     }
 
-    function addAuthAddress(
-        uint256 _id,
-        address _address
-    ) public {
+    function addAuthAddress(uint256 _id, address _address) public {
         checkSender(_id, msg.sender);
         _addAuthAddress(_id, _address, false, msg.sender);
     }
@@ -324,7 +296,13 @@ contract MogaMetaverse is Ownable, EIP712 {
         bytes memory signature
     ) public {
         checkBWO(msg.sender);
-        addAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
+        addAuthAddressBWOParamsVerfiy(
+            _id,
+            _address,
+            sender,
+            deadline,
+            signature
+        );
         _addAuthAddressBWO(_id, _address, true, sender);
     }
 
@@ -371,10 +349,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         metaStorage.IncrementNonce(_sender);
     }
 
-    function removeAuthAddress(
-        uint256 _id,
-        address _address
-    ) public {
+    function removeAuthAddress(uint256 _id, address _address) public {
         checkSender(_id, msg.sender);
         _removeAuthAddress(_id, _address, false, msg.sender);
     }
@@ -387,7 +362,13 @@ contract MogaMetaverse is Ownable, EIP712 {
         bytes memory signature
     ) public {
         checkBWO(msg.sender);
-        removeAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
+        removeAuthAddressBWOParamsVerfiy(
+            _id,
+            _address,
+            sender,
+            deadline,
+            signature
+        );
         _removeAuthAddressBWO(_id, _address, true, sender);
     }
 
@@ -429,7 +410,6 @@ contract MogaMetaverse is Ownable, EIP712 {
         address _sender
     ) private {
         metaStorage.removeAuthAddress(_id, _address);
-
         emit RemoveAuthAddressBWO(_id, _address, _isBWO, _sender, getNonce(_sender));
         metaStorage.IncrementNonce(_sender);
     }
@@ -442,11 +422,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         return metaStorage.getAccount(_id);
     }
 
-    function getAccountAuthAddress(uint256 _id)
-        public
-        view
-        returns (address)
-    {
+    function getAccountAuthAddress(uint256 _id) public view returns (address) {
         return metaStorage.getAuthAddress(_id);
         // todo 似乎有用
     }
@@ -510,18 +486,16 @@ contract MogaMetaverse is Ownable, EIP712 {
     }
 
     function checkBWO(address _address) internal view {
-        require((isOperator[_address] || _owner == _address), "Metaverse: address is not BWO");
+        require(
+            (isOperator[_address] || _owner == _address),
+            "Metaverse: address is not BWO"
+        );
     }
 
     function getNonce(address _address) public view returns (uint256) {
         return metaStorage.nonces(_address);
     }
     
-    // for test
-    function getChainId() external view returns (uint256) {
-        return block.chainid;
-    }
-
     function _recoverSig(
         uint256 deadline,
         address signer,
