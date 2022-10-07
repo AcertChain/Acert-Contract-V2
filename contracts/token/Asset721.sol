@@ -564,7 +564,7 @@ contract Asset721 is EIP712, ERC165, IAsset721, Ownable {
         _beforeTokenTransfer(fromAccount, toAccount, tokenId);
 
         // Clear approvals from the previous owner
-        _approve(address(0), tokenId);
+        _tokenApprovalsById[tokenId] = address(0);
 
         _balancesById[fromAccount] -= 1;
         _balancesById[toAccount] += 1;
@@ -779,7 +779,8 @@ contract Asset721 is EIP712, ERC165, IAsset721, Ownable {
     function _burn(uint256 tokenId) internal virtual {
         address owner = Item721.ownerOf(tokenId);
         // Clear approvals
-        _approve(address(0), tokenId);
+        _tokenApprovalsById[tokenId] = address(0);
+        
         uint256 ownerId = metaverse.getAccountIdByAddress(owner);
         _beforeTokenTransfer(ownerId, 0, tokenId);
         _balancesById[ownerId] -= 1;
