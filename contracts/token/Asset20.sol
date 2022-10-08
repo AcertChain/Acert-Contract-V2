@@ -5,11 +5,12 @@ import "hardhat/console.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
+import "../common/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract Asset20 is Context, EIP712, IAsset20 {
+contract Asset20 is Context, EIP712, IAsset20, Ownable {
     mapping(uint256 => uint256) private _balancesById;
     mapping(uint256 => mapping(address => uint256)) private _allowancesById;
     mapping(address => uint256) private _nonces;
@@ -19,7 +20,6 @@ contract Asset20 is Context, EIP712, IAsset20 {
     string private _symbol;
     address private _world;
     address private _metadverse;
-    address private _owner;
 
     IWorld public world;
     IMetaverse public metaverse;
@@ -36,11 +36,9 @@ contract Asset20 is Context, EIP712, IAsset20 {
         world = IWorld(world_);
         _metadverse = world.getMetaverse();
         metaverse = IMetaverse(_metadverse);
-        _owner = _msgSender();
     }
 
-    function updateWorld(address _address) public {
-        require(_owner == _msgSender(), "Item: only owner");
+    function updateWorld(address _address) public onlyOwner {
         require(
             _metadverse == IWorld(_address).getMetaverse(),
             "Item: metaverse not match"
@@ -66,6 +64,18 @@ contract Asset20 is Context, EIP712, IAsset20 {
     }
 
     /**
+     * @dev See {IAsset-protocol}.
+     */
+    function protocol()
+        external
+        pure
+        virtual
+        returns (IWorldAsset.ProtocolEnum)
+    {
+        return IWorldAsset.ProtocolEnum.ASSET20;
+    }
+
+    /**
      * @dev Returns the number of decimals used to get its user representation.
      * For example, if `decimals` equals `2`, a balance of `505` tokens should
      * be displayed to a user as `5.05` (`505 / 10 ** 2`).
@@ -83,18 +93,6 @@ contract Asset20 is Context, EIP712, IAsset20 {
     }
 
     /**
-     * @dev See {IAsset-protocol}.
-     */
-    function protocol()
-        external
-        pure
-        virtual
-        returns (IWorldAsset.ProtocolEnum)
-    {
-        return IWorldAsset.ProtocolEnum.ASSET20;
-    }
-
-    /**
      * @dev See {IERC20-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
@@ -104,27 +102,29 @@ contract Asset20 is Context, EIP712, IAsset20 {
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account)
+    function balanceOf(address owner)
         public
         view
         virtual
         override
         returns (uint256)
     {
-        return _balancesById[metaverse.getAccountIdByAddress(account)];
+        _checkAddrIsNotZero(owner, "Asset20: address zero is not a valid owner");
+        return _balancesById[metaverse.getAccountIdByAddress(owner)];
     }
 
     /**
      * @dev See {IAsset-balanceOf}.
      */
-    function balanceOf(uint256 account)
+    function balanceOf(uint256 accountId)
         public
         view
         virtual
         override
         returns (uint256)
     {
-        return _balancesById[account];
+        _checkIdIsNotZero(accountId, "Asset20: id zero is not a valid owner");
+        return _balancesById[accountId];
     }
 
     /**
@@ -199,9 +199,9 @@ contract Asset20 is Context, EIP712, IAsset20 {
     ) internal virtual {
         require(from != address(0), "Asset20: transfer from the zero address");
         if (to == address(0)) {
-            _burn(metaverse.getAccountIdByAddress(to), amount);
+            _burn(metaverse.getAccountIdByAddress(from), amount);
         } else {
-            _transferAsset(metaverse.getAccountIdByAddress(from), metaverse.getAccountIdByAddress(to), amount, false, sender, from, to);
+            _transferAsset(metaverse.getAccountIdByAddress(from), metaverse.getOrCreateAccountId(to), amount, false, sender, from, to);
         }
 
     }
@@ -223,14 +223,14 @@ contract Asset20 is Context, EIP712, IAsset20 {
                 }
             }
         }
-        _transferAsset(fromAccount, toAccount, amount, true, _msgSender(), metaverse.getAddressByAccountId(fromAccount), metaverse.getOrCreateAccountId(toAccount));
+        _transferAsset(fromAccount, toAccount, amount, true, _msgSender(), metaverse.getAddressByAccountId(fromAccount), metaverse.getAddressByAccountId(toAccount));
         return true;
     }
 
     /**
      * @dev See {IAsset-transferBWO}.
      */
-    function transferBWO(
+    function transferFromBWO(
         uint256 fromAccount,
         uint256 toAccount,
         uint256 amount,
@@ -293,8 +293,11 @@ contract Asset20 is Context, EIP712, IAsset20 {
         address _fromAddr,
         address _toAddr
     ) internal virtual {
-        require(!metaverse.isFreeze(fromAccount), "Asset20: transfer from is frozen");
+        require(!metaverse.isFreeze(fromAccount), "Asset20: transfer from frozen account");
         require(metaverse.accountIsExist(toAccount), "Asset20: to account is not exist");
+        _checkIdIsNotZero(to, "Asset20: transfer to the zero id");
+        _accountIsExist(to);
+        
         uint256 fromBalance = _balancesById[fromAccount];
         require(fromBalance >= amount, "Asset20: transfer amount exceeds balance");
         unchecked {
@@ -564,6 +567,17 @@ contract Asset20 is Context, EIP712, IAsset20 {
         emit Transfer(metaverse.getAddressByAccountId(accountId), address(0), amount);
         emit Transfer(accountId, 0, amount, false, _msgSender(), getNonce(_msgSender()));
         _nonces[_msgSender()] += 1;
+    }
+
+    function _checkIdIsNotZero(uint256 _id, string memory _msg) internal pure {
+        require(_id != 0, _msg);
+    }
+
+    function _checkAddrIsNotZero(address _addr, string memory _msg)
+        internal
+        pure
+    {
+        require(_addr != address(0), _msg);
     }
 
     function getNonce(address account)
