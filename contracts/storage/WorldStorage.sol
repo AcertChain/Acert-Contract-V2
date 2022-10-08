@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../common/Ownable.sol";
-import "../interfaces/IWorldAsset.sol";
+import "../interfaces/IAsset.sol";
 
 contract WorldStorage is Ownable {
     // struct Asset
@@ -10,7 +10,7 @@ contract WorldStorage is Ownable {
         bool isExist;
         bool isEnabled;
         address addr;
-        IWorldAsset.ProtocolEnum _protocol;
+        IAsset.ProtocolEnum _protocol;
     }
 
     // struct Contract
@@ -23,8 +23,7 @@ contract WorldStorage is Ownable {
     // Mapping from address to trust contract
     mapping(address => Contract) public safeContracts;
     // Mapping from account Id to contract
-    mapping(uint256 => mapping(address => bool))
-        public isTrustContractByAccountId;
+    mapping(uint256 => mapping(address => bool)) public isTrustContractByAccountId;
     // Mapping from address to Asset
     mapping(address => Asset) public assets;
     // Mapping from is trust world
@@ -57,37 +56,37 @@ contract WorldStorage is Ownable {
     }
 
     function setAsset(address _address) public onlyWorld {
-        IWorldAsset.ProtocolEnum protocol = IWorldAsset(_address).protocol();
+        IAsset.ProtocolEnum protocol = IAsset(_address).protocol();
         assets[_address] = Asset(true, true, _address, protocol);
     }
 
-    function updateAsset(address _address, _enabled) public onlyWorld {
+    function updateAsset(address _address, bool _enabled) public onlyWorld {
         require(assets[_address].isExist == true, "World: asset is not exist");
         assets[_address].isEnabled = _enabled;
     }
 
     function addSafeContract(address _address, string calldata _name) public onlyWorld {
-        safeContracts[_contract.addr] = Contract(_address, _name);
+        safeContracts[_address] = Contract(true, _address, _name);
     }
 
     function removeSafeContract(address _address) public onlyWorld {
         require(safeContracts[_address].isExist == true, "World: safeContract is not exist");
-        safeContracts[_contract.addr].isExist = false;
+        safeContracts[_address].isExist = false;
     }
 
-    function getSafeContract(address _address) public view returns (Contract memory)
-    {
+    function getSafeContract(address _address) public view returns (Contract memory) {
         return safeContracts[_address];
     }
 
-    function setTrustContractByAccountId(uint256 _accountId, address _address, bool _isTrustContract)
-        public
-        onlyWorld
-    {
-        isTrustContractByAccountId[_accountId][_address] = _isTrustContract;
+    function setTrustContractByAccountId(
+        uint256 _accountId,
+        address _address,
+        bool _isTrust
+    ) public onlyWorld {
+        isTrustContractByAccountId[_accountId][_address] = _isTrust;
     }
 
-    function setTrustWorld(uint256 _accountId, bool _isTrustWorld) public onlyWorld {
-        isTrustWorld[_accountId] = _isTrustWorld;
+    function setTrustWorld(uint256 _accountId, bool _isTrust) public onlyWorld {
+        isTrustWorld[_accountId] = _isTrust;
     }
 }
