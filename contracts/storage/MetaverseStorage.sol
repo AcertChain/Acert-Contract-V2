@@ -10,6 +10,7 @@ contract MetaverseStorage is Ownable {
 
     struct WorldInfo {
         address world;
+        string name;
         bool isEnabled;
     }
 
@@ -18,20 +19,17 @@ contract MetaverseStorage is Ownable {
         bool isTrustAdmin;
         bool isFreeze;
         uint256 id;
-        address addr;
     }
 
     mapping(address => WorldInfo) public worldInfos;
     // Mapping from account ID to Account
     mapping(uint256 => Account) public accounts;
-    // Mapping from adress to account ID
-    mapping(address => uint256) public addressToId;
     // nonce
     mapping(address => uint256) public nonces;
 
-    mapping(uint256 => mapping(address => bool)) public authAddress;
+    mapping(uint256 => EnumerableSet.AddressSet) private authAddress;
 
-    mapping(address => uint256) public authToAddress;
+    mapping(address => uint256) public authToId;
 
     address public metaverse;
 
@@ -44,7 +42,7 @@ contract MetaverseStorage is Ownable {
     }
 
     modifier onlyMetaverse() {
-        require( metaverse == msg.sender);
+        require(metaverse == msg.sender);
         _;
     }
 
@@ -56,10 +54,10 @@ contract MetaverseStorage is Ownable {
         return worlds.contains(addr);
     }
 
-    function add(address addr) public onlyMetaverse {
+    function add(address addr, string calldata name) public onlyMetaverse {
         if (!worlds.contains(addr)) {
             worlds.add(addr);
-            worldInfos[addr] = WorldInfo(_world, true);
+            worldInfos[addr] = WorldInfo(addr, name, true);
         }
     }
 
@@ -77,14 +75,6 @@ contract MetaverseStorage is Ownable {
         }
     }
 
-    function addAddressToId(address addr, uint256 id) public onlyMetaverse {
-        addressToId[addr] = id;
-    }
-
-    function deleteAddressToId(address addr) public onlyMetaverse {
-        delete addressToId[addr];
-    }
-
     function setAccount(Account calldata account) public onlyMetaverse {
         accounts[account.id] = account;
     }
@@ -97,17 +87,25 @@ contract MetaverseStorage is Ownable {
         return accounts[id];
     }
 
-    function getAuthAddress(uint256 id) public view returns (address memory) {
-        return authAddress[id];
+    function authAddressContains(uint256 id, address addr) public view returns (bool) {
+        return authAddress[id].contains(addr);
     }
 
-    function addAuthAddress(uint256 id, address  addr) public onlyMetaverse {
-            authAddress[id][addr] = true;
-            authToAddress[addr] = id;
+    function getAuthAddresses(uint256 id) public view returns (address[] memory) {
+        return authAddress[id].values();
     }
 
-    function removeAuthAddress(uint256 id, address  addr) public onlyMetaverse {
-            delete authAddress[id][addr];
-            delete authToAddress[addr];
+    function getAccountAddress(uint256 id) public view returns (address) {
+        return authAddress[id].at(0);
+    }
+
+    function addAuthAddress(uint256 id, address addr) public onlyMetaverse {
+        authAddress[id].add(addr);
+        authToId[addr] = id;
+    }
+
+    function removeAuthAddress(uint256 id, address addr) public onlyMetaverse {
+        authAddress[id].remove(addr);
+        delete authToId[addr];
     }
 }

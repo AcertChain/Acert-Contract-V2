@@ -8,52 +8,32 @@ import "../storage/MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract MogaMetaverse is Ownable, EIP712 {
-    event RegisterWorld(
-        address indexed world,
-        string name
-    );
+    enum OperationEnum {
+        ADD,
+        REMOVE
+    }
+    event RegisterWorld(address indexed world, string name);
     event DisableWorld(address indexed world);
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
-    event CreateAccount(
+    event CreateAccount(uint256 indexed accountId, address indexed authAddress, bool isTrustAdmin);
+    event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed Sender, uint256 nonce);
+    event FreezeAccount(uint256 indexed accountId, bool isBWO, address indexed Sender, uint256 nonce);
+    event UnFreezeAccount(uint256 indexed accountId);
+    //operation true: add, false: remove
+    event AuthAddressChanged(
         uint256 indexed accountId,
         address indexed authAddress,
-        bool isTrustAdmin
-    );
-    event TrustAdmin(
-        uint256 indexed accountId,
-        bool isTrustAdmin,
-        bool isBWO,
-        address indexed Sender,
-        uint256 nonce
-    );
-    event FreezeAccount(
-        uint256 indexed accountId,
-        bool isBWO,
-        address indexed Sender,
-        uint256 nonce
-    );
-    event UnFreezeAccount(
-        uint256 indexed accountId
-    );
-    event AddAuthAddress(
-        uint256 indexed accountId,
-        address indexed authAddress,
-        bool isBWO,
-        address indexed sender,
-        uint256 nonce
-    );
-    event RemoveAuthAddress(
-        uint256 indexed accountId,
-        address indexed authAddress,
+        OperationEnum operation,
         bool isBWO,
         address indexed sender,
         uint256 nonce
     );
 
-    address public _admin;
-    uint256 public immutable _startId;
+    string public name;
+    address public admin;
+    uint256 public immutable startId;
     MetaverseStorage public metaStorage;
     uint256 public totalAccount;
 
@@ -66,19 +46,17 @@ contract MogaMetaverse is Ownable, EIP712 {
         uint256 startId_,
         address metaStorage_
     ) EIP712(name_, version_) {
+        name = name_;
         _owner = msg.sender;
-        _startId = startId_;
+        startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
     }
 
-    function registerWorld(address _world) public onlyOwner {
+    function registerWorld(address _world, string calldata _name) public onlyOwner {
         checkAddressIsNotZero(_world);
         require(containsWorld(_world) == false, "Metaverse: world is exist");
-        require(
-            MonsterGalaxy(_world).getMetaverse() == address(this),
-            "Metaverse: metaverse is not match"
-        );
-        metaStorage.add(_world);
+        require(MonsterGalaxy(_world).getMetaverse() == address(this), "Metaverse: metaverse is not match");
+        metaStorage.add(_world, _name);
         emit RegisterWorld(_world, _name);
     }
 
@@ -88,11 +66,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         emit DisableWorld(_world);
     }
 
-    function getWorldInfo(address _world)
-        public
-        view
-        returns (MetaverseStorage.WorldInfo memory)
-    {
+    function getWorldInfo(address _world) public view returns (MetaverseStorage.WorldInfo memory) {
         return metaStorage.getWorldInfo(_world);
     }
 
@@ -110,12 +84,8 @@ contract MogaMetaverse is Ownable, EIP712 {
 
     function setAdmin(address _address) public onlyOwner {
         checkAddressIsNotZero(_address);
-        _admin = _address;
+        admin = _address;
         emit SetAdmin(_address);
-    }
-
-    function getAdmin() public view returns (address) {
-        return _admin;
     }
 
     function addOperator(address _operator) public onlyOwner {
@@ -129,27 +99,17 @@ contract MogaMetaverse is Ownable, EIP712 {
         emit RemoveOperator(_operator);
     }
 
-    function createAccount(address _address, bool _isTrustAdmin)
-        public
-        virtual
-        returns (uint256 id)
-    {
+    function createAccount(address _address, bool _isTrustAdmin) public virtual returns (uint256 id) {
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
-
         totalAccount++;
-        id = totalAccount + _startId;
-        metaStorage.setAccount(
-            MetaverseStorage.Account(true, _isTrustAdmin, false, id, _address)
-        );
-        metaStorage.addAddressToId(_address, _id);
+        id = totalAccount + startId;
+        metaStorage.setAccount(MetaverseStorage.Account(true, _isTrustAdmin, false, id));
+        metaStorage.addAuthAddress( id,_address);
         emit CreateAccount(id, _address, _isTrustAdmin);
-   }
+    }
 
-    function trustAdmin(
-        uint256 _id,
-        bool _isTrustAdmin
-    ) public {
+    function trustAdmin(uint256 _id, bool _isTrustAdmin) public {
         checkSender(_id, msg.sender);
         _trustAdmin(_id, _isTrustAdmin, false, msg.sender);
     }
@@ -162,13 +122,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         bytes memory signature
     ) public {
         checkBWO(msg.sender);
-        changeAccountBWOParamsVerify(
-            _id,
-            _isTrustAdmin,
-            sender,
-            deadline,
-            signature
-        );
+        trustAdminBWOParamsVerify(_id, _isTrustAdmin, sender, deadline, signature);
         _trustAdmin(_id, _isTrustAdmin, true, sender);
     }
 
@@ -187,9 +141,7 @@ contract MogaMetaverse is Ownable, EIP712 {
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256(
-                            "BWO(uint256 id,address new,bool isTrustAdmin,address sender,uint256 nonce,uint256 deadline)"
-                        ),
+                        keccak256("BWO(uint256 id,bool isTrustAdmin,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         _isTrustAdmin,
                         sender,
@@ -213,23 +165,14 @@ contract MogaMetaverse is Ownable, EIP712 {
         require(account.isExist == true, "Metaverse: account is not exist");
         account.isTrustAdmin = _isTrustAdmin;
         metaStorage.setAccount(account);
-        emit TrustAdmin(
-            _id,
-            _isTrustAdmin,
-            _isBWO,
-            _sender,
-            getNonce(_sender)
-        );        
+        emit TrustAdmin(_id, _isTrustAdmin, _isBWO, _sender, getNonce(_sender));
         metaStorage.IncrementNonce(_sender);
     }
 
     function freezeAccount(uint256 _id) public {
         MetaverseStorage.Account memory account = getAccountInfo(_id);
-        if (msg.sender == _admin && getAccountIdByAddress(msg.sender != _id)) {
-            require(
-                (account.isTrustAdmin),
-                "Metaverse: admin does not have permission to freeze the account"
-            );
+        if (msg.sender == admin && getAccountIdByAddress(msg.sender) != _id) {
+            require((account.isTrustAdmin), "Metaverse: admin does not have permission to freeze the account");
         } else {
             checkSender(_id, msg.sender);
         }
@@ -261,9 +204,7 @@ contract MogaMetaverse is Ownable, EIP712 {
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256(
-                            "BWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"
-                        ),
+                        keccak256("BWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         sender,
                         nonce,
@@ -275,43 +216,29 @@ contract MogaMetaverse is Ownable, EIP712 {
         );
         return true;
     }
+
     function _freezeAccount(
-        uint256 _id, 
+        uint256 _id,
         bool _isBWO,
         address _sender
     ) private {
         MetaverseStorage.Account memory account = getAccountInfo(_id);
-        require(
-            account.isFreeze == false,
-            "Metaverse: The account has been frozen"
-        );
+        require(account.isFreeze == false, "Metaverse: The account has been frozen");
         account.isFreeze = true;
         metaStorage.setAccount(account);
-        emit FreezeAccount(
-            _id,
-            _isBWO,
-            _sender,
-            getNonce(_sender)
-        );        
+        emit FreezeAccount(_id, _isBWO, _sender, getNonce(_sender));
         metaStorage.IncrementNonce(_sender);
     }
 
     function unfreezeAccount(uint256 _id) public {
-        require(msg.sender == _admin, "Metaverse: sender is not admin");
+        require(msg.sender == admin, "Metaverse: sender is not admin");
         MetaverseStorage.Account memory account = getAccountInfo(_id);
-        require(
-            account.isFreeze,
-            "Metaverse: The accounts were not frozen"
-        );
+        require(account.isFreeze, "Metaverse: The accounts were not frozen");
         account.isFreeze = false;
         emit UnFreezeAccount(_id);
-
     }
 
-    function addAuthAddress(
-        uint256 _id,
-        address _address
-    ) public {
+    function addAuthAddress(uint256 _id, address _address) public {
         checkSender(_id, msg.sender);
         _addAuthAddress(_id, _address, false, msg.sender);
     }
@@ -325,7 +252,7 @@ contract MogaMetaverse is Ownable, EIP712 {
     ) public {
         checkBWO(msg.sender);
         addAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
-        _addAuthAddressBWO(_id, _address, true, sender);
+        _addAuthAddress(_id, _address, true, sender);
     }
 
     function addAuthAddressBWOParamsVerfiy(
@@ -343,9 +270,7 @@ contract MogaMetaverse is Ownable, EIP712 {
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256(
-                            "BWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"
-                        ),
+                        keccak256("BWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         _address,
                         sender,
@@ -359,7 +284,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         return true;
     }
 
-    function _addAuthAddressBWO(
+    function _addAuthAddress(
         uint256 _id,
         address _address,
         bool _isBWO,
@@ -367,14 +292,11 @@ contract MogaMetaverse is Ownable, EIP712 {
     ) private {
         metaStorage.addAuthAddress(_id, _address);
 
-        emit AddAuthAddressBWO(_id, _address, _isBWO, _sender, getNonce(_sender));
+        emit AuthAddressChanged(_id, _address, OperationEnum.ADD, _isBWO, _sender, getNonce(_sender));
         metaStorage.IncrementNonce(_sender);
     }
 
-    function removeAuthAddress(
-        uint256 _id,
-        address _address
-    ) public {
+    function removeAuthAddress(uint256 _id, address _address) public {
         checkSender(_id, msg.sender);
         _removeAuthAddress(_id, _address, false, msg.sender);
     }
@@ -388,7 +310,7 @@ contract MogaMetaverse is Ownable, EIP712 {
     ) public {
         checkBWO(msg.sender);
         removeAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
-        _removeAuthAddressBWO(_id, _address, true, sender);
+        _removeAuthAddress(_id, _address, true, sender);
     }
 
     function removeAuthAddressBWOParamsVerfiy(
@@ -406,9 +328,7 @@ contract MogaMetaverse is Ownable, EIP712 {
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256(
-                            "BWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"
-                        ),
+                        keccak256("BWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         _address,
                         sender,
@@ -422,38 +342,23 @@ contract MogaMetaverse is Ownable, EIP712 {
         return true;
     }
 
-    function _removeAuthAddressBWO(
+    function _removeAuthAddress(
         uint256 _id,
         address _address,
         bool _isBWO,
         address _sender
     ) private {
         metaStorage.removeAuthAddress(_id, _address);
-
-        emit RemoveAuthAddressBWO(_id, _address, _isBWO, _sender, getNonce(_sender));
+        emit AuthAddressChanged(_id, _address, OperationEnum.REMOVE, _isBWO, _sender, getNonce(_sender));
         metaStorage.IncrementNonce(_sender);
     }
 
-    function getAccountInfo(uint256 _id)
-        public
-        view
-        returns (MetaverseStorage.Account memory account)
-    {
+    function getAccountInfo(uint256 _id) public view returns (MetaverseStorage.Account memory account) {
         return metaStorage.getAccount(_id);
     }
 
-    function getAccountAuthAddress(uint256 _id)
-        public
-        view
-        returns (address)
-    {
-        return metaStorage.getAuthAddress(_id);
-        // todo 似乎有用
-    }
-
-    function authToAddress(address _address) public view returns (uint256) {
-        return metaStorage.authToAddress(_address);
-        // todo 似乎没用
+    function getAccountAuthAddress(uint256 _id) public view returns (address[] memory) {
+        return metaStorage.getAuthAddresses(_id);
     }
 
     /**
@@ -473,10 +378,7 @@ contract MogaMetaverse is Ownable, EIP712 {
     /**
      * @dev See {IMetaverse-getOrCreateAccountId}.
      */
-    function getOrCreateAccountId(address _address)
-        public
-        returns (uint256 id)
-    {
+    function getOrCreateAccountId(address _address) public returns (uint256 id) {
         checkAddressIsNotZero(_address);
         if (getAccountIdByAddress(_address) == 0) {
             id = createAccount(_address, false);
@@ -489,24 +391,22 @@ contract MogaMetaverse is Ownable, EIP712 {
      * @dev See {IMetaverse-getAccountIdByAddress}.
      */
     function getAccountIdByAddress(address _address) public view returns (uint256) {
-        return metaStorage.addressToId(_address);
+        return metaStorage.authToId(_address);
     }
 
     /**
      * @dev See {IMetaverse-getAddressByAccountId}.
      */
     function getAddressByAccountId(uint256 _id) public view returns (address) {
-        return getAccountInfo(_id).addr;
+        return metaStorage.getAccountAddress(_id);
     }
 
     /**
      * @dev See {IMetaverse-checkSender}.
      */
-    function checkSender(uint256 _id, address _sender) public {
-        MetaverseStorage.Account memory account = getAccountInfo(_id);
-        require(account.isExist == true, "Metaverse: account is not exist");
-        require(account.addr == _sender, "Metaverse: sender not owner");
-        // todo 还没有改AuthAddress的逻辑
+    function checkSender(uint256 _id, address _sender) public view {
+        require(accountIsExist(_id), "Metaverse: Account does not exist");
+        require(metaStorage.authAddressContains(_id, _sender),"Metaverse: Sender is not authorized");
     }
 
     function checkBWO(address _address) internal view {
@@ -516,11 +416,6 @@ contract MogaMetaverse is Ownable, EIP712 {
     function getNonce(address _address) public view returns (uint256) {
         return metaStorage.nonces(_address);
     }
-    
-    // for test
-    function getChainId() external view returns (uint256) {
-        return block.chainid;
-    }
 
     function _recoverSig(
         uint256 deadline,
@@ -529,17 +424,11 @@ contract MogaMetaverse is Ownable, EIP712 {
         bytes memory signature
     ) internal view {
         require(block.timestamp < deadline, "Metaverse: BWO call expired");
-        require(
-            signer == ECDSA.recover(digest, signature),
-            "Metaverse: recoverSig failed"
-        );
+        require(signer == ECDSA.recover(digest, signature), "Metaverse: recoverSig failed");
     }
 
-    function checkAddressIsNotUsed(address _address) internal pure {
-        require(
-            getAccountIdByAddress(_address) == 0,
-            "Metaverse: new address has been used"
-        );
+    function checkAddressIsNotUsed(address _address) internal view {
+        require(getAccountIdByAddress(_address) == 0, "Metaverse: new address has been used");
     }
 
     function checkAddressIsNotZero(address _address) internal pure {

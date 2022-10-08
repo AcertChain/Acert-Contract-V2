@@ -3,10 +3,8 @@
 pragma solidity ^0.8.0;
 
 import "../token/Asset721.sol";
-import "../common/Ownable.sol";
 
-contract MogaNFT is Asset721, Ownable {
-
+contract MogaNFT is Asset721 {
     constructor(
         string memory name,
         string memory symbol,
@@ -21,8 +19,8 @@ contract MogaNFT is Asset721, Ownable {
         _mint(to, tokenId);
     }
 
-    function mintItem(uint256 to, uint256 tokenId) public onlyOwner {
-        _mintItem(to, tokenId);
+    function mint(uint256 to, uint256 tokenId) public onlyOwner {
+        _mint(to, tokenId);
     }
 
     function safeMint(

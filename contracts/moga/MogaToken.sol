@@ -3,8 +3,8 @@
 pragma solidity ^0.8.0;
 
 import "../token/Asset20.sol";
-import "../common/Ownable.sol";
-contract GGMToken is Asset20, Ownable {
+
+contract GGMToken is Asset20 {
     constructor(
         string memory name,
         string memory symbol,
@@ -22,12 +22,12 @@ contract GGMToken is Asset20, Ownable {
         _burn(account, amount);
     }
 
-    function mintCash(uint256 accountId, uint256 amount) public onlyOwner {
-        _mintCash(accountId, amount);
+    function mint(uint256 accountId, uint256 amount) public onlyOwner {
+        _mint(accountId, amount);
     }
 
-    function burnCash(uint256 accountId, uint256 amount) public onlyOwner {
-        _burnCash(accountId, amount);
+    function burn(uint256 accountId, uint256 amount) public onlyOwner {
+        _burn(accountId, amount);
     }
 
     function getChainId() external view returns (uint256) {

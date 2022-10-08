@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "./IAsset.sol";
 
 interface IAsset20 is IERC20Metadata, IAsset {
-    event Transfer(
+    event AssetTransfer(
         uint256 indexed from,
         uint256 indexed to,
         uint256 value,
@@ -14,7 +14,7 @@ interface IAsset20 is IERC20Metadata, IAsset {
         uint256 nonce
     );
 
-    event Approval(
+    event AssetApproval(
         uint256 indexed owner,
         address indexed spender,
         uint256 value,
@@ -25,10 +25,7 @@ interface IAsset20 is IERC20Metadata, IAsset {
 
     function balanceOf(uint256 account) external view returns (uint256);
 
-    function allowance(uint256 account, address spender)
-        external
-        view
-        returns (uint256);
+    function allowance(uint256 account, address spender) external view returns (uint256);
 
     function transferFrom(
         uint256 from,
