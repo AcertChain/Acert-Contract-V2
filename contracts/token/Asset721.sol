@@ -6,6 +6,7 @@ import "../interfaces/IAsset721.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
 import "../common/Ownable.sol";
+import "../storage/Asset721Storage.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -28,27 +29,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
 
     IWorld public world;
     IMetaverse public metaverse;
-
-    // nonce
-    mapping(address => uint256) public _nonces;
-
-    // Mapping from token ID to owner address
-    mapping(uint256 => uint256) private _ownersById;
-
-    // Mapping owner address to token count
-    mapping(uint256 => uint256) private _balancesById;
-
-    // Mapping from token ID to approved address
-    mapping(uint256 => address) private _tokenApprovalsById;
-
-    // Mapping from owner to operator approvals
-    mapping(uint256 => mapping(address => bool)) private _operatorApprovalsById;
-
-    // Mapping from owner to list of owned token IDs
-    mapping(uint256 => mapping(uint256 => uint256)) private _ownedTokens;
-
-    // Mapping from token ID to index of the owner tokens list
-    mapping(uint256 => uint256) private _ownedTokensIndex;
+    Asset721Storage public storageContract;
 
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
@@ -58,17 +39,19 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         string memory symbol_,
         string memory version_,
         string memory tokenURI_,
-        address world_
+        address world_,
+        address storage_
     ) EIP712(name_, version_) {
         _name = name_;
         _symbol = symbol_;
         _tokenURI = tokenURI_;
         world = IWorld(world_);
+        storageContract = Asset721Storage(storage_);
         metaverse = IMetaverse(world.getMetaverse());
     }
 
     function updateWorld(address _world) public onlyOwner {
-        require(address(metaverse) == IWorld(_world).getMetaverse(), "Item: metaverse not match");
+        require(address(metaverse) == IWorld(_world).getMetaverse(), "Asset721: metaverse not match");
         world = IWorld(_world);
     }
 
@@ -117,7 +100,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
      */
     function balanceOf(address owner) public view virtual override returns (uint256) {
         _checkAddrIsNotZero(owner, "Item: address zero is not a valid owner");
-        return _balancesById[metaverse.getAccountIdByAddress(owner)];
+        return _balancesById(_getAccountIdByAddress(owner));
     }
 
     /**
@@ -125,14 +108,14 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
      */
     function balanceOf(uint256 accountId) public view virtual override returns (uint256) {
         _checkIdIsNotZero(accountId, "Item: id zero is not a valid owner");
-        return _balancesById[accountId];
+        return _balancesById(accountId);
     }
 
     /**
      * @dev See {IERC721-ownerOf}.
      */
     function ownerOf(uint256 tokenId) public view virtual override returns (address owner) {
-        owner = metaverse.getAddressByAccountId(_ownersById[tokenId]);
+        owner = _getAddressByAccountId(_ownersById(tokenId));
         _checkAddrIsNotZero(owner, "Item: owner query for nonexistent token");
     }
 
@@ -140,7 +123,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
      * @dev See {IAsset721-ownerAccountOf}.
      */
     function ownerAccountOf(uint256 tokenId) public view virtual override returns (uint256 ownerId) {
-        ownerId = _ownersById[tokenId];
+        ownerId = _ownersById(tokenId);
         _checkIdIsNotZero(ownerId, "Item: owner query for nonexistent token");
     }
 
@@ -156,7 +139,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         require(endAt < balanceOf(owner), "Item: endAt must be less than the balance of the owner");
         uint256[] memory items = new uint256[](endAt - startAt + 1);
         for (uint256 i = 0; i <= endAt - startAt; i++) {
-            items[i] = _ownedTokens[owner][startAt + i];
+            items[i] = _ownedTokens(owner, startAt + i);
         }
         return items;
     }
@@ -176,22 +159,20 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
 
     function _addTokenToOwnerEnumeration(uint256 to, uint256 tokenId) private {
         uint256 length = balanceOf(to);
-        _ownedTokens[to][length] = tokenId;
-        _ownedTokensIndex[tokenId] = length;
+        _setOwnedTokenAndIndex(to, length, tokenId);
     }
 
     function _removeTokenFromOwnerEnumeration(uint256 from, uint256 tokenId) private {
         uint256 lastTokenIndex = balanceOf(from) - 1;
-        uint256 tokenIndex = _ownedTokensIndex[tokenId];
+        uint256 tokenIndex = storageContract.ownedTokensIndex(tokenId);
 
         if (tokenIndex != lastTokenIndex) {
-            uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
-            _ownedTokens[from][tokenIndex] = lastTokenId;
-            _ownedTokensIndex[lastTokenId] = tokenIndex;
+            uint256 lastTokenId = _ownedTokens(from, lastTokenIndex);
+            _setOwnedTokenAndIndex(from, tokenIndex, lastTokenId);
         }
 
-        delete _ownedTokensIndex[tokenId];
-        delete _ownedTokens[from][lastTokenIndex];
+        storageContract.deleteOwnedToken(from, lastTokenIndex);
+        storageContract.deleteOwnedTokenIndex(tokenId);
     }
 
     /**
@@ -201,7 +182,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
     function approve(address spender, uint256 tokenId) public virtual override {
         uint256 ownerId = ownerAccountOf(tokenId);
         require(
-            metaverse.getAccountIdByAddress(_msgSender()) == ownerId || isApprovedForAll(ownerId, msg.sender),
+            _getAccountIdByAddress(_msgSender()) == ownerId || isApprovedForAll(ownerId, msg.sender),
             "Item: approve caller is not owner nor approved for all"
         );
         _approve(spender, tokenId, false, _msgSender());
@@ -214,7 +195,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        world.checkBWOByAsset(_msgSender());
+        _checkBWOByAsset(_msgSender());
         approveBWOParamsVerify(spender, tokenId, sender, deadline, signature);
         _approve(spender, tokenId, true, sender);
     }
@@ -227,7 +208,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         bytes memory signature
     ) public view returns (bool) {
         uint256 ownerId = ownerAccountOf(tokenId);
-        metaverse.checkSender(ownerId, sender);
+        _checkSender(ownerId, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -256,13 +237,14 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         address sender
     ) internal virtual {
         uint256 ownerId = ownerAccountOf(tokenId);
-        require(!metaverse.isFreeze(ownerId), "Asset20: approve owner is frozen");
+        require(!_isFreeze(ownerId), "Asset20: approve owner is frozen");
         _checkAddrIsNotZero(spender, "Asset721: approve to the zero address");
-        require(metaverse.getAccountIdByAddress(spender) != ownerId, "Asset721: approval to current account");
-        _tokenApprovalsById[tokenId] = spender;
+        require(_getAccountIdByAddress(spender) != ownerId, "Asset721: approval to current account");
+
+        _setTokenApprovalById(tokenId, spender);
         emit Approval(sender, spender, tokenId);
         emit AssetApproval(ownerId, spender, tokenId, isBWO, sender, getNonce(sender));
-        _nonces[sender] += 1;
+        _incrementNonce(sender);
     }
 
     /**
@@ -270,14 +252,14 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
      */
     function getApproved(uint256 tokenId) public view virtual override returns (address) {
         require(_exists(tokenId), "Asset721: approved query for nonexistent token");
-        return _tokenApprovalsById[tokenId];
+        return storageContract.tokenApprovalsById(tokenId);
     }
 
     /**
      * @dev See {IERC721-setApprovalForAll}.
      */
     function setApprovalForAll(address operator, bool approved) public virtual override {
-        uint256 accountId = metaverse.getAccountIdByAddress(_msgSender());
+        uint256 accountId = _getAccountIdByAddress(_msgSender());
         _checkIdIsNotZero(accountId, "Asset721: approveForAll query for nonexistent account");
         _setApprovalForAll(accountId, operator, approved, false, _msgSender());
     }
@@ -288,7 +270,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         bool approved
     ) public virtual override {
         _checkIdIsNotZero(accountId, "Asset721: approveForAll query for nonexistent account");
-        metaverse.checkSender(accountId, _msgSender());
+        _checkSender(accountId, _msgSender());
         _setApprovalForAll(accountId, operator, approved, false, _msgSender());
     }
 
@@ -300,7 +282,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        world.checkBWOByAsset(_msgSender());
+        _checkBWOByAsset(_msgSender());
         setApprovalForAllBWOParamsVerify(accountId, operator, approved, sender, deadline, signature);
         _setApprovalForAll(accountId, operator, approved, true, sender);
     }
@@ -313,7 +295,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
-        metaverse.checkSender(accountId, sender);
+        _checkSender(accountId, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -346,23 +328,23 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         address sender
     ) internal virtual {
         _checkIdIsNotZero(accountId, "Asset721: id zero is not a valid owner");
-        require(!metaverse.isFreeze(accountId), "Asset721: approve owner is frozen");
+        require(!_isFreeze(accountId), "Asset721: approve owner is frozen");
         _checkAddrIsNotZero(operator, "Asset721: approve to the zero address");
-        require(metaverse.getAccountIdByAddress(operator) != accountId, "Asset721: approval to current account");
-        _operatorApprovalsById[accountId][operator] = approved;
+        require(_getAccountIdByAddress(operator) != accountId, "Asset721: approval to current account");
+
+        storageContract.setOperatorApprovalById(accountId, operator, approved);
         // emit ERC721 event
         emit ApprovalForAll(sender, operator, approved);
         // emit Asset721 event
         emit AssetApprovalForAll(accountId, operator, approved, isBWO, sender, getNonce(sender));
-        _nonces[sender] += 1;
+        _incrementNonce(sender);
     }
 
     /**
      * @dev See {IERC721-isApprovedForAll}.
      */
     function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {
-        uint256 ownerId = metaverse.getAccountIdByAddress(owner);
-        return isApprovedForAll(ownerId, operator);
+        return isApprovedForAll(_getAccountIdByAddress(owner), operator);
     }
 
     function isApprovedForAll(uint256 ownerId, address operator) public view virtual override returns (bool) {
@@ -370,7 +352,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         if (world.isTrust(operator, ownerId)) {
             return true;
         }
-        return _operatorApprovalsById[ownerId][operator];
+        return storageContract.operatorApprovalsById(ownerId, operator);
     }
 
     /**
@@ -385,15 +367,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         if (to == address(0)) {
             _burn(tokenId);
         } else {
-            _transfer(
-                metaverse.getAccountIdByAddress(from),
-                metaverse.getOrCreateAccountId(to),
-                tokenId,
-                false,
-                _msgSender(),
-                from,
-                to
-            );
+            _transfer(_getAccountIdByAddress(from), _getOrCreateAccountId(to), tokenId, false, _msgSender(), from, to);
         }
     }
 
@@ -409,8 +383,8 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
             tokenId,
             false,
             _msgSender(),
-            metaverse.getAddressByAccountId(fromAccount),
-            metaverse.getAddressByAccountId(toAccount)
+            _getAddressByAccountId(fromAccount),
+            _getAddressByAccountId(toAccount)
         );
     }
 
@@ -422,7 +396,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        world.checkBWOByAsset(_msgSender());
+        _checkBWOByAsset(_msgSender());
         transferFromBWOParamsVerify(fromAccount, toAccount, tokenId, sender, deadline, signature);
         _transfer(
             fromAccount,
@@ -430,8 +404,8 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
             tokenId,
             true,
             sender,
-            metaverse.getAddressByAccountId(fromAccount),
-            metaverse.getAddressByAccountId(toAccount)
+            _getAddressByAccountId(fromAccount),
+            _getAddressByAccountId(toAccount)
         );
     }
 
@@ -443,7 +417,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
-        metaverse.checkSender(fromAccount, sender);
+        _checkSender(fromAccount, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -478,23 +452,23 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         address _toAddr
     ) internal virtual {
         require(Asset721.ownerAccountOf(tokenId) == fromAccount, "Item: transfer from incorrect owner");
-        require(!metaverse.isFreeze(fromAccount), "Asset721: transfer from frozen account");
-        require(metaverse.accountIsExist(toAccount), "Asset721: to account is not exist");
+        require(!_isFreeze(fromAccount), "Asset721: transfer from frozen account");
+        require(_isExist(toAccount), "Asset721: to account is not exist");
         _checkIdIsNotZero(toAccount, "Item: transfer to the zero id");
-        metaverse.accountIsExist(toAccount);
+        _isExist(toAccount);
 
         _beforeTokenTransfer(fromAccount, toAccount, tokenId);
 
         // Clear approvals from the previous owner
-        _tokenApprovalsById[tokenId] = address(0);
-
-        _balancesById[fromAccount] -= 1;
-        _balancesById[toAccount] += 1;
-        _ownersById[tokenId] = toAccount;
+        _setTokenApprovalById(tokenId, address(0));
+        _setBalanceById(fromAccount, _balancesById(fromAccount) - 1);
+        _setBalanceById(toAccount, _balancesById(toAccount) + 1);
+        storageContract.setOwnerById(tokenId, toAccount);
 
         emit Transfer(_fromAddr, _toAddr, tokenId);
         emit AssetTransfer(fromAccount, toAccount, tokenId, isBWO, sender, getNonce(sender));
-        _nonces[sender] += 1;
+
+        _incrementNonce(sender);
     }
 
     function safeTransferFrom(
@@ -515,7 +489,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         bytes memory data
     ) public virtual override {
         _checkAddrIsNotZero(to, "Item: transfer to the zero address");
-        safeTransferFrom(metaverse.getAccountIdByAddress(from), metaverse.getOrCreateAccountId(to), tokenId, data);
+        safeTransferFrom(_getAccountIdByAddress(from), _getOrCreateAccountId(to), tokenId, data);
     }
 
     function safeTransferFrom(
@@ -539,7 +513,8 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
     ) public virtual override {
         safeTransferFromItemBWOParamsVerify(from, to, tokenId, data, sender, deadline, signature);
         _safeTransfer(from, to, tokenId, true, sender, data);
-        _nonces[sender] += 1;
+
+        _incrementNonce(sender);
     }
 
     function safeTransferFromItemBWOParamsVerify(
@@ -584,22 +559,9 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         address sender,
         bytes memory data
     ) internal virtual {
-        _transfer(
-            from,
-            to,
-            tokenId,
-            isBWO,
-            sender,
-            metaverse.getAddressByAccountId(from),
-            metaverse.getAddressByAccountId(to)
-        );
+        _transfer(from, to, tokenId, isBWO, sender, _getAddressByAccountId(from), _getAddressByAccountId(to));
         require(
-            _checkOnERC721Received(
-                metaverse.getAddressByAccountId(from),
-                metaverse.getAddressByAccountId(to),
-                tokenId,
-                data
-            ),
+            _checkOnERC721Received(_getAddressByAccountId(from), _getAddressByAccountId(to), tokenId, data),
             "Item: transfer to non ERC721Receiver implementer"
         );
     }
@@ -613,7 +575,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
      * and stop existing when they are burned (`_burn`).
      */
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        return _ownersById[tokenId] != 0;
+        return _ownersById(tokenId) != 0;
     }
 
     /**
@@ -629,7 +591,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         uint256 ownerId = ownerAccountOf(tokenId);
 
         return (sender == owner ||
-            metaverse.getAccountIdByAddress(sender) == ownerId ||
+            _getAccountIdByAddress(sender) == ownerId ||
             isApprovedForAll(owner, sender) ||
             getApproved(tokenId) == sender);
     }
@@ -660,18 +622,21 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
      */
     function _mint(address to, uint256 tokenId) internal virtual {
         _checkAddrIsNotZero(to, "Item: mint to the zero address");
-        _mint(metaverse.getOrCreateAccountId(to), tokenId);
+        _mint(_getOrCreateAccountId(to), tokenId);
     }
 
     function _mint(uint256 to, uint256 tokenId) internal virtual {
         _checkIdIsNotZero(to, "Item: transfer to the zero id");
         require(!_exists(tokenId), "Item: token already minted");
         _beforeTokenTransfer(0, to, tokenId);
-        _balancesById[to] += 1;
-        _ownersById[tokenId] = to;
-        emit Transfer(address(0), metaverse.getAddressByAccountId(to), tokenId);
+
+        storageContract.setOwnerById(tokenId, to);
+        _setBalanceById(to, _balancesById(to) + 1);
+
+        emit Transfer(address(0), _getAddressByAccountId(to), tokenId);
         emit AssetTransfer(0, to, tokenId, false, _msgSender(), getNonce(_msgSender()));
-        _nonces[_msgSender()] += 1;
+
+        _incrementNonce(_msgSender());
     }
 
     /**
@@ -687,16 +652,18 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
     function _burn(uint256 tokenId) internal virtual {
         address owner = Asset721.ownerOf(tokenId);
         // Clear approvals
-        _tokenApprovalsById[tokenId] = address(0);
 
-        uint256 ownerId = metaverse.getAccountIdByAddress(owner);
+        _setTokenApprovalById(tokenId, address(0));
+
+        uint256 ownerId = _getAccountIdByAddress(owner);
         _beforeTokenTransfer(ownerId, 0, tokenId);
-        _balancesById[ownerId] -= 1;
-        delete _ownersById[tokenId];
+        _setBalanceById(ownerId, 1);
+        storageContract.deleteOwnerById(tokenId);
 
-        emit Transfer(metaverse.getAddressByAccountId(ownerId), address(0), tokenId);
+        emit Transfer(_getAddressByAccountId(ownerId), address(0), tokenId);
         emit AssetTransfer(ownerId, 0, tokenId, false, _msgSender(), getNonce(_msgSender()));
-        _nonces[_msgSender()] += 1;
+
+        _incrementNonce(_msgSender());
     }
 
     /**
@@ -741,11 +708,72 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
     }
 
     function getNonce(address account) public view virtual override returns (uint256) {
-        return _nonces[account];
+        return storageContract.nonces(account);
     }
 
     function worldAddress() external view virtual override returns (address) {
         return address(world);
+    }
+
+    function _setTokenApprovalById(uint256 tokenId, address to) internal virtual {
+        storageContract.setTokenApprovalById(tokenId, to);
+    }
+
+    function _setBalanceById(uint256 _id, uint256 _balance) internal {
+        storageContract.setBalanceById(_id, _balance);
+    }
+
+    function _ownedTokens(uint256 id, uint256 index) internal view returns (uint256) {
+        return storageContract.ownedTokens(id, index);
+    }
+
+    function _setOwnedTokenAndIndex(
+        uint256 to,
+        uint256 length,
+        uint256 tokenId
+    ) internal {
+        storageContract.setOwnedToken(to, length, tokenId);
+        storageContract.setOwnedTokenIndex(tokenId, length);
+    }
+
+    function _incrementNonce(address account) internal {
+        storageContract.incrementNonce(account);
+    }
+
+    function _ownersById(uint256 tokenId) internal view returns (uint256) {
+        return storageContract.ownersById(tokenId);
+    }
+
+    function _balancesById(uint256 _id) internal view returns (uint256) {
+        return storageContract.balancesById(_id);
+    }
+
+    function _getAccountIdByAddress(address _address) internal view returns (uint256) {
+        return metaverse.getAccountIdByAddress(_address);
+    }
+
+    function _getOrCreateAccountId(address _address) internal returns (uint256) {
+        return metaverse.getOrCreateAccountId(_address);
+    }
+
+    function _getAddressByAccountId(uint256 _id) internal view returns (address) {
+        return metaverse.getAddressByAccountId(_id);
+    }
+
+    function _isFreeze(uint256 _id) internal view returns (bool) {
+        return metaverse.isFreeze(_id);
+    }
+
+    function _checkSender(uint256 ownerId, address sender) internal view {
+        metaverse.checkSender(ownerId, sender);
+    }
+
+    function _isExist(uint256 _id) internal view returns (bool) {
+        return metaverse.accountIsExist(_id);
+    }
+
+    function _checkBWOByAsset(address _sender) internal view {
+        world.checkBWOByAsset(_sender);
     }
 
     function _recoverSig(

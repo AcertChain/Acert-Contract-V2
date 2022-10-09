@@ -21,7 +21,6 @@ contract MogaMetaverse is Ownable, EIP712 {
     event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed Sender, uint256 nonce);
     event FreezeAccount(uint256 indexed accountId, bool isBWO, address indexed Sender, uint256 nonce);
     event UnFreezeAccount(uint256 indexed accountId);
-    //operation true: add, false: remove
     event AuthAddressChanged(
         uint256 indexed accountId,
         address indexed authAddress,
@@ -105,7 +104,7 @@ contract MogaMetaverse is Ownable, EIP712 {
         totalAccount++;
         id = totalAccount + startId;
         metaStorage.setAccount(MetaverseStorage.Account(true, _isTrustAdmin, false, id));
-        metaStorage.addAuthAddress( id,_address);
+        metaStorage.addAuthAddress(id, _address);
         emit CreateAccount(id, _address, _isTrustAdmin);
     }
 
@@ -406,7 +405,7 @@ contract MogaMetaverse is Ownable, EIP712 {
      */
     function checkSender(uint256 _id, address _sender) public view {
         require(accountIsExist(_id), "Metaverse: Account does not exist");
-        require(metaStorage.authAddressContains(_id, _sender),"Metaverse: Sender is not authorized");
+        require(metaStorage.authAddressContains(_id, _sender), "Metaverse: Sender is not authorized");
     }
 
     function checkBWO(address _address) internal view {

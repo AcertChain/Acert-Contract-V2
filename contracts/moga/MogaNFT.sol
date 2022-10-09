@@ -10,8 +10,9 @@ contract MogaNFT is Asset721 {
         string memory symbol,
         string memory version,
         string memory tokenURI,
-        address world
-    ) Asset721(name, symbol, version, tokenURI, world) {
+        address world,
+        address storage_
+    ) Asset721(name, symbol, version, tokenURI, world, storage_) {
         _owner = msg.sender;
     }
 
