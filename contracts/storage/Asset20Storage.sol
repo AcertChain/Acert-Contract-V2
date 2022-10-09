@@ -25,7 +25,7 @@ contract Asset20Storage is Ownable {
         asset = _address;
     }
 
-    function IncrementNonce(address _sender) public onlyAsset {
+    function incrementNonce(address _sender) public onlyAsset {
         nonces[_sender]++;
     }
 
