@@ -1,5 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
 require("solidity-docgen")
+require('solidity-coverage')
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
@@ -38,12 +39,12 @@ module.exports = {
   solidity: {
     compilers: [{
       version: "0.8.4",
-      // settings: {
-      //   optimizer: {
-      //     enabled: true,
-      //     runs: 20000
-      //   }
-      // },
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 100000
+        }
+      },
     }]
   },
   networks: {

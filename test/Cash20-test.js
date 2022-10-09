@@ -140,7 +140,7 @@ contract('Cash20', function (accounts) {
   shouldBehaveLikeCash20BWO('Cash', initialSupply, BWOInitialHolder, BWOfromId, BWOReceipt, BWOToId, anotherAccount, anotherAccountId, BWOkey, BWOReceiptkey);
 
   shouldBehaveLikeCash20ProxyBWO('Cash', initialSupply, BWOInitialHolder, BWOfromId, BWOReceipt, BWOToId, anotherAccount, anotherAccountId, BWOkey, BWOReceiptkey);
-  
+
   describe('decrease allowance', function () {
     describe('when the spender is not the zero address', function () {
       const spender = recipient;

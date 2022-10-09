@@ -6,31 +6,30 @@ import "../interfaces/IAsset20.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
 import "../common/Ownable.sol";
+import "../storage/Asset20Storage.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract Asset20 is Context, EIP712, IAsset20, Ownable {
-    mapping(uint256 => uint256) private _balancesById;
-    mapping(uint256 => mapping(address => uint256)) private _allowancesById;
-    mapping(address => uint256) private _nonces;
-
-    uint256 private _totalSupply;
-    string private _name;
-    string private _symbol;
-
     IWorld public world;
     IMetaverse public metaverse;
+    Asset20Storage public storageContract;
+
+    string private _name;
+    string private _symbol;
 
     constructor(
         string memory name_,
         string memory symbol_,
         string memory version_,
-        address world_
+        address world_,
+        address storage_
     ) EIP712(name_, version_) {
         _name = name_;
         _symbol = symbol_;
         world = IWorld(world_);
+        storageContract = Asset20Storage(storage_);
         metaverse = IMetaverse(world.getMetaverse());
     }
 
@@ -82,7 +81,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
      * @dev See {IERC20-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
+        return storageContract.totalSupply();
     }
 
     /**
@@ -90,7 +89,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
      */
     function balanceOf(address owner) public view virtual override returns (uint256) {
         _checkAddrIsNotZero(owner, "Asset20: address zero is not a valid owner");
-        return _balancesById[metaverse.getAccountIdByAddress(owner)];
+        return storageContract.balancesById(metaverse.getAccountIdByAddress(owner));
     }
 
     /**
@@ -98,7 +97,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
      */
     function balanceOf(uint256 accountId) public view virtual override returns (uint256) {
         _checkIdIsNotZero(accountId, "Asset20: id zero is not a valid owner");
-        return _balancesById[accountId];
+        return storageContract.balancesById(accountId);
     }
 
     /**
@@ -251,7 +250,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         bytes memory signature
     ) public view returns (bool) {
         metaverse.checkSender(fromAccount, sender);
-        uint256 nonce = _nonces[sender];
+        uint256 nonce = storageContract.nonces(sender);
         _recoverSig(
             deadline,
             sender,
@@ -287,15 +286,14 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         require(!metaverse.isFreeze(fromAccount), "Asset20: transfer from frozen account");
         require(metaverse.accountIsExist(toAccount), "Asset20: to account is not exist");
 
-        uint256 fromBalance = _balancesById[fromAccount];
+        uint256 fromBalance = storageContract.balancesById(fromAccount);
         require(fromBalance >= amount, "Asset20: transfer amount exceeds balance");
-        unchecked {
-            _balancesById[fromAccount] = fromBalance - amount;
-        }
-        _balancesById[toAccount] += amount;
+        storageContract.setBalanceById(fromAccount, fromBalance - amount);
+        storageContract.setBalanceById(toAccount, storageContract.balancesById(toAccount) + amount);
+
         emit Transfer(_fromAddr, _toAddr, amount);
         emit AssetTransfer(fromAccount, toAccount, amount, _isBWO, _sender, getNonce(_sender));
-        _nonces[_sender] += 1;
+        storageContract.IncrementNonce(_sender);
     }
 
     /**
@@ -354,7 +352,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         bytes memory signature
     ) public view returns (bool) {
         metaverse.checkSender(ownerId, sender);
-        uint256 nonce = _nonces[sender];
+        uint256 nonce = storageContract.nonces(sender);
         _recoverSig(
             deadline,
             sender,
@@ -400,10 +398,11 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
     ) internal virtual {
         require(!metaverse.isFreeze(ownerId), "Asset20: approve owner is frozen");
         require(spender != address(0), "Asset20: approve to the zero address");
-        _allowancesById[ownerId][spender] = amount;
+
+        storageContract.setAllowanceById(ownerId, spender, amount);
         emit Approval(_sender, spender, amount);
         emit AssetApproval(ownerId, spender, amount, _isBWO, _sender, getNonce(_sender));
-        _nonces[_sender] += 1;
+        storageContract.IncrementNonce(_sender);
     }
 
     /**
@@ -420,7 +419,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         if (world.isTrustByAsset(spender, ownerId)) {
             return type(uint256).max;
         }
-        return _allowancesById[ownerId][spender];
+        return storageContract.allowancesById(ownerId, spender);
     }
 
     /**
@@ -437,7 +436,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
      */
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
         uint256 ownerId = metaverse.getOrCreateAccountId(_msgSender());
-        uint256 currentAllowance = _allowancesById[ownerId][spender];
+        uint256 currentAllowance = storageContract.allowancesById(ownerId, spender);
         _approveId(ownerId, spender, currentAllowance + addedValue, false, _msgSender());
         return true;
     }
@@ -458,7 +457,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
         uint256 ownerId = metaverse.getOrCreateAccountId(_msgSender());
-        uint256 currentAllowance = _allowancesById[ownerId][spender];
+        uint256 currentAllowance = storageContract.allowancesById(ownerId, spender);
         require(currentAllowance >= subtractedValue, "Asset20: decreased allowance below zero");
         _approveId(ownerId, spender, currentAllowance - subtractedValue, false, _msgSender());
 
@@ -483,11 +482,11 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         require(accountId != 0, "Asset20: mint to the zero Id");
         require(metaverse.accountIsExist(accountId), "Asset20: to account is not exist");
 
-        _totalSupply += amount;
-        _balancesById[accountId] += amount;
+        storageContract.setBalanceById(accountId, storageContract.balancesById(accountId) + amount);
+        storageContract.setTotalSupply(storageContract.totalSupply() + amount);
         emit Transfer(address(0), metaverse.getAddressByAccountId(accountId), amount);
         emit AssetTransfer(0, accountId, amount, false, _msgSender(), getNonce(_msgSender()));
-        _nonces[_msgSender()] += 1;
+        storageContract.IncrementNonce(_msgSender());
     }
 
     /**
@@ -510,16 +509,13 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         require(accountId != 0, "Asset20: burn from the zero Id");
         require(metaverse.accountIsExist(accountId), "Asset20: to account is not exist");
 
-        uint256 accountBalance = _balancesById[accountId];
+        uint256 accountBalance = storageContract.balancesById(accountId);
         require(accountBalance >= amount, "Asset20: burn amount exceeds balance");
-        unchecked {
-            _balancesById[accountId] = accountBalance - amount;
-        }
-        _totalSupply -= amount;
-
+        storageContract.setBalanceById(accountId, accountBalance - amount);
+        storageContract.setTotalSupply(storageContract.totalSupply() - amount);
         emit Transfer(metaverse.getAddressByAccountId(accountId), address(0), amount);
         emit AssetTransfer(accountId, 0, amount, false, _msgSender(), getNonce(_msgSender()));
-        _nonces[_msgSender()] += 1;
+        storageContract.IncrementNonce(_msgSender());
     }
 
     function _checkIdIsNotZero(uint256 _id, string memory _msg) internal pure {
@@ -531,7 +527,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
     }
 
     function getNonce(address account) public view virtual override returns (uint256) {
-        return _nonces[account];
+        return storageContract.nonces(account);
     }
 
     function _recoverSig(

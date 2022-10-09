@@ -9,8 +9,9 @@ contract GGMToken is Asset20 {
         string memory name,
         string memory symbol,
         string memory version,
-        address world
-    )  Asset20(name, symbol, version, world) {
+        address world,
+        address storage_
+    ) Asset20(name, symbol, version, world, storage_) {
         _owner = msg.sender;
     }
 
