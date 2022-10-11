@@ -134,18 +134,20 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         address to,
         uint256 amount
     ) public virtual override returns (bool) {
-        uint256 currentAllowance = allowance(from, _msgSender());
-        if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "Asset20: insufficient allowance");
-            unchecked {
-                _approveId(
-                    _getAccountIdByAddress(from),
-                    from,
-                    _msgSender(),
-                    currentAllowance - amount,
-                    false,
-                    _msgSender()
-                );
+        if (_getAccountIdByAddress(_msgSender()) != _getAccountIdByAddress(from)) {
+            uint256 currentAllowance = allowance(from, _msgSender());
+            if (currentAllowance != type(uint256).max) {
+                require(currentAllowance >= amount, "Asset20: insufficient allowance");
+                unchecked {
+                    _approveId(
+                        _getAccountIdByAddress(from),
+                        from,
+                        _msgSender(),
+                        currentAllowance - amount,
+                        false,
+                        _msgSender()
+                    );
+                }
             }
         }
         _transfer(from, to, amount, _msgSender());

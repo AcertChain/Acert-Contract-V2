@@ -245,24 +245,7 @@ contract MogaMetaverse is Context, Ownable, EIP712 {
         bytes memory signature
     ) public {
         checkSender(_id, _msgSender());
-        uint256 nonce = getNonce(_msgSender());
-        _recoverSig(
-            deadline,
-            _msgSender(),
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256("BWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
-                        _id,
-                        _address,
-                        _msgSender(),
-                        nonce,
-                        deadline
-                    )
-                )
-            ),
-            signature
-        );
+        checkAuthAddressSignature(_id, _address, _msgSender(), deadline, signature);
         _addAuthAddress(_id, _address, false, _msgSender());
     }
 
@@ -275,7 +258,8 @@ contract MogaMetaverse is Context, Ownable, EIP712 {
         bytes memory authSignature
     ) public {
         checkBWO(_msgSender());
-        addAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature, authSignature);
+        addAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
+        checkAuthAddressSignature(_id, _address, sender, deadline, authSignature);
         _addAuthAddress(_id, _address, true, sender);
     }
 
@@ -284,8 +268,7 @@ contract MogaMetaverse is Context, Ownable, EIP712 {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature,
-        bytes memory authSignature
+        bytes memory signature
     ) public view returns (bool) {
         checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
@@ -306,13 +289,25 @@ contract MogaMetaverse is Context, Ownable, EIP712 {
             ),
             signature
         );
+
+        return true;
+    }
+
+    function checkAuthAddressSignature(
+        uint256 _id,
+        address _address,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
+        uint256 nonce = getNonce(_address);
         _recoverSig(
             deadline,
             _address,
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("BWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256("AddAuth(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         _address,
                         sender,
@@ -321,7 +316,7 @@ contract MogaMetaverse is Context, Ownable, EIP712 {
                     )
                 )
             ),
-            authSignature
+            signature
         );
         return true;
     }
@@ -332,9 +327,11 @@ contract MogaMetaverse is Context, Ownable, EIP712 {
         bool _isBWO,
         address _sender
     ) private {
+        checkAddressIsNotUsed(_address);
         metaStorage.addAuthAddress(_id, _address);
 
         emit AuthAddressChanged(_id, _address, OperationEnum.ADD, _isBWO, _sender, getNonce(_sender));
+        metaStorage.IncrementNonce(_address);
         metaStorage.IncrementNonce(_sender);
     }
 
