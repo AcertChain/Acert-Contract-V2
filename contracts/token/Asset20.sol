@@ -5,13 +5,14 @@ import "hardhat/console.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
+import "../interfaces/IApplyStorage.sol";
 import "../common/Ownable.sol";
 import "../storage/Asset20Storage.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract Asset20 is Context, EIP712, IAsset20, Ownable {
+contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
     IWorld public world;
     IMetaverse public metaverse;
     Asset20Storage public storageContract;
@@ -31,6 +32,13 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         world = IWorld(world_);
         storageContract = Asset20Storage(storage_);
         metaverse = IMetaverse(world.getMetaverse());
+    }
+
+    /**
+     * @dev See {IApplyStorage-getStorageAddress}.
+     */
+    function getStorageAddress() external view returns (address) {
+        return address(storageContract);
     }
 
     function updateWorld(address _address) public onlyOwner {

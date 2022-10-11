@@ -4,11 +4,13 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../common/Ownable.sol";
 import "./MonsterGalaxy.sol";
+import "../interfaces/IApplyStorage.sol";
+import "../interfaces/IMetaverse.sol";
 import "../storage/MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract MogaMetaverse is Context, Ownable, EIP712 {
+contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
     enum OperationEnum {
         ADD,
         REMOVE
@@ -50,6 +52,13 @@ contract MogaMetaverse is Context, Ownable, EIP712 {
         _owner = _msgSender();
         startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
+    }
+
+    /**
+     * @dev See {IApplyStorage-getStorageAddress}.
+     */
+    function getStorageAddress() external view returns (address) {
+        return address(metaStorage);
     }
 
     function setName(string name_) public onlyOwner {

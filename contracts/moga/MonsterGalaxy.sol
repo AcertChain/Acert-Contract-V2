@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
+import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAsset721.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IAsset.sol";
@@ -13,7 +14,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract MonsterGalaxy is IWorld, Ownable, EIP712 {
+contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
     event RegisterAsset(address indexed asset, IAsset.ProtocolEnum protocol);
     event DisableAsset(address indexed asset);
     event AddOperator(address indexed operator);
@@ -51,6 +52,13 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         WorldStorage.Asset memory asset = worldStorage.getAsset(msg.sender);
         require(asset.isExist && asset.isEnabled, "World: asset is not exist or disabled");
         _;
+    }
+
+    /**
+     * @dev See {IApplyStorage-getStorageAddress}.
+     */
+    function getStorageAddress() external view returns (address) {
+        return address(worldStorage);
     }
 
     function setName(string name_) public onlyOwner {
