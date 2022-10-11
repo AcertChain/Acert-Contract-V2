@@ -12,5 +12,5 @@ interface IMetaverse {
 
     function getAddressByAccountId(uint256 _id) external view returns (address _address);
 
-    function checkSender(uint256 _id, address _address) external view ;
+    function checkSender(uint256 _id, address _address) external view;
 }
