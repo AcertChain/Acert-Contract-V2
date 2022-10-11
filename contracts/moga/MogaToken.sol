@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../token/Asset20.sol";
 
-contract GGMToken is Asset20 {
+contract MogaToken is Asset20 {
     constructor(
         string memory name,
         string memory symbol,

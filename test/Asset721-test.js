@@ -4,24 +4,24 @@ const {
 } = require('./ERC721.behavior');
 
 const {
-  shouldBehaveLikeItem721,
-} = require('./Item721.behavior');
+  shouldBehaveLikeAsset721,
+} = require('./Asset721.behavior');
 
 const {
-  shouldBehaveLikeItem721BWO,
-} = require('./Item721BWO.behavior');
+  shouldBehaveLikeAsset721BWO,
+} = require('./Asset721BWO.behavior');
 
 const {
-  shouldBehaveLikeItem721ProxyBWO,
-} = require('./Item721BWO.proxy');
+  shouldBehaveLikeAsset721ProxyBWO,
+} = require('./Asset721BWO.proxy');
 
-const Item721 = artifacts.require('Item721Mock');
+const Asset721 = artifacts.require('Asset721Mock');
 const World = artifacts.require('MonsterGalaxy');
 const WorldStorage = artifacts.require('WorldStorage');
 const Metaverse = artifacts.require('MogaMetaverse');
 const MetaverseStorage = artifacts.require('MetaverseStorage');
 
-contract('Item721', function (accounts) {
+contract('Asset721', function (accounts) {
   const name = 'Non Fungible Token';
   const symbol = 'NFT';
   const version = '1.0.0';
@@ -38,7 +38,7 @@ contract('Item721', function (accounts) {
     this.world = await World.new(this.Metaverse.address,this.WorldStorage.address, "world", "1.0");
     await this.WorldStorage.updateWorld(this.world.address);
 
-    this.token = await Item721.new(name, symbol, version, "testURI", this.world.address);
+    this.token = await Asset721.new(name, symbol, version, "testURI", this.world.address);
     this.chainId = await this.token.getChainId();
     this.tokenName = name;
     this.tokenVersion = version;
@@ -53,9 +53,9 @@ contract('Item721', function (accounts) {
     await this.world.addOperator(op);
   });
 
-  shouldBehaveLikeItem721BWO();
-  shouldBehaveLikeItem721('Item', ...accounts);
-  shouldBehaveLikeERC721('Item', ...accounts);
-  shouldBehaveLikeERC721Metadata('Item', name, symbol, ...accounts);
-  shouldBehaveLikeItem721ProxyBWO();
+  shouldBehaveLikeAsset721BWO();
+  shouldBehaveLikeAsset721('Asset721', ...accounts);
+  shouldBehaveLikeERC721('Asset721', ...accounts);
+  shouldBehaveLikeERC721Metadata('Asset721', name, symbol, ...accounts);
+  shouldBehaveLikeAsset721ProxyBWO();
 });

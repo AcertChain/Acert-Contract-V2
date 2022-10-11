@@ -41,27 +41,46 @@ const EIP712Domain = [{
 ];
 
 
-function shouldBehaveLikeCash20ProxyBWO(errorPrefix, initialSupply, initialHolder, initialHolderId,
+function shouldBehaveLikeAsset20ProxyBWO(errorPrefix, initialSupply, initialHolder, initialHolderId,
   recipient, recipientId, anotherAccount, anotherAccountId, BWOKey, receiptKey) {
 
 
   describe('transferCashBWO proxy and approveCashBWO proxy', function () {
     beforeEach(async function () {
-
       this.accountW = Wallet.generate();
       this.authAccount = this.accountW.getChecksumAddressString();
 
       const nonce = await this.Metaverse.getNonce(initialHolder);
-      const signature = signaddAuthAddressBWO(this.chainId, this.Metaverse.address, "metaverse", 
+      const signature = signAddAuthAddressBWO(this.chainId, this.Metaverse.address, "metaverse",
         BWOKey, "1.0", initialHolderId, this.authAccount, initialHolder, nonce, deadline);
+      const signatureAuth = signAddAuthAddressBWO(this.chainId, this.Metaverse.address, "metaverse",
+        this.accountW.getPrivateKey(), "1.0", initialHolderId, this.authAccount, initialHolder, nonce, deadline);
 
-      await this.Metaverse.addAuthAddressBWO(initialHolderId, this.authAccount, initialHolder, deadline, signature)
+      await this.Metaverse.addAuthAddressBWO(initialHolderId, this.authAccount, initialHolder, deadline, signature, signatureAuth)
     });
 
-    it('approveCashBWO proxy', async function () {
+    it('approve', async function () {
+
+    });
+
+    it('approveAsset', async function () {
+    });
+
+    it('transfer', async function () {
+    });
+
+    it('transferFrom', async function () {
+
+    });
+
+    it('transferFromAsset', async function () {
+
+    });
+
+    it('approveAssetBWO proxy', async function () {
       const nonce = await this.token.getNonce(this.authAccount);;
       const signature = signApproveData(this.chainId, this.token.address, this.tokenName, this.accountW.getPrivateKey(), this.tokenVersion,
-      initialHolderId, recipient, initialSupply, this.authAccount, deadline, nonce);
+        initialHolderId, recipient, initialSupply, this.authAccount, deadline, nonce);
 
       expectEvent(await this.token.approveCashBWO(initialHolderId, recipient, initialSupply, this.authAccount, deadline, signature, {
         from: this.BWO
@@ -73,12 +92,11 @@ function shouldBehaveLikeCash20ProxyBWO(errorPrefix, initialSupply, initialHolde
         nonce: nonce
       });
 
-
-      expect(await this.token.allowanceCash(initialHolderId, recipient)).to.be.bignumber.equal(initialSupply);
+      expect(await this.token.method['allowance(uint256,address)'](initialHolderId, recipient)).to.be.bignumber.equal(initialSupply);
 
     });
 
-    it('transferCashBWO proxy', async function () {
+    it('transferAssetBWO proxy', async function () {
 
       const nonce = await this.token.getNonce(this.authAccount);
 
@@ -89,7 +107,7 @@ function shouldBehaveLikeCash20ProxyBWO(errorPrefix, initialSupply, initialHolde
         from: this.BWO
       });
 
-      expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(initialSupply);
+      expect(await this.token.method['balanceOf(address)'](recipient)).to.be.bignumber.equal(initialSupply);
     });
 
   });
@@ -205,7 +223,7 @@ function signTransferData(chainId, verifyingContract, name, key, version,
   return signature;
 }
 
-function signaddAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
+function signAddAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
   const data = {
     types: {
       EIP712Domain,
@@ -254,7 +272,7 @@ function signaddAuthAddressBWO(chainId, verifyingContract, name, key, version, i
   return signature;
 }
 
-function signremoveAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
+function signRemoveAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
   const data = {
     types: {
       EIP712Domain,
@@ -305,7 +323,7 @@ function signremoveAuthAddressBWO(chainId, verifyingContract, name, key, version
 
 
 module.exports = {
-  shouldBehaveLikeCash20ProxyBWO,
+  shouldBehaveLikeAsset20ProxyBWO,
 };
 
 
