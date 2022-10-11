@@ -138,7 +138,14 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         if (currentAllowance != type(uint256).max) {
             require(currentAllowance >= amount, "Asset20: insufficient allowance");
             unchecked {
-                _approveId(_getAccountIdByAddress(from), _msgSender(), currentAllowance - amount, false, _msgSender());
+                _approveId(
+                    _getAccountIdByAddress(from),
+                    from,
+                    _msgSender(),
+                    currentAllowance - amount,
+                    false,
+                    _msgSender()
+                );
             }
         }
         _transfer(from, to, amount, _msgSender());
@@ -186,7 +193,14 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
             if (currentAllowance != type(uint256).max) {
                 require(currentAllowance >= amount, "Asset20: insufficient allowance");
                 unchecked {
-                    _approveId(fromAccount, _msgSender(), currentAllowance - amount, false, _msgSender());
+                    _approveId(
+                        fromAccount,
+                        _getAddressByAccountId(fromAccount),
+                        _msgSender(),
+                        currentAllowance - amount,
+                        false,
+                        _msgSender()
+                    );
                 }
             }
         }
@@ -194,7 +208,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
             fromAccount,
             toAccount,
             amount,
-            true,
+            false,
             _msgSender(),
             _getAddressByAccountId(fromAccount),
             _getAddressByAccountId(toAccount)
@@ -244,7 +258,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 fromAccount,uint256 toAccount,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 from,uint256 to,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         fromAccount,
                         toAccount,
@@ -269,7 +283,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         address _fromAddr,
         address _toAddr
     ) internal virtual {
-        require(!_isFreeze(fromAccount), "Asset20: transfer from frozen account");
+        require(!_isFreeze(fromAccount), "Asset20: transfer from is frozen");
         require(_isExist(toAccount), "Asset20: to account is not exist");
 
         uint256 fromBalance = _balanceOf(fromAccount);
@@ -293,7 +307,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
      * - `spender` cannot be the zero address.
      */
     function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approveId(_getOrCreateAccountId(_msgSender()), spender, amount, false, _msgSender());
+        _approveId(_getOrCreateAccountId(_msgSender()), _msgSender(), spender, amount, false, _msgSender());
         return true;
     }
 
@@ -307,8 +321,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
     ) public virtual override returns (bool) {
         require(spender != address(0), "Asset20: approve to the zero address");
         _checkSender(ownerId, _msgSender());
-
-        _approveId(ownerId, spender, amount, false, _msgSender());
+        _approveId(ownerId, _getAddressByAccountId(ownerId), spender, amount, false, _msgSender());
         return true;
     }
 
@@ -325,7 +338,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
     ) public virtual override returns (bool) {
         _checkBWOByAsset(_msgSender());
         approveBWOParamsVerify(ownerId, spender, amount, sender, deadline, signature);
-        _approveId(ownerId, spender, amount, true, sender);
+        _approveId(ownerId, _getAddressByAccountId(ownerId), spender, amount, true, sender);
         return true;
     }
 
@@ -377,16 +390,18 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
      */
     function _approveId(
         uint256 ownerId,
+        address owner,
         address spender,
         uint256 amount,
         bool _isBWO,
         address _sender
     ) internal virtual {
         require(!_isFreeze(ownerId), "Asset20: approve owner is frozen");
+        require(owner != address(0), "Asset20: approve from the zero address");
         require(spender != address(0), "Asset20: approve to the zero address");
 
         storageContract.setAllowanceById(ownerId, spender, amount);
-        emit Approval(_sender, spender, amount);
+        emit Approval(owner, spender, amount);
         emit AssetApproval(ownerId, spender, amount, _isBWO, _sender, getNonce(_sender));
         _incrementNonce(_sender);
     }
@@ -402,7 +417,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
      * @dev See {IAsset20-allowance}.
      */
     function allowance(uint256 ownerId, address spender) public view virtual override returns (uint256) {
-        if (world.isTrustByAsset(spender, ownerId)) {
+        if (_isTrust(spender, ownerId)) {
             return type(uint256).max;
         }
         return storageContract.allowancesById(ownerId, spender);
@@ -424,6 +439,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         uint256 ownerId = _getOrCreateAccountId(_msgSender());
         _approveId(
             ownerId,
+            _msgSender(),
             spender,
             storageContract.allowancesById(ownerId, spender) + addedValue,
             false,
@@ -450,7 +466,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         uint256 ownerId = _getOrCreateAccountId(_msgSender());
         uint256 currentAllowance = storageContract.allowancesById(ownerId, spender);
         require(currentAllowance >= subtractedValue, "Asset20: decreased allowance below zero");
-        _approveId(ownerId, spender, currentAllowance - subtractedValue, false, _msgSender());
+        _approveId(ownerId, _msgSender(), spender, currentAllowance - subtractedValue, false, _msgSender());
 
         return true;
     }
@@ -565,6 +581,10 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         world.checkBWOByAsset(_sender);
     }
 
+    function _isTrust(address _address, uint256 _id) internal view returns (bool) {
+        return world.isTrustByAsset(_address, _id);
+    }
+
     function _recoverSig(
         uint256 deadline,
         address signer,
@@ -575,5 +595,7 @@ contract Asset20 is Context, EIP712, IAsset20, Ownable {
         require(signer == ECDSA.recover(digest, signature), "Asset20: recoverSig failed");
     }
 
-    function worldAddress() external view override returns (address) {}
+    function worldAddress() external view override returns (address) {
+        return address(world);
+    }
 }

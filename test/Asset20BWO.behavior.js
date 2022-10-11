@@ -40,7 +40,7 @@ const EIP712Domain = [{
 ];
 
 
-function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, initialHolderId,
+function shouldBehaveLikeAsset20BWO(errorPrefix, initialSupply, initialHolder, initialHolderId,
   recipient, recipientId, anotherAccount, anotherAccountId, BWOKey, receiptKey) {
 
   describe('total supply', function () {
@@ -52,30 +52,30 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
   describe('balanceOfCash', function () {
     describe('when the requested account has no tokens', function () {
       it('returns zero', async function () {
-        expect(await this.token.balanceOfCash(anotherAccountId)).to.be.bignumber.equal('0');
+        expect(await this.token.methods['balanceOf(uint256)'](anotherAccountId)).to.be.bignumber.equal('0');
       });
     });
 
     describe('when the requested account has some tokens', function () {
       it('returns the total amount of tokens', async function () {
-        expect(await this.token.balanceOfCash(initialHolderId)).to.be.bignumber.equal(initialSupply);
+        expect(await this.token.methods['balanceOf(uint256)'](initialHolderId)).to.be.bignumber.equal(initialSupply);
       });
     });
   });
 
-  describe('transferCashBWO', function () {
-    shouldBehaveLikeCash20TransferBWO(errorPrefix, initialHolder, initialHolderId, recipientId, initialSupply, BWOKey,
+  describe('transferFromBWO', function () {
+    shouldBehaveLikeAsset20TransferBWO(errorPrefix, initialHolder, initialHolderId, recipientId, initialSupply, BWOKey,
       function (spender, from, to, value, nonce, key) {
         const signature = signTransferData(this.chainId, this.token.address, this.tokenName, key, this.tokenVersion,
           spender, from, to, value, deadline, nonce);
-        return this.token.transferCashBWO(from, to, value, spender, deadline, signature, {
+        return this.token.transferFromBWO(from, to, value, spender, deadline, signature, {
           from: this.BWO
         });
       },
     );
   });
 
-  describe('transferCashBWO test', function () {
+  describe('transferFromBWO test', function () {
     const spender = recipientId;
     const spenderAddr = recipient;
 
@@ -93,21 +93,21 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
           const signature = signApproveData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
             tokenOwner, spenderAddr, amount, tokenOwnerAddr, deadline, nonce);
 
-          await this.token.approveCashBWO(tokenOwner, spenderAddr, amount, tokenOwnerAddr, deadline, signature, {
+          await this.token.approveBWO(tokenOwner, spenderAddr, amount, tokenOwnerAddr, deadline, signature, {
             from: this.BWO
           });
         });
 
         it('reverts', async function () {
 
-          const nonce = await this.token.getNonce(spenderAddr);
+          const nonce = await this.token.getNonce(tokenOwnerAddr);
 
-          const signature = signTransferData(this.chainId, this.token.address, this.tokenName, receiptKey, this.tokenVersion,
-            spenderAddr, tokenOwner, to, amount, deadline, nonce);
+          const signature = signTransferData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
+            tokenOwnerAddr, tokenOwner, to, amount, deadline, nonce);
 
-          await expectRevert(this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
+          await expectRevert(this.token.transferFromBWO(tokenOwner, to, amount, tokenOwnerAddr, deadline, signature, {
             from: this.BWO
-          }), `${errorPrefix}: transfer to the zero Id`, );
+          }), `Metaverse: Account does not exist`, );
         });
       });
 
@@ -122,9 +122,9 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
           const signature = signTransferData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
             tokenOwnerAddr, tokenOwner, to, amount, deadline, nonce);
 
-          await expectRevert(this.token.transferCashBWO(tokenOwner, to, amount, tokenOwnerAddr, deadline, signature, {
+          await expectRevert(this.token.transferFromBWO(tokenOwner, to, amount, tokenOwnerAddr, deadline, signature, {
             from: this.BWO
-          }), `${errorPrefix}: to account is not exist`, );
+          }), `Metaverse: Account does not exist`, );
         });
       });
     });
@@ -142,23 +142,23 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
           spenderAddr, tokenOwner, to, amount, deadline, nonce);
 
         await expectRevert(
-          this.token.transferCashBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
+          this.token.transferFromBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
             from: this.BWO
           }),
-          'Cash: from is the zero Id',
+          'Metaverse: Account does not exist',
         );
       });
     });
   });
 
-  describe('approveCashBWO', function () {
-    shouldBehaveLikeCash20ApproveBWO(errorPrefix, initialHolderId, initialHolder, recipient, recipientId, initialSupply, BWOKey,
+  describe('approveBWO', function () {
+    shouldBehaveLikeAsset20ApproveBWO(errorPrefix, initialHolderId, initialHolder, recipient, recipientId, initialSupply, BWOKey,
       function (owner, ownerAddr, spenderAddr, amount, nonce, key) {
 
         const signature = signApproveData(this.chainId, this.token.address, this.tokenName, key, this.tokenVersion,
           owner, spenderAddr, amount, ownerAddr, deadline, nonce)
 
-        return this.token.approveCashBWO(owner, spenderAddr, amount, ownerAddr, deadline, signature, {
+        return this.token.approveBWO(owner, spenderAddr, amount, ownerAddr, deadline, signature, {
           from: this.BWO
         });
       },
@@ -167,7 +167,7 @@ function shouldBehaveLikeCash20BWO(errorPrefix, initialSupply, initialHolder, in
 
 }
 
-function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balance, key, transfer) {
+function shouldBehaveLikeAsset20TransferBWO(errorPrefix, spender, from, to, balance, key, transfer) {
   describe('when the recipientId is not the zero id', function () {
     describe('when the sender does not have enough balance', function () {
       const amount = balance.addn(1);
@@ -188,19 +188,20 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balan
 
         await transfer.call(this, spender, from, to, amount, nonce, key);
 
-        expect(await this.token.balanceOfCash(from)).to.be.bignumber.equal('0');
+        expect(await this.token.methods['balanceOf(uint256)'](from)).to.be.bignumber.equal('0');
 
-        expect(await this.token.balanceOfCash(to)).to.be.bignumber.equal(amount);
+        expect(await this.token.methods['balanceOf(uint256)'](to)).to.be.bignumber.equal(amount);
       });
 
       it('emits a transfer by id event', async function () {
         const nonce = await this.token.getNonce(spender);
         expectEvent(
           await transfer.call(this, spender, from, to, amount, nonce, key),
-          'TransferCashBWO', {
+          'AssetTransfer', {
             from,
             to,
             value: amount,
+            isBWO:true,
             sender: web3.utils.toChecksumAddress(spender),
             nonce: nonce,
           },
@@ -216,9 +217,9 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balan
 
         await transfer.call(this, spender, from, to, amount, nonce, key);
 
-        expect(await this.token.balanceOfCash(from)).to.be.bignumber.equal(balance);
+        expect(await this.token.methods['balanceOf(uint256)'](from)).to.be.bignumber.equal(balance);
 
-        expect(await this.token.balanceOfCash(to)).to.be.bignumber.equal('0');
+        expect(await this.token.methods['balanceOf(uint256)'](to)).to.be.bignumber.equal('0');
       });
 
       it('emits a transfer by id event', async function () {
@@ -226,10 +227,11 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balan
 
         expectEvent(
           await transfer.call(this, spender, from, to, amount, nonce, key),
-          'TransferCashBWO', {
+          'AssetTransfer', {
             from,
             to,
             value: amount,
+            isBWO:true,
             sender: web3.utils.toChecksumAddress(spender),
             nonce: nonce,
           },
@@ -257,13 +259,13 @@ function shouldBehaveLikeCash20TransferBWO(errorPrefix, spender, from, to, balan
     it('reverts', async function () {
       const nonce = await this.token.getNonce(spender);
       await expectRevert(transfer.call(this, spender, from, 0, balance, nonce, key),
-        `${errorPrefix}: transfer to the zero Id`,
+        `Metaverse: Account does not exist`,
       );
     });
   });
 }
 
-function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spenderAddr, spender, supply, key, approve) {
+function shouldBehaveLikeAsset20ApproveBWO(errorPrefix, owner, ownerAddr, spenderAddr, spender, supply, key, approve) {
   describe('when the spender is not the zero Id', function () {
     describe('when the sender has enough balance', function () {
       const amount = supply;
@@ -272,10 +274,11 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
         const nonce = await this.token.getNonce(ownerAddr);
         expectEvent(
           await approve.call(this, owner, ownerAddr, spenderAddr, amount, nonce, key),
-          'ApprovalCashBWO', {
+          'AssetApproval', {
             owner: owner,
             spender: web3.utils.toChecksumAddress(spenderAddr),
             value: amount,
+            isBWO:true,
             sender: web3.utils.toChecksumAddress(ownerAddr),
             nonce: nonce,
           },
@@ -287,7 +290,7 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
           const nonce = await this.token.getNonce(ownerAddr);
           await approve.call(this, owner, ownerAddr, spenderAddr, amount, nonce, key);
 
-          expect(await this.token.allowanceCash(owner, spenderAddr)).to.be.bignumber.equal(amount);
+          expect(await this.token.methods['allowance(uint256,address)'](owner, spenderAddr)).to.be.bignumber.equal(amount);
         });
       });
 
@@ -303,7 +306,7 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
 
           await approve.call(this, owner, ownerAddr, spenderAddr, amount, nonce, key);
 
-          expect(await this.token.allowanceCash(owner, spenderAddr)).to.be.bignumber.equal(amount);
+          expect(await this.token.methods['allowance(uint256,address)'](owner, spenderAddr)).to.be.bignumber.equal(amount);
         });
       });
     });
@@ -316,10 +319,11 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
 
         expectEvent(
           await approve.call(this, owner, ownerAddr, spenderAddr, amount, nonce, key),
-          'ApprovalCashBWO', {
+          'AssetApproval', {
             owner: owner,
             spender: web3.utils.toChecksumAddress(spenderAddr),
             value: amount,
+            isBWO:true,
             sender: web3.utils.toChecksumAddress(ownerAddr),
             nonce: nonce,
           },
@@ -332,7 +336,7 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
 
           await approve.call(this, owner, ownerAddr, spenderAddr, amount, nonce, key);
 
-          expect(await this.token.allowanceCash(owner, spenderAddr)).to.be.bignumber.equal(amount);
+          expect(await this.token.methods['allowance(uint256,address)'](owner, spenderAddr)).to.be.bignumber.equal(amount);
         });
       });
 
@@ -346,7 +350,7 @@ function shouldBehaveLikeCash20ApproveBWO(errorPrefix, owner, ownerAddr, spender
           const nonce = await this.token.getNonce(ownerAddr);
           await approve.call(this, owner, ownerAddr, spenderAddr, amount, nonce, key);
 
-          expect(await this.token.allowanceCash(owner, spenderAddr)).to.be.bignumber.equal(amount);
+          expect(await this.token.methods['allowance(uint256,address)'](owner, spenderAddr)).to.be.bignumber.equal(amount);
         });
       });
     });
@@ -431,7 +435,7 @@ function signApproveData(chainId, verifyingContract, name, key, version,
 }
 
 function signTransferData(chainId, verifyingContract, name, key, version,
-  sender, from, to, value, deadline, nonce) {
+  sender, from, to, amount, deadline, nonce) {
   const data = {
     types: {
       EIP712Domain,
@@ -444,7 +448,7 @@ function signTransferData(chainId, verifyingContract, name, key, version,
           type: 'uint256'
         },
         {
-          name: 'value',
+          name: 'amount',
           type: 'uint256'
         },
         {
@@ -471,7 +475,7 @@ function signTransferData(chainId, verifyingContract, name, key, version,
     message: {
       from,
       to,
-      value,
+      amount,
       sender,
       nonce,
       deadline
@@ -486,7 +490,7 @@ function signTransferData(chainId, verifyingContract, name, key, version,
 }
 
 module.exports = {
-  shouldBehaveLikeCash20BWO,
-  shouldBehaveLikeCash20TransferBWO,
-  shouldBehaveLikeCash20ApproveBWO,
+  shouldBehaveLikeAsset20BWO,
+  shouldBehaveLikeAsset20TransferBWO,
+  shouldBehaveLikeAsset20ApproveBWO,
 };

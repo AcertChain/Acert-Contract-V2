@@ -177,7 +177,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
 
                 it('account is trust World', async function () {
                     await this.world.getOrCreateAccountId(account);
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.trustWorld({
                         from: account
                     });
@@ -192,7 +192,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                     const accountW = Wallet.generate();
                     const account = accountW.getChecksumAddressString();
                     await this.world.getOrCreateAccountId(account)
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.addOperator(operator)
                     const nonce = await this.world.getNonce(account);
                     const signature = signData(this.chainId, this.world.address, this.tokenName,
@@ -219,19 +219,19 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
             context('is Trust', function () {
                 it('conrtact is not safe contract ', async function () {
                     await this.world.getOrCreateAccountId(account);
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user not trust world', async function () {
                     await this.world.getOrCreateAccountId(account);
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user trust world', async function () {
                     await this.world.getOrCreateAccountId(account);
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.trustWorld({
                         from: account
                     });
@@ -240,14 +240,14 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                 });
                 it('conrtact is safe contract and user not trust world not trust contract ', async function () {
                     await this.world.getOrCreateAccountId(account);
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user not trust world  trust contract ', async function () {
                     await this.world.getOrCreateAccountId(account);
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
                     expectEvent(await this.world.trustContract(contract, {
@@ -270,7 +270,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                     const accountW = Wallet.generate();
                     const account = accountW.getChecksumAddressString();
                     await this.world.getOrCreateAccountId(account)
-                    const accountId = new BN(await this.world.getAccountIdByAddress(account));
+                    const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.addOperator(operator)
                     const nonce = await this.world.getNonce(account);
                     const signature = signContractData(this.chainId, this.world.address, this.tokenName,
