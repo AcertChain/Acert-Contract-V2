@@ -15,7 +15,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         ADD,
         REMOVE
     }
-    event RegisterWorld(address indexed world, string name);
+    event RegisterWorld(address indexed world, string name, address indexed storageAddress);
     event DisableWorld(address indexed world);
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
@@ -71,7 +71,8 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         require(IWorld(_world).getMetaverse() == address(this), "Metaverse: metaverse is not match");
         string _name = IWorld(_world).name;
         metaStorage.add(_world, _name);
-        emit RegisterWorld(_world, _name);
+        string storageAddress = IApplyStorage(_world).getStorageAddress;
+        emit RegisterWorld(_world, _name, storageAddress);
     }
 
     function disableWorld(address _world) public onlyOwner {

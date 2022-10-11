@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
-    event RegisterAsset(address indexed asset, IAsset.ProtocolEnum protocol);
+    event RegisterAsset(address indexed asset, IAsset.ProtocolEnum protocol, address indexed storageAddress);
     event DisableAsset(address indexed asset);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
@@ -71,7 +71,8 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         require(worldStorage.getAsset(_address).isExist == false, "World: asset is exist");
 
         worldStorage.setAsset(_address);
-        emit RegisterAsset(_address, IAsset(_address).protocol());
+        string storageAddress = IApplyStorage(_address).getStorageAddress;
+        emit RegisterAsset(_address, IAsset(_address).protocol(), storageAddress);
     }
 
     function disableAsset(address _address) public onlyOwner {
