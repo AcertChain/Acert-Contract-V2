@@ -533,6 +533,11 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         _incrementNonce(_msgSender());
     }
 
+    function burn(uint256 accountId, uint256 amount) public virtual {
+        _checkSender(accountId, _msgSender());
+        _burn(accountId, amount);
+    }
+
     function _checkIdIsNotZero(uint256 _id, string memory _msg) internal pure {
         require(_id != 0, _msg);
     }

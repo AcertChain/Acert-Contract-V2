@@ -32,10 +32,6 @@ contract MogaNFT is Asset721 {
         _safeMint(to, tokenId, _data);
     }
 
-    function burn(uint256 tokenId) public onlyOwner {
-        _burn(tokenId);
-    }
-
     function getChainId() external view returns (uint256) {
         return block.chainid;
     }
