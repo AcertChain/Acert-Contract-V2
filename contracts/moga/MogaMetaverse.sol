@@ -3,9 +3,9 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "../common/Ownable.sol";
-import "./MonsterGalaxy.sol";
 import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IMetaverse.sol";
+import "../interfaces/IWorld.sol";
 import "../storage/MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -68,7 +68,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
     function registerWorld(address _world) public onlyOwner {
         checkAddressIsNotZero(_world);
         require(containsWorld(_world) == false, "Metaverse: world is exist");
-        require(MonsterGalaxy(_world).getMetaverse() == address(this), "Metaverse: metaverse is not match");
+        require(IWorld(_world).getMetaverse() == address(this), "Metaverse: metaverse is not match");
         string _name = IWorld(_world).name;
         metaStorage.add(_world, _name);
         emit RegisterWorld(_world, _name);
