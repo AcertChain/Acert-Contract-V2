@@ -53,6 +53,10 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         _;
     }
 
+    function setName(string name_) public onlyOwner {
+        name = name_;
+    }
+
     function registerAsset(address _address) public onlyOwner {
         require(_address != address(0), "World: zero address");
         require(address(this) == IAsset(_address).worldAddress(), "World: world address is not match");
