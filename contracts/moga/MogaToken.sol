@@ -19,7 +19,8 @@ contract MogaToken is Asset20 {
         _mint(account, amount);
     }
 
-    function burn(address account, uint256 amount) public onlyOwner {
+    function burn(address account, uint256 amount) public {
+        _checkSender(_getAccountIdByAddress(account), _msgSender());
         _burn(account, amount);
     }
 
@@ -27,7 +28,8 @@ contract MogaToken is Asset20 {
         _mint(accountId, amount);
     }
 
-    function burn(uint256 accountId, uint256 amount) public onlyOwner {
+    function burn(uint256 accountId, uint256 amount) public {
+        _checkSender(accountId, _msgSender());
         _burn(accountId, amount);
     }
 

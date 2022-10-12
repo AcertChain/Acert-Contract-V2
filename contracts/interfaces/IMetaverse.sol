@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 
 interface IMetaverse {
+    function name() external view returns (string memory);
+
     function accountIsExist(uint256 _id) external view returns (bool _isExist);
 
     function isFreeze(uint256 _id) external view returns (bool _isFreeze);

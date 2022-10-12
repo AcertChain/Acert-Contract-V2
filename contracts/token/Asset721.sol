@@ -5,6 +5,7 @@ import "hardhat/console.sol";
 import "../interfaces/IAsset721.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
+import "../interfaces/IApplyStorage.sol";
 import "../common/Ownable.sol";
 import "../storage/Asset721Storage.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -16,7 +17,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
-contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
+contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable {
     using Address for address;
     using Strings for uint256;
 
@@ -48,6 +49,13 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
         world = IWorld(world_);
         storageContract = Asset721Storage(storage_);
         metaverse = IMetaverse(world.getMetaverse());
+    }
+
+    /**
+     * @dev See {IApplyStorage-getStorageAddress}.
+     */
+    function getStorageAddress() external view override returns (address) {
+        return address(storageContract);
     }
 
     function updateWorld(address _world) public onlyOwner {
@@ -665,6 +673,13 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, Ownable {
 
         _incrementNonce(_msgSender());
     }
+
+    // function burn(uint256 tokenId) public virtual {
+    //     address owner = Asset721.ownerOf(tokenId);
+    //     uint256 ownerId = _getAccountIdByAddress(owner);
+    //     _checkSender(ownerId, _msgSender());
+    //     _burn(tokenId);
+    // }
 
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.

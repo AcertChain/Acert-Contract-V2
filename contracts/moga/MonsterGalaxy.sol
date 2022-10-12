@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
+import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAsset721.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IAsset.sol";
@@ -13,8 +14,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract MonsterGalaxy is IWorld, Ownable, EIP712 {
-    event RegisterAsset(address indexed asset, IAsset.ProtocolEnum protocol);
+contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
+    event RegisterAsset(address indexed asset, IAsset.ProtocolEnum protocol, address indexed storageAddress);
     event DisableAsset(address indexed asset);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
@@ -30,7 +31,7 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         uint256 nonce
     );
 
-    string public name;
+    string public override name;
     IMetaverse public metaverse;
     WorldStorage public worldStorage;
     mapping(address => bool) public isOperator;
@@ -53,13 +54,25 @@ contract MonsterGalaxy is IWorld, Ownable, EIP712 {
         _;
     }
 
+    /**
+     * @dev See {IApplyStorage-getStorageAddress}.
+     */
+    function getStorageAddress() external view override returns (address) {
+        return address(worldStorage);
+    }
+
+    function setName(string memory name_) public onlyOwner {
+        name = name_;
+    }
+
     function registerAsset(address _address) public onlyOwner {
         require(_address != address(0), "World: zero address");
         require(address(this) == IAsset(_address).worldAddress(), "World: world address is not match");
         require(worldStorage.getAsset(_address).isExist == false, "World: asset is exist");
 
         worldStorage.setAsset(_address);
-        emit RegisterAsset(_address, IAsset(_address).protocol());
+        address storageAddress = IApplyStorage(_address).getStorageAddress();
+        emit RegisterAsset(_address, IAsset(_address).protocol(), storageAddress);
     }
 
     function disableAsset(address _address) public onlyOwner {
