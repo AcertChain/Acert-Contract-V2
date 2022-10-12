@@ -4,6 +4,10 @@ pragma solidity ^0.8.0;
 import "../common/Ownable.sol";
 import "../interfaces/IAsset.sol";
 
+interface IWorldName {
+    function initName() external view returns (string memory);
+}
+
 contract WorldStorage is Ownable {
     // struct Asset
     struct Asset {
@@ -31,6 +35,9 @@ contract WorldStorage is Ownable {
     // nonce
     mapping(address => uint256) public nonces;
 
+    mapping(address => bool) public isOperator;
+
+    string public name;
     address public world;
 
     constructor() {
@@ -45,6 +52,15 @@ contract WorldStorage is Ownable {
     function updateWorld(address _address) public onlyOwner {
         require(_address != address(0));
         world = _address;
+        name = IWorldName(_address).initName();
+    }
+
+    function setName(string memory _name) public onlyWorld {
+        name = _name;
+    }
+
+    function setOperator(address _operator, bool _isOperator) public onlyWorld {
+        isOperator[_operator] = _isOperator;
     }
 
     function IncrementNonce(address _sender) public onlyWorld {

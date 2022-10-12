@@ -11,18 +11,10 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
-    event SetAdmin(address indexed admin);
-    event AddOperator(address indexed operator);
-    event RemoveOperator(address indexed operator);
-
-    string public override name;
-    address public admin;
-    uint256 public immutable startId;
     MetaverseStorage public metaStorage;
-    uint256 public totalAccount;
 
-    // Mapping from address to operator
-    mapping(address => bool) public isOperator;
+    string public initName;
+    uint256 public startId;
 
     constructor(
         string memory name_,
@@ -30,12 +22,14 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         uint256 startId_,
         address metaStorage_
     ) EIP712(name_, version_) {
-        name = name_;
+        initName = name_;
+        emit SetName(name_);
+
         _owner = _msgSender();
         startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
     }
-
+    
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
@@ -43,8 +37,13 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         return address(metaStorage);
     }
 
+    function name() external view override returns (string memory) {
+        return metaStorage.name();
+    }
+
     function setName(string memory name_) public onlyOwner {
-        name = name_;
+        metaStorage.setName(name_);
+        emit SetName(name_);
     }
 
     function registerWorld(address _world) public onlyOwner {
@@ -81,26 +80,26 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
 
     function setAdmin(address _address) public onlyOwner {
         checkAddressIsNotZero(_address);
-        admin = _address;
+        metaStorage.setAdmin(_address);
         emit SetAdmin(_address);
     }
 
     function addOperator(address _operator) public onlyOwner {
         checkAddressIsNotZero(_operator);
-        isOperator[_operator] = true;
+        metaStorage.setOperator(_operator, true);
         emit AddOperator(_operator);
     }
 
     function removeOperator(address _operator) public onlyOwner {
-        delete isOperator[_operator];
+        metaStorage.setOperator(_operator, false);
         emit RemoveOperator(_operator);
     }
 
     function createAccount(address _address, bool _isTrustAdmin) public virtual returns (uint256 id) {
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
-        totalAccount++;
-        id = totalAccount + startId;
+        metaStorage.IncrementTotalAccount();
+        id = metaStorage.totalAccount() + startId;
         metaStorage.setAccount(MetaverseStorage.Account(true, _isTrustAdmin, false, id));
         metaStorage.addAuthAddress(id, _address);
         emit CreateAccount(id, _address, _isTrustAdmin);
@@ -168,7 +167,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
 
     function freezeAccount(uint256 _id) public {
         MetaverseStorage.Account memory account = getAccountInfo(_id);
-        if (_msgSender() == admin && getAccountIdByAddress(_msgSender()) != _id) {
+        if (_msgSender() == metaStorage.admin() && getAccountIdByAddress(_msgSender()) != _id) {
             require((account.isTrustAdmin), "Metaverse: admin does not have permission to freeze the account");
         } else {
             checkSender(_id, _msgSender());
@@ -231,7 +230,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
     function unfreezeAccount(uint256 _id, address newAddress) public {
         checkAddressIsNotZero(newAddress);
         checkAddressIsNotUsed(newAddress);
-        require(_msgSender() == admin, "Metaverse: sender is not admin");
+        require(_msgSender() == metaStorage.admin(), "Metaverse: sender is not admin");
         MetaverseStorage.Account memory account = getAccountInfo(_id);
         require(account.isFreeze, "Metaverse: The accounts were not frozen");
         account.isFreeze = false;
@@ -455,7 +454,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
     }
 
     function checkBWO(address _address) internal view {
-        require((isOperator[_address] || _owner == _address), "Metaverse: address is not BWO");
+        require((metaStorage.isOperator(_address) || _owner == _address), "Metaverse: address is not BWO");
     }
 
     function getNonce(address _address) public view returns (uint256) {

@@ -15,13 +15,9 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
-    event AddOperator(address indexed operator);
-    event RemoveOperator(address indexed operator);
-
-    string public override name;
+    string public initName;
     IMetaverse public metaverse;
     WorldStorage public worldStorage;
-    mapping(address => bool) public isOperator;
 
     constructor(
         address metaverse_,
@@ -31,7 +27,8 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
     ) EIP712(name_, version_) {
         metaverse = IMetaverse(metaverse_);
         _owner = msg.sender;
-        name = name_;
+        initName = name_;
+        emit SetName(name_);
         worldStorage = WorldStorage(worldStorage_);
     }
 
@@ -48,8 +45,13 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         return address(worldStorage);
     }
 
+    function name() external view override returns (string memory) {
+        return worldStorage.name();
+    }
+
     function setName(string memory name_) public onlyOwner {
-        name = name_;
+        worldStorage.setName(name_);
+        emit SetName(name_);
     }
 
     function registerAsset(address _address) public onlyOwner {
@@ -92,12 +94,12 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
 
     function addOperator(address _address) public onlyOwner {
         require(_address != address(0), "World: zero address");
-        isOperator[_address] = true;
+        worldStorage.setOperator(_address, true);
         emit AddOperator(_address);
     }
 
     function removeOperator(address _address) public onlyOwner {
-        delete isOperator[_address];
+        worldStorage.setOperator(_address, false);
         emit RemoveOperator(_address);
     }
 
@@ -281,7 +283,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
     }
 
     function checkBWO(address _address) public view returns (bool) {
-        return isOperator[_address] || _owner == _address;
+        return worldStorage.isOperator(_address) || _owner == _address;
     }
 
     function getNonce(address _address) public view returns (uint256) {
