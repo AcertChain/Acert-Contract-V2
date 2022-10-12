@@ -85,7 +85,7 @@ contract('Asset20', function (accounts) {
     await this.tokenStorage.updateAsset(this.token.address);
 
     // register world
-    await this.Metaverse.registerWorld(this.world.address, "");
+    await this.Metaverse.registerWorld(this.world.address);
 
     // register token
     await this.world.registerAsset(this.token.address);
@@ -379,19 +379,19 @@ contract('Asset20', function (accounts) {
   describe('_burn', function () {
     it('rejects a null account', async function () {
       await expectRevert(this.token.methods['burn(address,uint256)'](ZERO_ADDRESS, new BN(1)),
-        'Asset20: burn from the zero address');
+        'Metaverse: Account does not exist');
     });
 
     describe('for a non zero account', function () {
       it('rejects burning more than balance', async function () {
         await expectRevert(this.token.methods['burn(address,uint256)'](
-          initialHolder, initialSupply.addn(1)), 'Asset20: burn amount exceeds balance');
+          initialHolder, initialSupply.addn(1),{from:initialHolder}), 'Asset20: burn amount exceeds balance');
       });
 
       const describeBurn = function (description, amount) {
         describe(description, function () {
           beforeEach('burning', async function () {
-            this.receipt = await this.token.methods['burn(address,uint256)'](initialHolder, amount);
+            this.receipt = await this.token.methods['burn(address,uint256)'](initialHolder, amount,{from:initialHolder});
           });
 
           it('decrements totalSupply', async function () {
@@ -464,19 +464,19 @@ contract('Asset20', function (accounts) {
   describe('_burn', function () {
     it('rejects a null account', async function () {
       await expectRevert(this.token.methods['burn(uint256,uint256)'](0, new BN(1)),
-        'Asset20: burn from the zero Id');
+        'Metaverse: Account does not exist');
     });
 
     describe('for a non zero account', function () {
       it('rejects burning more than balance', async function () {
         await expectRevert(this.token.methods['burn(uint256,uint256)'](
-          initialHolderId, initialSupply.addn(1)), 'Asset20: burn amount exceeds balance');
+          initialHolderId, initialSupply.addn(1),{from:initialHolder}), 'Asset20: burn amount exceeds balance');
       });
 
       const describeBurn = function (description, amount) {
         describe(description, function () {
           beforeEach('burning', async function () {
-            this.receipt = await this.token.methods['burn(uint256,uint256)'](initialHolderId, amount);
+            this.receipt = await this.token.methods['burn(uint256,uint256)'](initialHolderId, amount,{from:initialHolder});
           });
 
           it('decrements totalSupply', async function () {
