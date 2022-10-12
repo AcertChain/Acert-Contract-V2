@@ -5,6 +5,11 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "../common/Ownable.sol";
 
+interface IMetaverseName {
+    function initName() external view returns (string memory);
+    function startId() external view returns (uint256);
+}
+
 contract MetaverseStorage is Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private worlds;
@@ -32,7 +37,14 @@ contract MetaverseStorage is Ownable {
 
     mapping(address => uint256) public authToId;
 
+    // Mapping from address to operator
+    mapping(address => bool) public isOperator;
+
     address public metaverse;
+    string public name;
+    address public admin;
+    uint256 public startId;
+    uint256 public totalAccount;
 
     constructor() {
         _owner = msg.sender;
@@ -40,11 +52,29 @@ contract MetaverseStorage is Ownable {
 
     function updateMetaverse(address addr) public onlyOwner {
         metaverse = addr;
+        name = IMetaverseName(addr).initName();
+        startId = IMetaverseName(addr).startId();
     }
 
     modifier onlyMetaverse() {
         require(metaverse == msg.sender);
         _;
+    }
+
+    function setName(string memory _name) public onlyMetaverse {
+        name = _name;
+    }
+
+    function setAdmin(address _admin) public onlyMetaverse {
+        admin = _admin;
+    }
+
+    function setOperator(address _operator, bool _isOperator) public onlyMetaverse {
+        isOperator[_operator] = _isOperator;
+    }
+
+    function IncrementTotalAccount() public onlyMetaverse {
+        totalAccount++;
     }
 
     function IncrementNonce(address sender) public onlyMetaverse {

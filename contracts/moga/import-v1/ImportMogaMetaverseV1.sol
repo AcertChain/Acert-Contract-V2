@@ -11,11 +11,9 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract ImportMogaMetaverseV1 is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
-    string public override name;
-    address public admin;
+    string public initName;
     uint256 public immutable startId;
     MetaverseStorage public metaStorage;
-    uint256 public totalAccount;
 
     constructor(
         string memory name_,
@@ -23,10 +21,15 @@ contract ImportMogaMetaverseV1 is IMetaverse, IApplyStorage, Context, Ownable, E
         uint256 startId_,
         address metaStorage_
     ) EIP712(name_, version_) {
-        name = name_;
+        initName = name_;
+        emit SetName(name_);
         _owner = _msgSender();
         startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
+    }
+
+    function name() external view override returns (string memory) {
+        return metaStorage.name();
     }
 
     /**
@@ -53,8 +56,8 @@ contract ImportMogaMetaverseV1 is IMetaverse, IApplyStorage, Context, Ownable, E
     function createAccount(address _address, bool _isTrustAdmin) public onlyOwner returns (uint256 id) {
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
-        totalAccount++;
-        id = totalAccount + startId;
+        metaStorage.IncrementTotalAccount();
+        id = metaStorage.totalAccount() + startId;
         metaStorage.setAccount(MetaverseStorage.Account(true, _isTrustAdmin, false, id));
         metaStorage.addAuthAddress(id, _address);
         emit CreateAccount(id, _address, _isTrustAdmin);

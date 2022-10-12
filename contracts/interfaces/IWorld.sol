@@ -3,6 +3,9 @@ pragma solidity ^0.8.0;
 import "../interfaces/IAsset.sol";
 
 interface IWorld {
+    event SetName(string name);
+    event AddOperator(address indexed operator);
+    event RemoveOperator(address indexed operator);
     event RegisterAsset(address indexed asset, IAsset.ProtocolEnum protocol, address indexed storageAddress);
     event DisableAsset(address indexed asset);
     event AddSafeContract(address indexed safeContract, string name);
