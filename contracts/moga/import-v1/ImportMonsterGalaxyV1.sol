@@ -15,21 +15,8 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract ImportMonsterGalaxyV1 is IWorld, IApplyStorage, Ownable, EIP712 {
-    event RegisterAsset(address indexed asset, IAsset.ProtocolEnum protocol, address indexed storageAddress);
-    event DisableAsset(address indexed asset);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
-    event AddSafeContract(address indexed safeContract, string name);
-    event RemoveSafeContract(address indexed safeContract);
-    event TrustWorld(uint256 indexed accountId, bool isTrustWorld, bool isBWO, address indexed Sender, uint256 nonce);
-    event TrustContract(
-        uint256 indexed accountId,
-        address indexed Contract,
-        bool isTrustWorld,
-        bool isBWO,
-        address indexed Sender,
-        uint256 nonce
-    );
 
     string public override name;
     IMetaverse public metaverse;

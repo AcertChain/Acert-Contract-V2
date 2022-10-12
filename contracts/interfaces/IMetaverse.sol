@@ -2,6 +2,25 @@
 pragma solidity ^0.8.0;
 
 interface IMetaverse {
+    enum OperationEnum {
+        ADD,
+        REMOVE
+    }
+    event RegisterWorld(address indexed world, string name, address indexed storageAddress);
+    event DisableWorld(address indexed world);
+    event CreateAccount(uint256 indexed accountId, address indexed authAddress, bool isTrustAdmin);
+    event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed Sender, uint256 nonce);
+    event FreezeAccount(uint256 indexed accountId, bool isBWO, address indexed Sender, uint256 nonce);
+    event UnFreezeAccount(uint256 indexed accountId, address indexed newAuthAddress);
+    event AuthAddressChanged(
+        uint256 indexed accountId,
+        address indexed authAddress,
+        OperationEnum operation,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
+
     function name() external view returns (string memory);
 
     function accountIsExist(uint256 _id) external view returns (bool _isExist);
