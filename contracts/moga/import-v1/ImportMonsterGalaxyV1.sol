@@ -2,14 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "../interfaces/IWorld.sol";
-import "../interfaces/IMetaverse.sol";
-import "../interfaces/IApplyStorage.sol";
-import "../interfaces/IAsset721.sol";
-import "../interfaces/IAsset20.sol";
-import "../interfaces/IAsset.sol";
-import "../storage/WorldStorage.sol";
-import "../common/Ownable.sol";
+import "../../interfaces/IWorld.sol";
+import "../../interfaces/IMetaverse.sol";
+import "../../interfaces/IApplyStorage.sol";
+import "../../interfaces/IAsset721.sol";
+import "../../interfaces/IAsset20.sol";
+import "../../interfaces/IAsset.sol";
+import "../../storage/WorldStorage.sol";
+import "../../common/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -31,7 +31,7 @@ contract ImportMonsterGalaxyV1 is IWorld, IApplyStorage, Ownable, EIP712 {
         uint256 nonce
     );
 
-    string public name;
+    string public override name;
     IMetaverse public metaverse;
     WorldStorage public worldStorage;
 
@@ -50,7 +50,7 @@ contract ImportMonsterGalaxyV1 is IWorld, IApplyStorage, Ownable, EIP712 {
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
-    function getStorageAddress() external view returns (address) {
+    function getStorageAddress() external view override returns (address) {
         return address(worldStorage);
     }
 
@@ -60,7 +60,7 @@ contract ImportMonsterGalaxyV1 is IWorld, IApplyStorage, Ownable, EIP712 {
         require(worldStorage.getAsset(_address).isExist == false, "World: asset is exist");
 
         worldStorage.setAsset(_address);
-        string storageAddress = IApplyStorage(_address).getStorageAddress;
+        address storageAddress = IApplyStorage(_address).getStorageAddress();
         emit RegisterAsset(_address, IAsset(_address).protocol(), storageAddress);
     }
 
@@ -70,7 +70,7 @@ contract ImportMonsterGalaxyV1 is IWorld, IApplyStorage, Ownable, EIP712 {
 
     function trustWorld(uint256 _id, bool _isTrustWorld) public onlyOwner {
         worldStorage.setTrustWorld(_id, _isTrustWorld);
-        emit TrustWorld(_id, _isTrustWorld, _isBWO, address(0), 0);
+        emit TrustWorld(_id, _isTrustWorld, false, address(0), 0);
     }
 
     /**
@@ -103,7 +103,7 @@ contract ImportMonsterGalaxyV1 is IWorld, IApplyStorage, Ownable, EIP712 {
     /**
      * @dev See {IWorld-isBWOByAsset}.
      */
-    function checkBWOByAsset(address _address) public view virtual override onlyAsset returns (bool) {
+    function checkBWOByAsset(address _address) public view virtual override returns (bool) {
         return false;
     }
 
@@ -115,7 +115,6 @@ contract ImportMonsterGalaxyV1 is IWorld, IApplyStorage, Ownable, EIP712 {
         view
         virtual
         override
-        onlyAsset
         returns (bool _isTrust)
     {
         return false;

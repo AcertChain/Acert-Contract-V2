@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 interface IWorld {
-
     function name() external view returns (string memory);
 
     function isTrustWorld(uint256 _id) external view returns (bool _isTrustWorld);

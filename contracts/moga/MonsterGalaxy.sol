@@ -31,7 +31,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         uint256 nonce
     );
 
-    string public name;
+    string public override name;
     IMetaverse public metaverse;
     WorldStorage public worldStorage;
     mapping(address => bool) public isOperator;
@@ -57,11 +57,11 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
-    function getStorageAddress() external view returns (address) {
+    function getStorageAddress() external view override returns (address) {
         return address(worldStorage);
     }
 
-    function setName(string name_) public onlyOwner {
+    function setName(string memory name_) public onlyOwner {
         name = name_;
     }
 
@@ -71,7 +71,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         require(worldStorage.getAsset(_address).isExist == false, "World: asset is exist");
 
         worldStorage.setAsset(_address);
-        string storageAddress = IApplyStorage(_address).getStorageAddress;
+        address storageAddress = IApplyStorage(_address).getStorageAddress();
         emit RegisterAsset(_address, IAsset(_address).protocol(), storageAddress);
     }
 

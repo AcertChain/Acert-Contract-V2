@@ -37,7 +37,7 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
-    function getStorageAddress() external view returns (address) {
+    function getStorageAddress() external view override returns (address) {
         return address(storageContract);
     }
 
@@ -142,18 +142,20 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         address to,
         uint256 amount
     ) public virtual override returns (bool) {
-        uint256 currentAllowance = allowance(from, _msgSender());
-        if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "Asset20: insufficient allowance");
-            unchecked {
-                _approveId(
-                    _getAccountIdByAddress(from),
-                    from,
-                    _msgSender(),
-                    currentAllowance - amount,
-                    false,
-                    _msgSender()
-                );
+        if (_getAccountIdByAddress(_msgSender()) != _getAccountIdByAddress(from)) {
+            uint256 currentAllowance = allowance(from, _msgSender());
+            if (currentAllowance != type(uint256).max) {
+                require(currentAllowance >= amount, "Asset20: insufficient allowance");
+                unchecked {
+                    _approveId(
+                        _getAccountIdByAddress(from),
+                        from,
+                        _msgSender(),
+                        currentAllowance - amount,
+                        false,
+                        _msgSender()
+                    );
+                }
             }
         }
         _transfer(from, to, amount, _msgSender());
@@ -533,10 +535,10 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         _incrementNonce(_msgSender());
     }
 
-    function burn(uint256 accountId, uint256 amount) public virtual {
-        _checkSender(accountId, _msgSender());
-        _burn(accountId, amount);
-    }
+    // function burn(uint256 accountId, uint256 amount) public virtual {
+    //     _checkSender(accountId, _msgSender());
+    //     _burn(accountId, amount);
+    // }
 
     function _checkIdIsNotZero(uint256 _id, string memory _msg) internal pure {
         require(_id != 0, _msg);

@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../token/Asset721.sol";
+import "../../token/Asset721.sol";
 
 contract ImportMogaNFTV1 is Asset721 {
     constructor(

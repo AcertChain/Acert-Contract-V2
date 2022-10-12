@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../token/Asset20.sol";
+import "../../token/Asset20.sol";
 
 contract ImportMogaTokenV1 is Asset20 {
     constructor(

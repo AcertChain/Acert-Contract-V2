@@ -54,7 +54,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
-    function getStorageAddress() external view returns (address) {
+    function getStorageAddress() external view override returns (address) {
         return address(storageContract);
     }
 
@@ -674,12 +674,12 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         _incrementNonce(_msgSender());
     }
 
-    function burn(uint256 tokenId) public virtual {
-        address owner = Asset721.ownerOf(tokenId);
-        uint256 ownerId = _getAccountIdByAddress(owner);
-        _checkSender(ownerId, _msgSender());
-        _burn(tokenId);
-    }
+    // function burn(uint256 tokenId) public virtual {
+    //     address owner = Asset721.ownerOf(tokenId);
+    //     uint256 ownerId = _getAccountIdByAddress(owner);
+    //     _checkSender(ownerId, _msgSender());
+    //     _burn(tokenId);
+    // }
 
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.

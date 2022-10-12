@@ -109,4 +109,13 @@ contract MetaverseStorage is Ownable {
         authAddress[id].remove(addr);
         delete authToId[addr];
     }
+
+    function removeAllAuthAddress(uint256 id) public onlyMetaverse {
+        EnumerableSet.AddressSet storage addrs = authAddress[id];
+        for (uint256 i = 0; i < addrs.length(); i++) {
+            address addr = addrs.at(i);
+            delete authToId[addr];
+            addrs.remove(addr);
+        }
+    }
 }
