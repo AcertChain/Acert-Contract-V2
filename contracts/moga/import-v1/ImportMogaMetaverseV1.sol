@@ -45,8 +45,7 @@ contract ImportMogaMetaverseV1 is IMetaverse, IApplyStorage, Context, Ownable, E
         require(IWorld(_world).getMetaverse() == address(this), "Metaverse: metaverse is not match");
         string memory _name = IWorld(_world).name();
         metaStorage.add(_world, _name);
-        address storageAddress = IApplyStorage(_world).getStorageAddress();
-        emit RegisterWorld(_world, _name, storageAddress);
+        emit RegisterWorld(_world, _name);
     }
 
     function containsWorld(address _world) public view returns (bool) {

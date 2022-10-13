@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "../common/Ownable.sol";
 import "../interfaces/IAsset.sol";
 
-interface IWorldName {
+interface IWorldContract {
     function initName() external view returns (string memory);
 }
 
@@ -52,7 +52,7 @@ contract WorldStorage is Ownable {
     function updateWorld(address _address) public onlyOwner {
         require(_address != address(0));
         world = _address;
-        name = IWorldName(_address).initName();
+        name = IWorldContract(_address).initName();
     }
 
     function setName(string memory _name) public onlyWorld {

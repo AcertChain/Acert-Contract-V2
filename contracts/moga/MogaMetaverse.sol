@@ -29,7 +29,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
     }
-    
+
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
@@ -52,8 +52,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         require(IWorld(_world).getMetaverse() == address(this), "Metaverse: metaverse is not match");
         string memory _name = IWorld(_world).name();
         metaStorage.add(_world, _name);
-        address storageAddress = IApplyStorage(_world).getStorageAddress();
-        emit RegisterWorld(_world, _name, storageAddress);
+        emit RegisterWorld(_world, _name);
     }
 
     function disableWorld(address _world) public onlyOwner {
@@ -422,8 +421,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
      * @dev See {IMetaverse-getOrCreateAccountId}.
      */
     function getOrCreateAccountId(address _address) public override returns (uint256 id) {
-        checkAddressIsNotZero(_address);
-        if (getAccountIdByAddress(_address) == 0) {
+        if (_address != address(0) && getAccountIdByAddress(_address) == 0) {
             id = createAccount(_address, false);
         } else {
             id = getAccountIdByAddress(_address);
@@ -441,7 +439,6 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
      * @dev See {IMetaverse-getAddressByAccountId}.
      */
     function getAddressByAccountId(uint256 _id) public view override returns (address) {
-        require(accountIsExist(_id), "Metaverse: Account does not exist");
         return metaStorage.getAccountAddress(_id);
     }
 

@@ -22,21 +22,21 @@ const {
 const deadline = new BN(parseInt(new Date().getTime() / 1000) + 3600);
 
 const EIP712Domain = [{
-    name: 'name',
-    type: 'string'
-  },
-  {
-    name: 'version',
-    type: 'string'
-  },
-  {
-    name: 'chainId',
-    type: 'uint256'
-  },
-  {
-    name: 'verifyingContract',
-    type: 'address'
-  },
+  name: 'name',
+  type: 'string'
+},
+{
+  name: 'version',
+  type: 'string'
+},
+{
+  name: 'chainId',
+  type: 'uint256'
+},
+{
+  name: 'verifyingContract',
+  type: 'address'
+},
 ];
 
 
@@ -98,16 +98,21 @@ function shouldBehaveLikeAsset20BWO(errorPrefix, initialSupply, initialHolder, i
           });
         });
 
-        it('reverts', async function () {
+        it('burn token', async function () {
 
           const nonce = await this.token.getNonce(tokenOwnerAddr);
 
           const signature = signTransferData(this.chainId, this.token.address, this.tokenName, BWOKey, this.tokenVersion,
             tokenOwnerAddr, tokenOwner, to, amount, deadline, nonce);
 
-          await expectRevert(this.token.transferFromBWO(tokenOwner, to, amount, tokenOwnerAddr, deadline, signature, {
+          const beforeBalance = await this.token.methods['balanceOf(uint256)'](tokenOwner)
+
+          await this.token.transferFromBWO(tokenOwner, to, amount, tokenOwnerAddr, deadline, signature, {
             from: this.BWO
-          }), `Metaverse: Account does not exist`, );
+          })
+
+          expect(await this.token.methods['balanceOf(uint256)'](tokenOwner)).to.be.bignumber.equal(beforeBalance.sub(amount));
+
         });
       });
 
@@ -124,7 +129,7 @@ function shouldBehaveLikeAsset20BWO(errorPrefix, initialSupply, initialHolder, i
 
           await expectRevert(this.token.transferFromBWO(tokenOwner, to, amount, tokenOwnerAddr, deadline, signature, {
             from: this.BWO
-          }), `Metaverse: Account does not exist`, );
+          }), `${errorPrefix}: to account is not exist`,);
         });
       });
     });
@@ -145,7 +150,7 @@ function shouldBehaveLikeAsset20BWO(errorPrefix, initialSupply, initialHolder, i
           this.token.transferFromBWO(tokenOwner, to, amount, spenderAddr, deadline, signature, {
             from: this.BWO
           }),
-          'Metaverse: Account does not exist',
+          'Asset20: approve from the zero address',
         );
       });
     });
@@ -198,13 +203,13 @@ function shouldBehaveLikeAsset20TransferBWO(errorPrefix, spender, from, to, bala
         expectEvent(
           await transfer.call(this, spender, from, to, amount, nonce, key),
           'AssetTransfer', {
-            from,
-            to,
-            value: amount,
-            isBWO:true,
-            sender: web3.utils.toChecksumAddress(spender),
-            nonce: nonce,
-          },
+          from,
+          to,
+          value: amount,
+          isBWO: true,
+          sender: web3.utils.toChecksumAddress(spender),
+          nonce: nonce,
+        },
         );
       });
     });
@@ -228,13 +233,13 @@ function shouldBehaveLikeAsset20TransferBWO(errorPrefix, spender, from, to, bala
         expectEvent(
           await transfer.call(this, spender, from, to, amount, nonce, key),
           'AssetTransfer', {
-            from,
-            to,
-            value: amount,
-            isBWO:true,
-            sender: web3.utils.toChecksumAddress(spender),
-            nonce: nonce,
-          },
+          from,
+          to,
+          value: amount,
+          isBWO: true,
+          sender: web3.utils.toChecksumAddress(spender),
+          nonce: nonce,
+        },
         );
       });
     });
@@ -256,11 +261,14 @@ function shouldBehaveLikeAsset20TransferBWO(errorPrefix, spender, from, to, bala
   });
 
   describe('when the recipientId is the zero Id', function () {
-    it('reverts', async function () {
+    it('burn token', async function () {
       const nonce = await this.token.getNonce(spender);
-      await expectRevert(transfer.call(this, spender, from, 0, balance, nonce, key),
-        `Metaverse: Account does not exist`,
-      );
+      const beforeBalance = await this.token.methods['balanceOf(uint256)'](from)
+
+      await transfer.call(this, spender, from, 0, balance, nonce, key)
+
+      expect(await this.token.methods['balanceOf(uint256)'](from)).to.be.bignumber.equal(beforeBalance.sub(balance));
+
     });
   });
 }
@@ -275,13 +283,13 @@ function shouldBehaveLikeAsset20ApproveBWO(errorPrefix, owner, ownerAddr, spende
         expectEvent(
           await approve.call(this, owner, ownerAddr, spenderAddr, amount, nonce, key),
           'AssetApproval', {
-            owner: owner,
-            spender: web3.utils.toChecksumAddress(spenderAddr),
-            value: amount,
-            isBWO:true,
-            sender: web3.utils.toChecksumAddress(ownerAddr),
-            nonce: nonce,
-          },
+          owner: owner,
+          spender: web3.utils.toChecksumAddress(spenderAddr),
+          value: amount,
+          isBWO: true,
+          sender: web3.utils.toChecksumAddress(ownerAddr),
+          nonce: nonce,
+        },
         );
       });
 
@@ -320,13 +328,13 @@ function shouldBehaveLikeAsset20ApproveBWO(errorPrefix, owner, ownerAddr, spende
         expectEvent(
           await approve.call(this, owner, ownerAddr, spenderAddr, amount, nonce, key),
           'AssetApproval', {
-            owner: owner,
-            spender: web3.utils.toChecksumAddress(spenderAddr),
-            value: amount,
-            isBWO:true,
-            sender: web3.utils.toChecksumAddress(ownerAddr),
-            nonce: nonce,
-          },
+          owner: owner,
+          spender: web3.utils.toChecksumAddress(spenderAddr),
+          value: amount,
+          isBWO: true,
+          sender: web3.utils.toChecksumAddress(ownerAddr),
+          nonce: nonce,
+        },
         );
       });
 
@@ -385,29 +393,29 @@ function signApproveData(chainId, verifyingContract, name, key, version,
     types: {
       EIP712Domain,
       BWO: [{
-          name: 'ownerId',
-          type: 'uint256'
-        },
-        {
-          name: 'spender',
-          type: 'address'
-        },
-        {
-          name: 'amount',
-          type: 'uint256'
-        },
-        {
-          name: 'sender',
-          type: 'address'
-        },
-        {
-          name: 'nonce',
-          type: 'uint256'
-        },
-        {
-          name: 'deadline',
-          type: 'uint256'
-        },
+        name: 'ownerId',
+        type: 'uint256'
+      },
+      {
+        name: 'spender',
+        type: 'address'
+      },
+      {
+        name: 'amount',
+        type: 'uint256'
+      },
+      {
+        name: 'sender',
+        type: 'address'
+      },
+      {
+        name: 'nonce',
+        type: 'uint256'
+      },
+      {
+        name: 'deadline',
+        type: 'uint256'
+      },
       ],
     },
     domain: {
@@ -440,29 +448,29 @@ function signTransferData(chainId, verifyingContract, name, key, version,
     types: {
       EIP712Domain,
       BWO: [{
-          name: 'from',
-          type: 'uint256'
-        },
-        {
-          name: 'to',
-          type: 'uint256'
-        },
-        {
-          name: 'amount',
-          type: 'uint256'
-        },
-        {
-          name: 'sender',
-          type: 'address'
-        },
-        {
-          name: 'nonce',
-          type: 'uint256'
-        },
-        {
-          name: 'deadline',
-          type: 'uint256'
-        },
+        name: 'from',
+        type: 'uint256'
+      },
+      {
+        name: 'to',
+        type: 'uint256'
+      },
+      {
+        name: 'amount',
+        type: 'uint256'
+      },
+      {
+        name: 'sender',
+        type: 'address'
+      },
+      {
+        name: 'nonce',
+        type: 'uint256'
+      },
+      {
+        name: 'deadline',
+        type: 'uint256'
+      },
       ],
     },
     domain: {

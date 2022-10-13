@@ -216,10 +216,16 @@ function shouldBehaveLikeAsset20(errorPrefix, initialSupply, initialHolder, init
           });
         });
 
-        it('reverts', async function () {
-          await expectRevert(this.token.methods['transferFrom(uint256,uint256,uint256)'](tokenOwner, to, amount, {
+        it('burn token', async function () {
+
+          const beforeBalance = await this.token.methods['balanceOf(uint256)'](tokenOwner)
+
+          await this.token.methods['transferFrom(uint256,uint256,uint256)'](tokenOwner, to, amount, {
             from: spenderAddr
-          }), `Metaverse: Account does not exist`);
+          })
+
+          expect(await this.token.methods['balanceOf(uint256)'](tokenOwner)).to.be.bignumber.equal(beforeBalance.sub(amount));
+
         });
       });
 
@@ -236,7 +242,7 @@ function shouldBehaveLikeAsset20(errorPrefix, initialSupply, initialHolder, init
         it('reverts', async function () {
           await expectRevert(this.token.methods['transferFrom(uint256,uint256,uint256)'](tokenOwner, to, amount, {
             from: spenderAddr
-          }), `Metaverse: Account does not exist`);
+          }), `${errorPrefix}: to account is not exist`);
         });
       });
     });
@@ -251,7 +257,7 @@ function shouldBehaveLikeAsset20(errorPrefix, initialSupply, initialHolder, init
           this.token.methods['transferFrom(uint256,uint256,uint256)'](tokenOwner, to, amount, {
             from: spenderAddr
           }),
-          'Metaverse: Account does not exist',
+          `${errorPrefix}: approve from the zero address`,
         );
       });
     });
@@ -420,10 +426,14 @@ function shouldBehaveLikeAsset20Transfer(errorPrefix, fromAddr, from, to, balanc
   });
 
   describe('when the recipientId is the zero Id', function () {
-    it('reverts', async function () {
-      await expectRevert(transfer.call(this, fromAddr, from, 0, balance),
-        `Metaverse: Account does not exist`,
-      );
+    it('burn token', async function () {
+
+      const beforeBalance = await this.token.methods['balanceOf(uint256)'](from)
+
+      await transfer.call(this, fromAddr, from, 0, balance);
+
+      expect(await this.token.methods['balanceOf(uint256)'](from)).to.be.bignumber.equal(beforeBalance.sub(balance));
+
     });
   });
 }
