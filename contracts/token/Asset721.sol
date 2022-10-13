@@ -269,7 +269,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      * @dev See {IERC721-setApprovalForAll}.
      */
     function setApprovalForAll(address operator, bool approved) public virtual override {
-        uint256 accountId = _getAccountIdByAddress(_msgSender());
+        uint256 accountId = _getOrCreateAccountId(_msgSender());
         _checkIdIsNotZero(accountId, "Asset721: approveForAll query for nonexistent account");
         _setApprovalForAll(accountId, operator, approved, false, _msgSender());
     }
