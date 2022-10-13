@@ -220,7 +220,6 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
             _getAccountIdByAddress(sender) == ownerId || isApprovedForAll(ownerId, sender),
             "Asset721: approve caller is not owner nor approved for all"
         );
-
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -533,6 +532,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
+        _checkBWOByAsset(_msgSender());
         safeTransferFromBWOParamsVerify(from, to, tokenId, data, sender, deadline, signature);
 
         if (to == 0) {
