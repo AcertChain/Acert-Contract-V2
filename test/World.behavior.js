@@ -44,7 +44,7 @@ function shouldBehaveLikeWorld(owner) {
         describe('基础view查询接口', function () {
             context('getTotalAccount', function () {
                 it('应该等于avatarMaxId+1', async function () {
-                    await this.world.getOrCreateAccountId(owner);
+                    await this.Metaverse.getOrCreateAccountId(owner);
                     expect(await this.Metaverse.getTotalAccount()).to.be.bignumber.equal(new BN(1));
                 });
             });
@@ -171,12 +171,12 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         describe('isTrustWorld', function () {
             context('is trust World', function () {
                 it('account is not trust World', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     expect(await this.world.isTrustWorld(account)).to.equal(false);
                 });
 
                 it('account is trust World', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.trustWorld({
                         from: account
@@ -191,7 +191,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                 it('account is trust World BWO', async function () {
                     const accountW = Wallet.generate();
                     const account = accountW.getChecksumAddressString();
-                    await this.world.getOrCreateAccountId(account)
+                    await this.Metaverse.getOrCreateAccountId(account)
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.addOperator(operator)
                     const nonce = await this.world.getNonce(account);
@@ -218,19 +218,19 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         describe('isTrust', function () {
             context('is Trust', function () {
                 it('conrtact is not safe contract ', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user not trust world', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user trust world', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.trustWorld({
                         from: account
@@ -239,14 +239,14 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
                 });
                 it('conrtact is safe contract and user not trust world not trust contract ', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user not trust world  trust contract ', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
@@ -269,7 +269,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                 it('conrtact is safe contract and user not trust world  trust contract  BWO', async function () {
                     const accountW = Wallet.generate();
                     const account = accountW.getChecksumAddressString();
-                    await this.world.getOrCreateAccountId(account)
+                    await this.Metaverse.getOrCreateAccountId(account)
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.addOperator(operator)
                     const nonce = await this.world.getNonce(account);

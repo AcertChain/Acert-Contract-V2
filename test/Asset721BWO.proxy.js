@@ -38,28 +38,6 @@ const ZERO = new BN(0);
 const RECEIVER_MAGIC_VALUE = '0x150b7a02';
 
 
-const ownerW = Wallet.generate();
-const approvedW = Wallet.generate();
-const anotherApprovedW = Wallet.generate();
-const operatorW = Wallet.generate();
-const otherW = Wallet.generate();
-
-const owner = ownerW.getAddressString();
-const approved = approvedW.getAddressString();
-const anotherApproved = anotherApprovedW.getAddressString();
-const operator = operatorW.getAddressString();
-const other = otherW.getAddressString();
-
-const ownerId = new BN(1);
-const approvedId = new BN(2);
-const anotherApprovedId = new BN(3);
-const operatorId = new BN(4);
-const otherId = new BN(5);
-
-const accountW = Wallet.generate();
-const accountWAddr = accountW.getAddressString()
-const authAccount = accountW.getChecksumAddressString();
-
 const deadline = new BN(parseInt(new Date().getTime() / 1000) + 36000);
 
 const EIP712Domain = [{
@@ -80,34 +58,65 @@ const EIP712Domain = [{
   },
 ];
 
-function shouldBehaveLikeItem721ProxyBWO() {
+function shouldBehaveLikeItem721Proxy() {
   shouldSupportInterfaces([
     'ERC165',
     'ERC721',
   ]);
 
-  context('with minted tokens', function () {
+  context('with minted tokens', function (owner,approved,authAccount) {
     beforeEach(async function () {
       // create account
-      await this.world.getOrCreateAccountId(owner);
-      await this.world.getOrCreateAccountId(approved);
-      await this.world.getOrCreateAccountId(anotherApproved);
-      await this.world.getOrCreateAccountId(operator);
-      await this.world.getOrCreateAccountId(other);
+      await this.Metaverse.getOrCreateAccountId(owner);
+      await this.Metaverse.getOrCreateAccountId(approved);
+      await this.Metaverse.getOrCreateAccountId(authAccount);
 
-      await this.token.mint(owner, firstTokenId);
-      await this.token.mint(owner, secondTokenId);
-      this.toWhom = other; // default to other for toWhom in context-dependent tests
-      this.toWhomId = otherId;
+      await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
+      await this.token.methods['mint(address,uint256)'](owner, secondTokenId);
 
+      this.domain = {
+        name: "metaverse",
+        version: "1.0",
+        chainId: this.chainId.toString(),
+        verifyingContract: this.Metaverse.address
+      };
 
-      // add proxy
+      this.signAuthTypes = {
+        AddAuth: [
+          {
+            name: 'id',
+            type: 'uint256'
+          },
+          {
+            name: 'addr',
+            type: 'address'
+          },
+          {
+            name: 'sender',
+            type: 'address'
+          },
+          {
+            name: 'nonce',
+            type: 'uint256'
+          },
+          {
+            name: 'deadline',
+            type: 'uint256'
+          },
+        ],
+      };
 
-      const nonce = await this.Metaverse.getNonce(owner);
-      const signature = signaddAuthAddressBWO(this.chainId, this.Metaverse.address, "metaverse", 
-      ownerW.getPrivateKey(), "1.0", ownerId, authAccount, owner, nonce, deadline);
+      const value = { id: initialHolderId.toString(), addr: authAccount, sender: initialHolder, nonce: '0', deadline: deadline.toString() };
 
-      await this.Metaverse.addAuthAddressBWO(ownerId, authAccount, owner, deadline, signature)
+      this.initialHolderSinger = await ethers.getSigner(initialHolder)
+
+      this.authAccountSinger = await ethers.getSigner(authAccount)
+
+      const signature = await this.authAccountSinger._signTypedData(this.domain, this.signAuthTypes, value)
+
+      await this.Metaverse.addAuthAddress(initialHolderId, authAccount, deadline, signature, {
+        from: initialHolder
+      });
 
     });
 
@@ -171,7 +180,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
         });
 
         it('adjusts owners balances', async function () {
-          expect(await this.token.balanceOfItem(ownerId)).to.be.bignumber.equal('1');
+          expect(await this.token.methods['balanceOf(uint256)'](ownerId)).to.be.bignumber.equal('1');
         });
 
         it('adjusts owners tokens by index', async function () {
@@ -250,7 +259,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
           });
 
           it('keeps the owner balance', async function () {
-            expect(await this.token.balanceOfItem(ownerId)).to.be.bignumber.equal('2');
+            expect(await this.token.methods['balanceOf(uint256)'](ownerId)).to.be.bignumber.equal('2');
           });
 
           it('keeps same tokens by index', async function () {
@@ -380,7 +389,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
             beforeEach(async function () {
               this.receiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.None);
               this.toWhom = this.receiver.address;
-              await this.world.getOrCreateAccountId(this.receiver.address);
+              await this.Metaverse.getOrCreateAccountId(this.receiver.address);
               this.receiverId = new BN(await this.Metaverse.getAccountIdByAddress(this.receiver.address));
             });
 
@@ -436,7 +445,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
         describe('to a receiver contract returning unexpected value', function () {
           it('reverts', async function () {
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
-            await this.world.getOrCreateAccountId(invalidReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(invalidReceiver.address);
             const invalidReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(invalidReceiver.address));
             const nonce = await this.token.getNonce(authAccount);
             const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
@@ -455,7 +464,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
         describe('to a receiver contract that reverts with message', function () {
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithMessage);
-            await this.world.getOrCreateAccountId(revertingReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(revertingReceiver.address));
 
             const nonce = await this.token.getNonce(authAccount);
@@ -475,7 +484,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
         describe('to a receiver contract that reverts without message', function () {
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
-            await this.world.getOrCreateAccountId(revertingReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(revertingReceiver.address));
             const nonce = await this.token.getNonce(authAccount);
             const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
@@ -494,7 +503,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
         describe('to a receiver contract that panics', function () {
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.Panic);
-            await this.world.getOrCreateAccountId(revertingReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(revertingReceiver.address));
 
             const nonce = await this.token.getNonce(authAccount);
@@ -513,7 +522,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
         describe('to a contract that does not implement the required function', function () {
           it('reverts', async function () {
             const nonReceiver = this.token;
-            await this.world.getOrCreateAccountId(nonReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(nonReceiver.address);
             const nonReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(nonReceiver.address));
             const nonce = await this.token.getNonce(authAccount);
             const signature = signSafeTrasferData(this.chainId, this.token.address, this.tokenName,
@@ -1205,5 +1214,5 @@ function signaddAuthAddressBWO(chainId, verifyingContract, name, key, version, i
 }
 
 module.exports = {
-  shouldBehaveLikeItem721ProxyBWO,
+  shouldBehaveLikeItem721Proxy,
 };

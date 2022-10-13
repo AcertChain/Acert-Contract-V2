@@ -190,7 +190,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
     function approve(address spender, uint256 tokenId) public virtual override {
         uint256 ownerId = ownerAccountOf(tokenId);
         require(
-            _getOrCreateAccountId(_msgSender()) == ownerId || isApprovedForAll(ownerId, _msgSender()),
+            _getAccountIdByAddress(_msgSender()) == ownerId || isApprovedForAll(ownerId, _msgSender()),
             "Asset721: approve caller is not owner nor approved for all"
         );
         _approve(spender, tokenId, false, _msgSender());
@@ -216,7 +216,11 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         bytes memory signature
     ) public view returns (bool) {
         uint256 ownerId = ownerAccountOf(tokenId);
-        _checkSender(ownerId, sender);
+        require(
+            _getAccountIdByAddress(sender) == ownerId || isApprovedForAll(ownerId, sender),
+            "Asset721: approve caller is not owner nor approved for all"
+        );
+
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -266,7 +270,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      * @dev See {IERC721-setApprovalForAll}.
      */
     function setApprovalForAll(address operator, bool approved) public virtual override {
-        uint256 accountId = _getOrCreateAccountId(_msgSender());
+        uint256 accountId = _getAccountIdByAddress(_msgSender());
         _checkIdIsNotZero(accountId, "Asset721: approveForAll query for nonexistent account");
         _setApprovalForAll(accountId, operator, approved, false, _msgSender());
     }
@@ -441,7 +445,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 fromAccount,uint256 toAccount,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
+                            "BWO(uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         fromAccount,
                         toAccount,
@@ -520,7 +524,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         }
     }
 
-    function safeTransferFrom(
+    function safeTransferFromBWO(
         uint256 from,
         uint256 to,
         uint256 tokenId,
@@ -529,7 +533,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        safeTransferFromItemBWOParamsVerify(from, to, tokenId, data, sender, deadline, signature);
+        safeTransferFromBWOParamsVerify(from, to, tokenId, data, sender, deadline, signature);
 
         if (to == 0) {
             _burn(tokenId);
@@ -538,7 +542,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         }
     }
 
-    function safeTransferFromItemBWOParamsVerify(
+    function safeTransferFromBWOParamsVerify(
         uint256 from,
         uint256 to,
         uint256 tokenId,

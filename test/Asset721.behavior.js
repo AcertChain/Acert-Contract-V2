@@ -49,11 +49,11 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
   context('with minted tokens', function () {
     beforeEach(async function () {
       // create account
-      await this.world.getOrCreateAccountId(owner);
-      await this.world.getOrCreateAccountId(approved);
-      await this.world.getOrCreateAccountId(anotherApproved);
-      await this.world.getOrCreateAccountId(operator);
-      await this.world.getOrCreateAccountId(other);
+      await this.Metaverse.getOrCreateAccountId(owner);
+      await this.Metaverse.getOrCreateAccountId(approved);
+      await this.Metaverse.getOrCreateAccountId(anotherApproved);
+      await this.Metaverse.getOrCreateAccountId(operator);
+      await this.Metaverse.getOrCreateAccountId(other);
 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
@@ -64,20 +64,20 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
     describe('balanceOfItem', function () {
       context('when the given address owns some tokens', function () {
         it('returns the amount of tokens owned by the given address', async function () {
-          expect(await this.token.balanceOfItem(ownerId)).to.be.bignumber.equal('2');
+          expect(await this.token.methods['balanceOf(uint256)'](ownerId)).to.be.bignumber.equal('2');
         });
       });
 
       context('when the given address does not own any tokens', function () {
         it('returns 0', async function () {
-          expect(await this.token.balanceOfItem(otherId)).to.be.bignumber.equal('0');
+          expect(await this.token.methods['balanceOf(uint256)'](otherId)).to.be.bignumber.equal('0');
         });
       });
 
       context('when querying the zero address', function () {
         it('throws', async function () {
           await expectRevert(
-            this.token.balanceOfItem(0), 'Asset721: id zero is not a valid owner',
+            this.token.methods['balanceOf(uint256)'](0), 'Asset721: id zero is not a valid owner',
           );
         });
       });
@@ -88,7 +88,7 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
         const tokenId = firstTokenId;
 
         it('returns the owner of the given token ID', async function () {
-          expect(await this.token.ownerOfItem(tokenId)).to.be.bignumber.equal(ownerId);
+          expect(await this.token.ownerAccountOf(tokenId)).to.be.bignumber.equal(ownerId);
         });
       });
 
@@ -97,7 +97,7 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
 
         it('reverts', async function () {
           await expectRevert(
-            this.token.ownerOfItem(tokenId), 'Asset721: owner query for nonexistent token',
+            this.token.ownerAccountOf(tokenId), 'Asset721: owner query for nonexistent token',
           );
         });
       });
@@ -113,7 +113,7 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
         await this.token.approve(approved, tokenId, {
           from: owner
         });
-        await this.token.setApprovalForAllItem(ownerId, operator, true, {
+        await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
           from: owner
         });
       });
@@ -124,14 +124,15 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
         approved
       }) {
         it('transfers the ownership of the given token ID to the given address', async function () {
-          expect(await this.token.ownerOfItem(tokenId)).to.be.bignumber.equal(this.toWhomId);
+          expect(await this.token.ownerAccountOf(tokenId)).to.be.bignumber.equal(this.toWhomId);
         });
 
         it('emits a TransferItem event', async function () {
-          expectEvent.inLogs(logs, 'TransferItem', {
+          expectEvent.inLogs(logs, 'AssetTransfer', {
             from: ownerId,
             to: this.toWhomId,
-            tokenId: tokenId
+            tokenId: tokenId,
+            isBWO: false
           });
         });
 
@@ -139,16 +140,9 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
           expect(await this.token.getApproved(tokenId)).to.be.equal(ZERO_ADDRESS);
         });
 
-        it('emits an ApprovalItem event', async function () {
-          expectEvent.inLogs(logs, 'Approval', {
-            owner: owner,
-            approved: ZERO_ADDRESS,
-            tokenId: tokenId
-          });
-        });
 
         it('adjusts owners balances', async function () {
-          expect(await this.token.balanceOfItem(ownerId)).to.be.bignumber.equal('1');
+          expect(await this.token.methods['balanceOf(uint256)'](ownerId)).to.be.bignumber.equal('1');
         });
 
         it('adjusts owners tokens by index', async function () {
@@ -234,23 +228,24 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
           });
 
           it('keeps ownership of the token', async function () {
-            expect(await this.token.ownerOfItem(tokenId)).to.be.bignumber.equal(ownerId);
+            expect(await this.token.ownerAccountOf(tokenId)).to.be.bignumber.equal(ownerId);
           });
 
           it('clears the approval for the token ID', async function () {
             expect(await this.token.getApproved(tokenId)).to.be.equal(ZERO_ADDRESS);
           });
 
-          it('emits only a transferCash event', async function () {
-            expectEvent.inLogs(logs, 'TransferItem', {
+          it('emits only a AssetTransfer event', async function () {
+            expectEvent.inLogs(logs, 'AssetTransfer', {
               from: ownerId,
               to: ownerId,
               tokenId: tokenId,
+              isBWO: false,
             });
           });
 
           it('keeps the owner balance', async function () {
-            expect(await this.token.balanceOfItem(ownerId)).to.be.bignumber.equal('2');
+            expect(await this.token.methods['balanceOf(uint256)'](ownerId)).to.be.bignumber.equal('2');
           });
 
           it('keeps same tokens by index', async function () {
@@ -299,12 +294,16 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
 
         context('when the address to transfer the token to is the zero id', function () {
           it('reverts', async function () {
-            await expectRevert(
-              transferFunction.call(this, ownerId, ownerId, 0, tokenId, {
-                from: owner
-              }),
+            await transferFunction.call(this, ownerId, ownerId, 0, tokenId, {
+              from: owner
+            }),
               'Asset721: transfer to the zero id',
-            );
+
+              await expectRevert(
+                this.token.ownerOf(tokenId),
+                'Asset721: owner query for nonexistent token',
+              );
+
           });
         });
 
@@ -322,13 +321,13 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
 
       describe('via transferFromItem', function () {
         shouldTransferTokensByUsers(function (senderId, fromId, toId, tokenId, opts) {
-          return this.token.transferFromItem(fromId, toId, tokenId, opts);
+          return this.token.methods['transferFrom(uint256,uint256,uint256)'](fromId, toId, tokenId, opts);
         });
       });
 
       describe('via safeTransferFromItem', function () {
         const safeTransferFromItemWithData = function (senderId, fromId, toId, tokenId, opts) {
-          return this.token.methods['safeTransferFromItem(uint256,uint256,uint256,bytes)'](fromId, toId, tokenId, data, opts);
+          return this.token.methods['safeTransferFrom(uint256,uint256,uint256,bytes)'](fromId, toId, tokenId, data, opts);
         };
 
         // const safeTransferFromItemWithoutData = function (senderId, fromId, toId, tokenId, opts) {
@@ -344,7 +343,7 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
             beforeEach(async function () {
               this.receiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.None);
               this.toWhom = this.receiver.address;
-              await this.world.getOrCreateAccountId(this.receiver.address);
+              await this.Metaverse.getOrCreateAccountId(this.receiver.address);
               this.receiverId = new BN(await this.Metaverse.getAccountIdByAddress(this.receiver.address));
 
             });
@@ -407,10 +406,10 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
         describe('to a receiver contract returning unexpected value', function () {
           it('reverts', async function () {
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
-            await this.world.getOrCreateAccountId(invalidReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(invalidReceiver.address);
             const invalidReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(invalidReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, invalidReceiverId, tokenId, '0x', {
+              this.token.methods["safeTransferFrom(uint256,uint256,uint256,bytes)"](ownerId, invalidReceiverId, tokenId, '0x', {
                 from: owner
               }),
               'Asset721: transfer to non ERC721Receiver implementer',
@@ -421,11 +420,11 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
         describe('to a receiver contract that reverts with message', function () {
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithMessage);
-            await this.world.getOrCreateAccountId(revertingReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, '0x', {
+              this.token.methods['safeTransferFrom(uint256,uint256,uint256,bytes)'](ownerId, revertingReceiverId, tokenId, '0x', {
                 from: owner
               }),
               'ERC721ReceiverMock: reverting',
@@ -436,10 +435,10 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
         describe('to a receiver contract that reverts without message', function () {
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
-            await this.world.getOrCreateAccountId(revertingReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(revertingReceiver.address));
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, '0x', {
+              this.token.methods['safeTransferFrom(uint256,uint256,uint256,bytes)'](ownerId, revertingReceiverId, tokenId, '0x', {
                 from: owner
               }),
               'Asset721: transfer to non ERC721Receiver implementer',
@@ -450,11 +449,11 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
         describe('to a receiver contract that panics', function () {
           it('reverts', async function () {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.Panic);
-            await this.world.getOrCreateAccountId(revertingReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(revertingReceiver.address);
             const revertingReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(revertingReceiver.address));
 
             await expectRevert.unspecified(
-              this.token.safeTransferFromItem(ownerId, revertingReceiverId, tokenId, '0x', {
+              this.token.methods['safeTransferFrom(uint256,uint256,uint256,bytes)'](ownerId, revertingReceiverId, tokenId, '0x', {
                 from: owner
               }),
             );
@@ -464,11 +463,11 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
         describe('to a contract that does not implement the required function', function () {
           it('reverts', async function () {
             const nonReceiver = this.token;
-            await this.world.getOrCreateAccountId(nonReceiver.address);
+            await this.Metaverse.getOrCreateAccountId(nonReceiver.address);
             const nonReceiverId = new BN(await this.Metaverse.getAccountIdByAddress(nonReceiver.address));
 
             await expectRevert(
-              this.token.safeTransferFromItem(ownerId, nonReceiverId, tokenId, '0x', {
+              this.token.methods['safeTransferFrom(uint256,uint256,uint256,bytes)'](ownerId, nonReceiverId, tokenId, '0x', {
                 from: owner
               }),
               'Asset721: transfer to non ERC721Receiver implementer',
@@ -665,7 +664,7 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
           await expectRevert(
             this.token.approve(owner, tokenId, {
               from: owner
-            }), 'Asset721: approval to current owner',
+            }), 'Asset721: approval to current account',
           );
         });
       });
@@ -693,7 +692,7 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
 
       context('when the sender is an operator', function () {
         beforeEach(async function () {
-          await this.token.setApprovalForAllItem(ownerId, operator, true, {
+          await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
             from: owner
           });
           ({
@@ -721,92 +720,98 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
       context('when the operator willing to approve is not the owner', function () {
         context('when there is no operator approval set by the sender', function () {
           it('approves the operator', async function () {
-            await this.token.setApprovalForAllItem(ownerId, operator, true, {
+            await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
               from: owner
             });
 
-            expect(await this.token.isApprovedForAllItem(ownerId, operator)).to.equal(true);
+            expect(await this.token.methods['isApprovedForAll(uint256,address)'](ownerId, operator)).to.equal(true);
           });
 
           it('emits an approvalById event', async function () {
             const {
               logs
-            } = await this.token.setApprovalForAllItem(ownerId, operator, true, {
+            } = await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
               from: owner
             });
 
-            expectEvent.inLogs(logs, 'ApprovalForAllItem', {
-              owner: ownerId,
-              operator: operator,
+            expectEvent.inLogs(logs, 'AssetApprovalForAll', {
+              from: ownerId,
+              to: operator,
               approved: true,
+              isBWO: false,
+              sender: owner
             });
           });
         });
 
         context('when the operator was set as not approved', function () {
           beforeEach(async function () {
-            await this.token.setApprovalForAllItem(ownerId, operator, false, {
+            await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, false, {
               from: owner
             });
           });
 
           it('approves the operator', async function () {
-            await this.token.setApprovalForAllItem(ownerId, operator, true, {
+            await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
               from: owner
             });
 
-            expect(await this.token.isApprovedForAllItem(ownerId, operator)).to.equal(true);
+            expect(await this.token.methods['isApprovedForAll(uint256,address)'](ownerId, operator)).to.equal(true);
           });
 
           it('emits an approvalById event', async function () {
             const {
               logs
-            } = await this.token.setApprovalForAllItem(ownerId, operator, true, {
+            } = await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
               from: owner
             });
 
-            expectEvent.inLogs(logs, 'ApprovalForAllItem', {
-              owner: ownerId,
-              operator: web3.utils.toChecksumAddress(operator),
+            expectEvent.inLogs(logs, 'AssetApprovalForAll', {
+              from: ownerId,
+              to: operator,
               approved: true,
+              isBWO: false,
+              sender: owner
             });
           });
 
           it('can unset the operator approval', async function () {
-            await this.token.setApprovalForAllItem(ownerId, operator, false, {
+            await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, false, {
               from: owner
             });
 
-            expect(await this.token.isApprovedForAllItem(ownerId, operator)).to.equal(false);
+            expect(await this.token.methods['isApprovedForAll(uint256,address)'](ownerId, operator)).to.equal(false);
           });
         });
 
         context('when the operator was already approved', function () {
           beforeEach(async function () {
-            await this.token.setApprovalForAllItem(ownerId, operator, true, {
+            await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
               from: owner
             });
           });
 
           it('keeps the approval to the given address', async function () {
-            await this.token.setApprovalForAllItem(ownerId, operator, true, {
+            await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
               from: owner
             });
 
-            expect(await this.token.isApprovedForAllItem(ownerId, operator)).to.equal(true);
+            expect(await this.token.methods['isApprovedForAll(uint256,address)'](ownerId, operator)).to.equal(true);
           });
 
-          it('emits an approvalById event', async function () {
+          it('emits an approval event', async function () {
             const {
               logs
-            } = await this.token.setApprovalForAllItem(ownerId, operator, true, {
+            } = await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
               from: owner
             });
 
-            expectEvent.inLogs(logs, 'ApprovalForAllItem', {
-              owner: ownerId,
-              operator: web3.utils.toChecksumAddress(operator),
+            expectEvent.inLogs(logs, 'AssetApprovalForAll', {
+              from: ownerId,
+              to: operator,
               approved: true,
+              isBWO: false,
+              sender: owner
             });
           });
         });
@@ -814,10 +819,10 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
 
       context('when the operator is the owner', function () {
         it('reverts', async function () {
-          await expectRevert(this.token.setApprovalForAllItem(ownerId, owner, true, {
+          await expectRevert(this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, owner, true, {
             from: owner
           }),
-            'Asset721: approve to caller');
+            'Asset721: approval to current account');
         });
       });
     });
@@ -877,8 +882,8 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
       });
 
       it('creates the token', async function () {
-        expect(await this.token.balanceOfItem(ownerId)).to.be.bignumber.equal('1');
-        expect(await this.token.ownerOfItem(firstTokenId)).to.bignumber.equal(ownerId);
+        expect(await this.token.methods['balanceOf(uint256)'](ownerId)).to.be.bignumber.equal('1');
+        expect(await this.token.ownerAccountOf(firstTokenId)).to.bignumber.equal(ownerId);
       });
 
       it('reverts when adding a token id that already exists', async function () {
@@ -896,15 +901,15 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
 
     context('with minted tokens', function () {
       beforeEach(async function () {
-        await this.token.mint(owner, firstTokenId);
-        await this.token.mint(owner, secondTokenId);
+        await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
+        await this.token.methods['mint(address,uint256)'](owner, secondTokenId);
       });
 
       context('with burnt token', function () {
         beforeEach(async function () {
           ({
             logs: this.logs
-          } = await this.token.burn(firstTokenId));
+          } = await this.token.burn(firstTokenId,{from:owner}));
         });
 
         it('emits a Transfer event', function () {
@@ -915,18 +920,10 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
           });
         });
 
-        it('emits an Approval event', function () {
-          expectEvent.inLogs(this.logs, 'Approval', {
-            owner,
-            approved: ZERO_ADDRESS,
-            tokenId: firstTokenId
-          });
-        });
-
         it('deletes the token', async function () {
-          expect(await this.token.balanceOfItem(ownerId)).to.be.bignumber.equal('1');
+          expect(await this.token.methods['balanceOf(uint256)'](ownerId)).to.be.bignumber.equal('1');
           await expectRevert(
-            this.token.ownerOfItem(firstTokenId), 'Asset721: owner query for nonexistent token',
+            this.token.ownerAccountOf(firstTokenId), 'Asset721: owner query for nonexistent token',
           );
         });
 
@@ -944,17 +941,17 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
     beforeEach('set safe contract and trust world', async function () {
 
       // create account
-      await this.world.getOrCreateAccountId(owner);
-      await this.world.getOrCreateAccountId(approved);
-      await this.world.getOrCreateAccountId(anotherApproved);
-      await this.world.getOrCreateAccountId(operator);
-      await this.world.getOrCreateAccountId(other);
+      await this.Metaverse.getOrCreateAccountId(owner);
+      await this.Metaverse.getOrCreateAccountId(approved);
+      await this.Metaverse.getOrCreateAccountId(anotherApproved);
+      await this.Metaverse.getOrCreateAccountId(operator);
+      await this.Metaverse.getOrCreateAccountId(other);
 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
       await this.world.addSafeContract(anotherApproved, "");
-      await this.world.trustWorld({
+      await this.world.trustWorld(ownerId, true, {
         from: owner
       });
     });
@@ -967,17 +964,17 @@ function shouldBehaveLikeAsset721(errorPrefix, owner, approved, anotherApproved,
 
     beforeEach('trust contract', async function () {
       // create account
-      await this.world.getOrCreateAccountId(owner);
-      await this.world.getOrCreateAccountId(approved);
-      await this.world.getOrCreateAccountId(anotherApproved);
-      await this.world.getOrCreateAccountId(operator);
-      await this.world.getOrCreateAccountId(other);
+      await this.Metaverse.getOrCreateAccountId(owner);
+      await this.Metaverse.getOrCreateAccountId(approved);
+      await this.Metaverse.getOrCreateAccountId(anotherApproved);
+      await this.Metaverse.getOrCreateAccountId(operator);
+      await this.Metaverse.getOrCreateAccountId(other);
 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
       await this.world.addSafeContract(anotherApproved, "");
-      await this.world.trustContract(anotherApproved, {
+      await this.world.trustContract(ownerId, anotherApproved, true, {
         from: owner
       });
     });
@@ -990,7 +987,7 @@ function shouldBehaveLikeAsset721IsTrust(owner, approved, operator, other, trust
   const tokenId = firstTokenId;
   const data = '0x42';
   const safeTransferFromItemWithData = function (fromId, toId, tokenId, opts) {
-    return this.token.methods['safeTransferFromItem(uint256,uint256,uint256,bytes)'](fromId, toId, tokenId, data, opts);
+    return this.token.methods['safeTransferFrom(uint256,uint256,uint256,bytes)'](fromId, toId, tokenId, data, opts);
   };
   const safeTransferFromWithData = function (from, to, tokenId, opts) {
     return this.token.methods['safeTransferFrom(address,address,uint256,bytes)'](from, to, tokenId, data, opts);
@@ -1000,7 +997,7 @@ function shouldBehaveLikeAsset721IsTrust(owner, approved, operator, other, trust
     await this.token.approve(approved, tokenId, {
       from: owner
     });
-    await this.token.setApprovalForAllItem(ownerId, operator, true, {
+    await this.token.methods['setApprovalForAll(uint256,address,bool)'](ownerId, operator, true, {
       from: owner
     });
   });
@@ -1008,7 +1005,7 @@ function shouldBehaveLikeAsset721IsTrust(owner, approved, operator, other, trust
   describe('transferFrom', function () {
     it('emit Transfer event', async function () {
       expectEvent(
-        await this.token.transferFrom(owner, other, tokenId, {
+        await this.token.methods['transferFrom(address,address,uint256)'](owner, other, tokenId, {
           from: trust
         }),
         'Transfer', {
@@ -1022,13 +1019,15 @@ function shouldBehaveLikeAsset721IsTrust(owner, approved, operator, other, trust
   describe('transferFromItem', function () {
     it('emit TransferItem event', async function () {
       expectEvent(
-        await this.token.transferFromItem(ownerId, otherId, tokenId, {
+        await this.token.methods['transferFrom(uint256,uint256,uint256)'](ownerId, otherId, tokenId, {
           from: trust
         }),
-        'TransferItem', {
+        'AssetTransfer', {
         from: ownerId,
         to: otherId,
-        tokenId: tokenId
+        tokenId: tokenId,
+        isBWO: false,
+        sender: trust
       },
       );
     });
@@ -1052,7 +1051,7 @@ function shouldBehaveLikeAsset721IsTrust(owner, approved, operator, other, trust
   describe('safeTransferFromItem', function () {
     it('emit TransferItem event', async function () {
       this.receiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.None);
-      await this.world.getOrCreateAccountId(this.receiver.address);
+      await this.Metaverse.getOrCreateAccountId(this.receiver.address);
       this.receiverId = new BN(await this.Metaverse.getAccountIdByAddress(this.receiver.address));
 
       const receipt = await safeTransferFromItemWithData.call(this, ownerId, this.receiverId, tokenId, {
@@ -1074,7 +1073,7 @@ function shouldBehaveLikeAsset721IsTrust(owner, approved, operator, other, trust
   });
   describe('isApprovedForAllItem', function () {
     it('return true', async function () {
-      expect(await this.token.isApprovedForAllItem(ownerId, trust)).to.equal(true);
+      expect(await this.token.methods['isApprovedForAll(uint256,address)'](ownerId, trust)).to.equal(true);
     });
   });
 }

@@ -58,7 +58,7 @@ interface IAsset721 is IERC721Metadata, IAsset {
         bytes calldata data
     ) external;
 
-    function safeTransferFrom(
+    function safeTransferFromBWO(
         uint256 from,
         uint256 to,
         uint256 tokenId,
