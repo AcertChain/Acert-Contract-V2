@@ -29,7 +29,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
     }
-
+    
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
