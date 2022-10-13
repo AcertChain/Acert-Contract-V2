@@ -107,7 +107,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      * @dev See {IERC721-balanceOf}.
      */
     function balanceOf(address owner) public view virtual override returns (uint256) {
-        _checkAddrIsNotZero(owner, "Item: address zero is not a valid owner");
+        _checkAddrIsNotZero(owner, "Asset721: address zero is not a valid owner");
         return _balancesById(_getAccountIdByAddress(owner));
     }
 
@@ -115,7 +115,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      * @dev See {IAsset721-balanceOf}.
      */
     function balanceOf(uint256 accountId) public view virtual override returns (uint256) {
-        _checkIdIsNotZero(accountId, "Item: id zero is not a valid owner");
+        _checkIdIsNotZero(accountId, "Asset721: id zero is not a valid owner");
         return _balancesById(accountId);
     }
 
@@ -124,7 +124,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      */
     function ownerOf(uint256 tokenId) public view virtual override returns (address owner) {
         owner = _getAddressByAccountId(_ownersById(tokenId));
-        _checkAddrIsNotZero(owner, "Item: owner query for nonexistent token");
+        _checkAddrIsNotZero(owner, "Asset721: owner query for nonexistent token");
     }
 
     /**
@@ -132,7 +132,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      */
     function ownerAccountOf(uint256 tokenId) public view virtual override returns (uint256 ownerId) {
         ownerId = _ownersById(tokenId);
-        _checkIdIsNotZero(ownerId, "Item: owner query for nonexistent token");
+        _checkIdIsNotZero(ownerId, "Asset721: owner query for nonexistent token");
     }
 
     /**
@@ -143,8 +143,8 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 startAt,
         uint256 endAt
     ) public view virtual override returns (uint256[] memory) {
-        require(startAt <= endAt, "Item: startAt must be less than or equal to endAt");
-        require(endAt < balanceOf(owner), "Item: endAt must be less than the balance of the owner");
+        require(startAt <= endAt, "Asset721: startAt must be less than or equal to endAt");
+        require(endAt < balanceOf(owner), "Asset721: endAt must be less than the balance of the owner");
         uint256[] memory items = new uint256[](endAt - startAt + 1);
         for (uint256 i = 0; i <= endAt - startAt; i++) {
             items[i] = _ownedTokens(owner, startAt + i);
@@ -190,8 +190,8 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
     function approve(address spender, uint256 tokenId) public virtual override {
         uint256 ownerId = ownerAccountOf(tokenId);
         require(
-            _getAccountIdByAddress(_msgSender()) == ownerId || isApprovedForAll(ownerId, msg.sender),
-            "Item: approve caller is not owner nor approved for all"
+            _getOrCreateAccountId(_msgSender()) == ownerId || isApprovedForAll(ownerId, _msgSender()),
+            "Asset721: approve caller is not owner nor approved for all"
         );
         _approve(spender, tokenId, false, _msgSender());
     }
@@ -245,12 +245,11 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         address sender
     ) internal virtual {
         uint256 ownerId = ownerAccountOf(tokenId);
-        require(!_isFreeze(ownerId), "Asset20: approve owner is frozen");
-        _checkAddrIsNotZero(spender, "Asset721: approve to the zero address");
-        require(_getAccountIdByAddress(spender) != ownerId, "Asset721: approval to current account");
+        require(!_isFreeze(ownerId), "Asset721: approve owner is frozen");
+        require(_getOrCreateAccountId(spender) != ownerId, "Asset721: approval to current account");
 
         _setTokenApprovalById(tokenId, spender);
-        emit Approval(sender, spender, tokenId);
+        emit Approval(ownerOf(tokenId), spender, tokenId);
         emit AssetApproval(ownerId, spender, tokenId, isBWO, sender, getNonce(sender));
         _incrementNonce(sender);
     }
@@ -267,7 +266,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      * @dev See {IERC721-setApprovalForAll}.
      */
     function setApprovalForAll(address operator, bool approved) public virtual override {
-        uint256 accountId = _getAccountIdByAddress(_msgSender());
+        uint256 accountId = _getOrCreateAccountId(_msgSender());
         _checkIdIsNotZero(accountId, "Asset721: approveForAll query for nonexistent account");
         _setApprovalForAll(accountId, operator, approved, false, _msgSender());
     }
@@ -371,11 +370,11 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         address to,
         uint256 tokenId
     ) public virtual override {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "Item: transfer caller is not owner nor approved");
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "Asset721: transfer caller is not owner nor approved");
         if (to == address(0)) {
             _burn(tokenId);
         } else {
-            _transfer(_getAccountIdByAddress(from), _getOrCreateAccountId(to), tokenId, false, _msgSender(), from, to);
+            _transfer(_getOrCreateAccountId(from), _getOrCreateAccountId(to), tokenId, false, _msgSender(), from, to);
         }
     }
 
@@ -384,16 +383,20 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 toAccount,
         uint256 tokenId
     ) public virtual override {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "Item: transfer caller is not owner nor approved");
-        _transfer(
-            fromAccount,
-            toAccount,
-            tokenId,
-            false,
-            _msgSender(),
-            _getAddressByAccountId(fromAccount),
-            _getAddressByAccountId(toAccount)
-        );
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "Asset721: transfer caller is not owner nor approved");
+        if (toAccount == 0) {
+            _burn(tokenId);
+        } else {
+            _transfer(
+                fromAccount,
+                toAccount,
+                tokenId,
+                false,
+                _msgSender(),
+                _getAddressByAccountId(fromAccount),
+                _getAddressByAccountId(toAccount)
+            );
+        }
     }
 
     function transferFromBWO(
@@ -406,15 +409,19 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
     ) public virtual override {
         _checkBWOByAsset(_msgSender());
         transferFromBWOParamsVerify(fromAccount, toAccount, tokenId, sender, deadline, signature);
-        _transfer(
-            fromAccount,
-            toAccount,
-            tokenId,
-            true,
-            sender,
-            _getAddressByAccountId(fromAccount),
-            _getAddressByAccountId(toAccount)
-        );
+        if (toAccount == 0) {
+            _burn(tokenId);
+        } else {
+            _transfer(
+                fromAccount,
+                toAccount,
+                tokenId,
+                true,
+                sender,
+                _getAddressByAccountId(fromAccount),
+                _getAddressByAccountId(toAccount)
+            );
+        }
     }
 
     function transferFromBWOParamsVerify(
@@ -425,7 +432,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
-        _checkSender(fromAccount, sender);
+        require(_isApprovedOrOwner(sender, tokenId), "Asset721: transfer caller is not owner nor approved");
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -459,16 +466,16 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         address _fromAddr,
         address _toAddr
     ) internal virtual {
-        require(Asset721.ownerAccountOf(tokenId) == fromAccount, "Item: transfer from incorrect owner");
+        require(Asset721.ownerAccountOf(tokenId) == fromAccount, "Asset721: transfer from incorrect owner");
         require(!_isFreeze(fromAccount), "Asset721: transfer from frozen account");
         require(_isExist(toAccount), "Asset721: to account is not exist");
-        _checkIdIsNotZero(toAccount, "Item: transfer to the zero id");
-        _isExist(toAccount);
+        _checkIdIsNotZero(toAccount, "Asset721: transfer to the zero id");
 
         _beforeTokenTransfer(fromAccount, toAccount, tokenId);
 
         // Clear approvals from the previous owner
         _setTokenApprovalById(tokenId, address(0));
+
         _setBalanceById(fromAccount, _balancesById(fromAccount) - 1);
         _setBalanceById(toAccount, _balancesById(toAccount) + 1);
         storageContract.setOwnerById(tokenId, toAccount);
@@ -496,8 +503,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 tokenId,
         bytes memory data
     ) public virtual override {
-        _checkAddrIsNotZero(to, "Item: transfer to the zero address");
-        safeTransferFrom(_getAccountIdByAddress(from), _getOrCreateAccountId(to), tokenId, data);
+        safeTransferFrom(_getOrCreateAccountId(from), _getOrCreateAccountId(to), tokenId, data);
     }
 
     function safeTransferFrom(
@@ -506,8 +512,12 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 tokenId,
         bytes memory data
     ) public virtual override {
-        require(_isApprovedOrOwner(msg.sender, tokenId), "Item: transfer caller is not owner nor approved");
-        _safeTransfer(from, to, tokenId, false, _msgSender(), data);
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "Asset721: transfer caller is not owner nor approved");
+        if (to == 0) {
+            _burn(tokenId);
+        } else {
+            _safeTransfer(from, to, tokenId, false, _msgSender(), data);
+        }
     }
 
     function safeTransferFrom(
@@ -520,9 +530,12 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         bytes memory signature
     ) public virtual override {
         safeTransferFromItemBWOParamsVerify(from, to, tokenId, data, sender, deadline, signature);
-        _safeTransfer(from, to, tokenId, true, sender, data);
 
-        _incrementNonce(sender);
+        if (to == 0) {
+            _burn(tokenId);
+        } else {
+            _safeTransfer(from, to, tokenId, true, sender, data);
+        }
     }
 
     function safeTransferFromItemBWOParamsVerify(
@@ -534,6 +547,8 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
+        require(_isApprovedOrOwner(sender, tokenId), "Asset721: transfer caller is not owner nor approved");
+
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -570,7 +585,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         _transfer(from, to, tokenId, isBWO, sender, _getAddressByAccountId(from), _getAddressByAccountId(to));
         require(
             _checkOnERC721Received(_getAddressByAccountId(from), _getAddressByAccountId(to), tokenId, data),
-            "Item: transfer to non ERC721Receiver implementer"
+            "Asset721: transfer to non ERC721Receiver implementer"
         );
     }
 
@@ -594,7 +609,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      * - `tokenId` must exist.
      */
     function _isApprovedOrOwner(address sender, uint256 tokenId) internal view virtual returns (bool) {
-        require(_exists(tokenId), "Item: operator query for nonexistent token");
+        require(_exists(tokenId), "Asset721: operator query for nonexistent token");
         address owner = ownerOf(tokenId);
         uint256 ownerId = ownerAccountOf(tokenId);
 
@@ -612,7 +627,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         _mint(to, tokenId);
         require(
             _checkOnERC721Received(address(0), to, tokenId, data),
-            "Item: transfer to non ERC721Receiver implementer"
+            "Asset721: transfer to non ERC721Receiver implementer"
         );
     }
 
@@ -629,13 +644,13 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      * Emits a {Transfer} event.
      */
     function _mint(address to, uint256 tokenId) internal virtual {
-        _checkAddrIsNotZero(to, "Item: mint to the zero address");
+        _checkAddrIsNotZero(to, "Asset721: mint to the zero address");
         _mint(_getOrCreateAccountId(to), tokenId);
     }
 
     function _mint(uint256 to, uint256 tokenId) internal virtual {
-        _checkIdIsNotZero(to, "Item: transfer to the zero id");
-        require(!_exists(tokenId), "Item: token already minted");
+        _checkIdIsNotZero(to, "Asset721: transfer to the zero id");
+        require(!_exists(tokenId), "Asset721: token already minted");
         _beforeTokenTransfer(0, to, tokenId);
 
         storageContract.setOwnerById(tokenId, to);
@@ -674,13 +689,6 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         _incrementNonce(_msgSender());
     }
 
-    // function burn(uint256 tokenId) public virtual {
-    //     address owner = Asset721.ownerOf(tokenId);
-    //     uint256 ownerId = _getAccountIdByAddress(owner);
-    //     _checkSender(ownerId, _msgSender());
-    //     _burn(tokenId);
-    // }
-
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
      * The call is not executed if the target address is not a contract.
@@ -698,11 +706,11 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         bytes memory data
     ) private returns (bool) {
         if (to.code.length > 0) {
-            try IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data) returns (bytes4 retval) {
+            try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, data) returns (bytes4 retval) {
                 return retval == IERC721Receiver.onERC721Received.selector;
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
-                    revert("Item: transfer to non ERC721Receiver implementer");
+                    revert("Asset721: transfer to non ERC721Receiver implementer");
                 } else {
                     assembly {
                         revert(add(32, reason), mload(reason))
@@ -797,7 +805,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         bytes32 digest,
         bytes memory signature
     ) internal view {
-        require(block.timestamp < deadline, "Item: BWO call expired");
-        require(signer == ECDSA.recover(digest, signature), "Item: recoverSig failed");
+        require(block.timestamp < deadline, "Asset721: BWO call expired");
+        require(signer == ECDSA.recover(digest, signature), "Asset721: recoverSig failed");
     }
 }

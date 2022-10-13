@@ -116,7 +116,7 @@ function shouldBehaveLikeAsset721BWO() {
       context('when querying the zero address', function () {
         it('throws', async function () {
           await expectRevert(
-            this.token.balanceOfItem(0), 'Item: id zero is not a valid owner',
+            this.token.balanceOfItem(0), 'Asset721: id zero is not a valid owner',
           );
         });
       });
@@ -136,7 +136,7 @@ function shouldBehaveLikeAsset721BWO() {
 
         it('reverts', async function () {
           await expectRevert(
-            this.token.ownerOfItem(tokenId), 'Item: owner query for nonexistent token',
+            this.token.ownerOfItem(tokenId), 'Asset721: owner query for nonexistent token',
           );
         });
       });
@@ -314,7 +314,7 @@ function shouldBehaveLikeAsset721BWO() {
               transferFunction.call(this, owner, otherId, otherId, tokenId, signature, {
                 from: this.operator
               }),
-              'Item: not owner or auth',
+              'Asset721: not owner or auth',
             );
           });
         });
@@ -336,7 +336,7 @@ function shouldBehaveLikeAsset721BWO() {
               transferFunction.call(this, other, ownerId, otherId, tokenId, signature, {
                 from: this.operator
               }),
-              'Item: not owner',
+              'Asset721: not owner',
             );
           });
         });
@@ -359,7 +359,7 @@ function shouldBehaveLikeAsset721BWO() {
               transferFunction.call(this, owner, ownerId, otherId, nonExistentTokenId, signature, {
                 from: this.operator
               }),
-              'Item: owner query for nonexistent token',
+              'Asset721: owner query for nonexistent token',
             );
           });
         });
@@ -382,7 +382,7 @@ function shouldBehaveLikeAsset721BWO() {
               transferFunction.call(this, owner, ownerId, ZERO, tokenId, signature, {
                 from: this.operator
               }),
-              'Item: transfer to the zero id',
+              'Asset721: transfer to the zero id',
             );
           });
         });
@@ -454,7 +454,7 @@ function shouldBehaveLikeAsset721BWO() {
                       from: this.operator
                     },
                   ),
-                  'Item: owner query for nonexistent token',
+                  'Asset721: owner query for nonexistent token',
                 );
               });
             });
@@ -479,7 +479,7 @@ function shouldBehaveLikeAsset721BWO() {
               this.token.safeTransferFromItemBWO(ownerId, invalidReceiverId, tokenId, '0x', owner, deadline, signature, {
                 from: this.operator
               }),
-              'Item: transfer to non ERC721Receiver implementer',
+              'Asset721: transfer to non ERC721Receiver implementer',
             );
           });
         });
@@ -518,7 +518,7 @@ function shouldBehaveLikeAsset721BWO() {
               this.token.safeTransferFromItemBWO(ownerId, revertingReceiverId, tokenId, '0x', owner, deadline, signature, {
                 from: this.operator
               }),
-              'Item: transfer to non ERC721Receiver implementer',
+              'Asset721: transfer to non ERC721Receiver implementer',
             );
           });
         });
@@ -556,7 +556,7 @@ function shouldBehaveLikeAsset721BWO() {
               this.token.safeTransferFromItemBWO(ownerId, nonReceiverId, tokenId, '0x', owner, deadline, signature, {
                 from: this.operator
               }),
-              'Item: transfer to non ERC721Receiver implementer',
+              'Asset721: transfer to non ERC721Receiver implementer',
             );
           });
         });
@@ -593,7 +593,7 @@ function shouldBehaveLikeAsset721BWO() {
             const invalidReceiver = await ERC721ReceiverMock.new('0x42', Error.None);
             await expectRevert(
               this.token.safeMint(invalidReceiver.address, tokenId,'0x'),
-              'Item: transfer to non ERC721Receiver implementer',
+              'Asset721: transfer to non ERC721Receiver implementer',
             );
           });
         });
@@ -613,7 +613,7 @@ function shouldBehaveLikeAsset721BWO() {
             const revertingReceiver = await ERC721ReceiverMock.new(RECEIVER_MAGIC_VALUE, Error.RevertWithoutMessage);
             await expectRevert(
               this.token.safeMint(revertingReceiver.address, tokenId,'0x'),
-              'Item: transfer to non ERC721Receiver implementer',
+              'Asset721: transfer to non ERC721Receiver implementer',
             );
           });
         });
@@ -632,7 +632,7 @@ function shouldBehaveLikeAsset721BWO() {
             const nonReceiver = this.token;
             await expectRevert(
               this.token.safeMint(nonReceiver.address, tokenId,'0x'),
-              'Item: transfer to non ERC721Receiver implementer',
+              'Asset721: transfer to non ERC721Receiver implementer',
             );
           });
         });
@@ -794,7 +794,7 @@ function shouldBehaveLikeAsset721BWO() {
           await expectRevert(
             this.token.approveItemBWO(owner, tokenId, owner, deadline, signature, {
               from: this.operator
-            }), 'Item: approval to current owner',
+            }), 'Asset721: approval to current owner',
           );
         });
       });
@@ -808,7 +808,7 @@ function shouldBehaveLikeAsset721BWO() {
           await expectRevert(this.token.approveItemBWO(approved, tokenId, other, deadline, signature, {
               from: this.operator
             }),
-            'Item: not owner');
+            'Asset721: not owner');
         });
       });
 
@@ -823,7 +823,7 @@ function shouldBehaveLikeAsset721BWO() {
           await expectRevert(this.token.approveItemBWO(approved, nonExistentTokenId, operator, deadline, signature, {
               from: this.operator
             }),
-            'Item: owner query for nonexistent token');
+            'Asset721: owner query for nonexistent token');
         });
       });
     });
@@ -977,7 +977,7 @@ function shouldBehaveLikeAsset721BWO() {
           await expectRevert(this.token.setApprovalForAllItemBWO(ownerId, owner, true, owner, deadline, signature, {
               from: this.operator
             }),
-            'Item: approve to caller');
+            'Asset721: approve to caller');
         });
       });
     });
@@ -987,7 +987,7 @@ function shouldBehaveLikeAsset721BWO() {
         it('reverts', async function () {
           await expectRevert(
             this.token.getApproved(nonExistentTokenId),
-            'Item: approved query for nonexistent token',
+            'Asset721: approved query for nonexistent token',
           );
         });
       });
@@ -1022,7 +1022,7 @@ function shouldBehaveLikeAsset721BWO() {
   describe('_mint(address, uint256)', function () {
     it('reverts with a null destination address', async function () {
       await expectRevert(
-        this.token.mint(ZERO_ADDRESS, firstTokenId), 'Item: mint to the zero address',
+        this.token.mint(ZERO_ADDRESS, firstTokenId), 'Asset721: mint to the zero address',
       );
     });
 
@@ -1047,7 +1047,7 @@ function shouldBehaveLikeAsset721BWO() {
       });
 
       it('reverts when adding a token id that already exists', async function () {
-        await expectRevert(this.token.mint(owner, firstTokenId), 'Item: token already minted');
+        await expectRevert(this.token.mint(owner, firstTokenId), 'Asset721: token already minted');
       });
     });
   });
@@ -1055,7 +1055,7 @@ function shouldBehaveLikeAsset721BWO() {
   describe('_burn', function () {
     it('reverts when burning a non-existent token id', async function () {
       await expectRevert(
-        this.token.burn(nonExistentTokenId), 'Item: owner query for nonexistent token',
+        this.token.burn(nonExistentTokenId), 'Asset721: owner query for nonexistent token',
       );
     });
 
@@ -1089,13 +1089,13 @@ function shouldBehaveLikeAsset721BWO() {
         it('deletes the token', async function () {
           expect(await this.token.balanceOfItem(ownerId)).to.be.bignumber.equal('1');
           await expectRevert(
-            this.token.ownerOf(firstTokenId), 'Item: owner query for nonexistent token',
+            this.token.ownerOf(firstTokenId), 'Asset721: owner query for nonexistent token',
           );
         });
 
         it('reverts when burning a token id that has been deleted', async function () {
           await expectRevert(
-            this.token.burn(firstTokenId), 'Item: owner query for nonexistent token',
+            this.token.burn(firstTokenId), 'Asset721: owner query for nonexistent token',
           );
         });
       });

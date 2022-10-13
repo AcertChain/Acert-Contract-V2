@@ -284,7 +284,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
               transferFunction.call(this, authAccount, otherId, otherId, tokenId, signature, {
                 from: this.operator
               }),
-              'Item: not owner or auth',
+              'Asset721: not owner or auth',
             );
           });
         });
@@ -306,7 +306,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
               transferFunction.call(this, other, ownerId, otherId, tokenId, signature, {
                 from: this.operator
               }),
-              'Item: not owner',
+              'Asset721: not owner',
             );
           });
         });
@@ -329,7 +329,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
               transferFunction.call(this, authAccount, ownerId, otherId, nonExistentTokenId, signature, {
                 from: this.operator
               }),
-              'Item: owner query for nonexistent token',
+              'Asset721: owner query for nonexistent token',
             );
           });
         });
@@ -352,7 +352,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
               transferFunction.call(this, authAccount, ownerId, ZERO, tokenId, signature, {
                 from: this.operator
               }),
-              'Item: transfer to the zero id',
+              'Asset721: transfer to the zero id',
             );
           });
         });
@@ -422,7 +422,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
                       from: this.operator
                     },
                   ),
-                  'Item: owner query for nonexistent token',
+                  'Asset721: owner query for nonexistent token',
                 );
               });
             });
@@ -447,7 +447,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
               this.token.safeTransferFromItemBWO(ownerId, invalidReceiverId, tokenId, '0x', authAccount, deadline, signature, {
                 from: this.operator
               }),
-              'Item: transfer to non ERC721Receiver implementer',
+              'Asset721: transfer to non ERC721Receiver implementer',
             );
           });
         });
@@ -486,7 +486,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
               this.token.safeTransferFromItemBWO(ownerId, revertingReceiverId, tokenId, '0x', authAccount, deadline, signature, {
                 from: this.operator
               }),
-              'Item: transfer to non ERC721Receiver implementer',
+              'Asset721: transfer to non ERC721Receiver implementer',
             );
           });
         });
@@ -524,7 +524,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
               this.token.safeTransferFromItemBWO(ownerId, nonReceiverId, tokenId, '0x', authAccount, deadline, signature, {
                 from: this.operator
               }),
-              'Item: transfer to non ERC721Receiver implementer',
+              'Asset721: transfer to non ERC721Receiver implementer',
             );
           });
         });
@@ -688,7 +688,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
           await expectRevert(this.token.approveItemBWO(approved, tokenId, other, deadline, signature, {
               from: this.operator
             }),
-            'Item: not owner');
+            'Asset721: not owner');
         });
       });
 
@@ -845,7 +845,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
           await expectRevert(this.token.setApprovalForAllItemBWO(ownerId, owner, true, authAccount, deadline, signature, {
               from: this.operator
             }),
-            'Item: approve to caller');
+            'Asset721: approve to caller');
         });
       });
     });
@@ -855,7 +855,7 @@ function shouldBehaveLikeItem721ProxyBWO() {
         it('reverts', async function () {
           await expectRevert(
             this.token.getApproved(nonExistentTokenId),
-            'Item: approved query for nonexistent token',
+            'Asset721: approved query for nonexistent token',
           );
         });
       });

@@ -143,23 +143,27 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         uint256 amount
     ) public virtual override returns (bool) {
         if (_getAccountIdByAddress(_msgSender()) != _getAccountIdByAddress(from)) {
-            uint256 currentAllowance = allowance(from, _msgSender());
-            if (currentAllowance != type(uint256).max) {
-                require(currentAllowance >= amount, "Asset20: insufficient allowance");
-                unchecked {
-                    _approveId(
-                        _getAccountIdByAddress(from),
-                        from,
-                        _msgSender(),
-                        currentAllowance - amount,
-                        false,
-                        _msgSender()
-                    );
-                }
-            }
+            _spendAllowance(_getAccountIdByAddress(from), from, _msgSender(), amount, false, _msgSender());
         }
         _transfer(from, to, amount, _msgSender());
         return true;
+    }
+
+    function _spendAllowance(
+        uint256 ownerId,
+        address owner,
+        address spender,
+        uint256 amount,
+        bool isBWO,
+        address sender
+    ) internal virtual {
+        uint256 currentAllowance = allowance(ownerId, _msgSender());
+        if (currentAllowance != type(uint256).max) {
+            require(currentAllowance >= amount, "Asset20: insufficient allowance");
+            unchecked {
+                _approveId(ownerId, owner, spender, currentAllowance - amount, isBWO, sender);
+            }
+        }
     }
 
     /**
@@ -184,9 +188,9 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
     ) internal virtual {
         require(from != address(0), "Asset20: transfer from the zero address");
         if (to == address(0)) {
-            _burn(_getAccountIdByAddress(from), amount);
+            _burn(_getOrCreateAccountId(from), amount);
         } else {
-            _transferAsset(_getAccountIdByAddress(from), _getOrCreateAccountId(to), amount, false, sender, from, to);
+            _transferAsset(_getOrCreateAccountId(from), _getOrCreateAccountId(to), amount, false, sender, from, to);
         }
     }
 
@@ -199,30 +203,29 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         uint256 amount
     ) public virtual override returns (bool) {
         if (_getAccountIdByAddress(_msgSender()) != fromAccount) {
-            uint256 currentAllowance = allowance(fromAccount, _msgSender());
-            if (currentAllowance != type(uint256).max) {
-                require(currentAllowance >= amount, "Asset20: insufficient allowance");
-                unchecked {
-                    _approveId(
-                        fromAccount,
-                        _getAddressByAccountId(fromAccount),
-                        _msgSender(),
-                        currentAllowance - amount,
-                        false,
-                        _msgSender()
-                    );
-                }
-            }
+            _spendAllowance(
+                fromAccount,
+                _getAddressByAccountId(fromAccount),
+                _msgSender(),
+                amount,
+                false,
+                _msgSender()
+            );
         }
-        _transferAsset(
-            fromAccount,
-            toAccount,
-            amount,
-            false,
-            _msgSender(),
-            _getAddressByAccountId(fromAccount),
-            _getAddressByAccountId(toAccount)
-        );
+
+        if (toAccount == 0) {
+            _burn(fromAccount, amount);
+        } else {
+            _transferAsset(
+                fromAccount,
+                toAccount,
+                amount,
+                false,
+                _msgSender(),
+                _getAddressByAccountId(fromAccount),
+                _getAddressByAccountId(toAccount)
+            );
+        }
         return true;
     }
 
@@ -239,15 +242,24 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
     ) public virtual override returns (bool) {
         _checkBWOByAsset(_msgSender());
         transferBWOParamsVerify(fromAccount, toAccount, amount, sender, deadline, signature);
-        _transferAsset(
-            fromAccount,
-            toAccount,
-            amount,
-            true,
-            sender,
-            _getAddressByAccountId(fromAccount),
-            _getAddressByAccountId(toAccount)
-        );
+
+        if (_getAccountIdByAddress(sender) != fromAccount) {
+            _spendAllowance(fromAccount, _getAddressByAccountId(fromAccount), sender, amount, true, sender);
+        }
+
+        if (toAccount == 0) {
+            _burn(fromAccount, amount);
+        } else {
+            _transferAsset(
+                fromAccount,
+                toAccount,
+                amount,
+                true,
+                sender,
+                _getAddressByAccountId(fromAccount),
+                _getAddressByAccountId(toAccount)
+            );
+        }
         return true;
     }
 
@@ -259,7 +271,6 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
-        _checkSender(fromAccount, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -403,8 +414,8 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         address owner,
         address spender,
         uint256 amount,
-        bool _isBWO,
-        address _sender
+        bool isBWO,
+        address sender
     ) internal virtual {
         require(!_isFreeze(ownerId), "Asset20: approve owner is frozen");
         require(owner != address(0), "Asset20: approve from the zero address");
@@ -412,8 +423,8 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
 
         storageContract.setAllowanceById(ownerId, spender, amount);
         emit Approval(owner, spender, amount);
-        emit AssetApproval(ownerId, spender, amount, _isBWO, _sender, getNonce(_sender));
-        _incrementNonce(_sender);
+        emit AssetApproval(ownerId, spender, amount, isBWO, sender, getNonce(sender));
+        _incrementNonce(sender);
     }
 
     /**
@@ -534,11 +545,6 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         emit AssetTransfer(accountId, 0, amount, false, _msgSender(), getNonce(_msgSender()));
         _incrementNonce(_msgSender());
     }
-
-    // function burn(uint256 accountId, uint256 amount) public virtual {
-    //     _checkSender(accountId, _msgSender());
-    //     _burn(accountId, amount);
-    // }
 
     function _checkIdIsNotZero(uint256 _id, string memory _msg) internal pure {
         require(_id != 0, _msg);

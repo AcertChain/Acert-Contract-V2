@@ -10,7 +10,7 @@ interface IMetaverse {
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
-    event RegisterWorld(address indexed world, string name, address indexed storageAddress);
+    event RegisterWorld(address indexed world, string name);
     event DisableWorld(address indexed world);
     event CreateAccount(uint256 indexed accountId, address indexed authAddress, bool isTrustAdmin);
     event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed Sender, uint256 nonce);

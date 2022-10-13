@@ -60,8 +60,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         require(worldStorage.getAsset(_address).isExist == false, "World: asset is exist");
 
         worldStorage.setAsset(_address);
-        address storageAddress = IApplyStorage(_address).getStorageAddress();
-        emit RegisterAsset(_address, IAsset(_address).protocol(), storageAddress);
+        emit RegisterAsset(_address, IAsset(_address).protocol());
     }
 
     function disableAsset(address _address) public onlyOwner {
