@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 interface IMetaverse {
     enum OperationEnum {
-        ADD,
-        REMOVE
+        REMOVE,
+        ADD
     }
     event SetName(string name);
     event SetAdmin(address indexed admin);
