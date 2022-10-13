@@ -44,7 +44,7 @@ function shouldBehaveLikeWorld(owner) {
         describe('基础view查询接口', function () {
             context('getTotalAccount', function () {
                 it('应该等于avatarMaxId+1', async function () {
-                    await this.world.getOrCreateAccountId(owner);
+                    await this.Metaverse.getOrCreateAccountId(owner);
                     expect(await this.Metaverse.getTotalAccount()).to.be.bignumber.equal(new BN(1));
                 });
             });
@@ -110,17 +110,17 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
             });
         });
 
-        describe('isBWO', function () {
+        describe('checkBWO', function () {
             context('query address is BWO', function () {
                 it('is operator', async function () {
                     await this.world.addOperator(operator);
-                    expect(await this.world.isBWO(operator)).to.equal(true);
+                    expect(await this.world.checkBWO(operator)).to.equal(true);
                 });
                 it('is world', async function () {
-                    expect(await this.world.isBWO(await this.world.owner())).to.equal(true);
+                    expect(await this.world.checkBWO(await this.world.owner())).to.equal(true);
                 });
                 it('is not owner', async function () {
-                    expect(await this.world.isBWO(owner)).to.equal(false);
+                    expect(await this.world.checkBWO(owner)).to.equal(false);
                 });
             });
         });
@@ -171,44 +171,53 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         describe('isTrustWorld', function () {
             context('is trust World', function () {
                 it('account is not trust World', async function () {
-                    await this.world.getOrCreateAccountId(account);
-                    expect(await this.world.isTrustWorld(account)).to.equal(false);
+                    await this.Metaverse.getOrCreateAccountId(account);
+
+                    const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
+
+                    expect(await this.world.isTrustWorld(accountId)).to.equal(false);
                 });
 
                 it('account is trust World', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
-                    await this.world.trustWorld({
+                    await this.world.trustWorld(accountId, true, {
                         from: account
                     });
                     expect(await this.world.isTrustWorld(accountId)).to.equal(true);
-                    await this.world.untrustWorld(accountId, {
+                    await this.world.trustWorld(accountId, false, {
                         from: account
                     });
-                    expect(await this.world.isTrustWorld(account)).to.equal(false);
+                    expect(await this.world.isTrustWorld(accountId)).to.equal(false);
                 });
 
                 it('account is trust World BWO', async function () {
                     const accountW = Wallet.generate();
                     const account = accountW.getChecksumAddressString();
-                    await this.world.getOrCreateAccountId(account)
+                    await this.Metaverse.getOrCreateAccountId(account)
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.addOperator(operator)
+
+                    await this.Metaverse.getOrCreateAccountId(operator)
+
+                    const operatorId = new BN(await this.Metaverse.getAccountIdByAddress(operator));
+
+
                     const nonce = await this.world.getNonce(account);
-                    const signature = signData(this.chainId, this.world.address, this.tokenName,
-                        accountW.getPrivateKey(), this.tokenVersion, account, nonce, deadline);
-                    await this.world.trustWorldBWO(account, deadline, signature, {
+                    const signature = signTrustWorldData(this.chainId, this.world.address, this.tokenName,
+                        accountW.getPrivateKey(), this.tokenVersion, accountId, true, account, nonce, deadline);
+                    await this.world.trustWorldBWO(accountId, true, account, deadline, signature, {
                         from: operator
                     });
                     expect(await this.world.isTrustWorld(accountId)).to.equal(true);
 
                     const nonce1 = await this.world.getNonce(account);
-                    const signature1 = signUnData(this.chainId, this.world.address, this.tokenName,
-                        accountW.getPrivateKey(), this.tokenVersion, accountId, account, nonce1, deadline);
-                    await this.world.untrustWorldBWO(accountId, account, deadline, signature1, {
+                    const signature1 = signTrustWorldData(this.chainId, this.world.address, this.tokenName,
+                        accountW.getPrivateKey(), this.tokenVersion, accountId, false, account, nonce1, deadline);
+                    await this.world.trustWorldBWO(accountId, false, account, deadline, signature1, {
                         from: operator
                     });
-                    expect(await this.world.isTrustWorld(account)).to.equal(false);
+                    expect(await this.world.isTrustWorld(accountId)).to.equal(false);
                 });
 
             });
@@ -218,50 +227,56 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         describe('isTrust', function () {
             context('is Trust', function () {
                 it('conrtact is not safe contract ', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user not trust world', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user trust world', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
-                    await this.world.trustWorld({
+                    await this.world.trustWorld(accountId, true, {
                         from: account
                     });
                     await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
                 });
                 it('conrtact is safe contract and user not trust world not trust contract ', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
                 it('conrtact is safe contract and user not trust world  trust contract ', async function () {
-                    await this.world.getOrCreateAccountId(account);
+                    await this.Metaverse.getOrCreateAccountId(account);
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
 
                     await this.world.addSafeContract(contract, "");
-                    expectEvent(await this.world.trustContract(contract, {
+                    expectEvent(await this.world.trustContract(accountId, contract, true, {
                         from: account
                     }), 'TrustContract', {
-                        id: accountId,
-                        safeContract: contract
+                        accountId: accountId,
+                        safeContract: contract,
+                        isTrustContract: true,
+                        isBWO: false,
+                        sender: account
                     });
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
-                    expectEvent(await this.world.untrustContract(accountId, contract, {
+                    expectEvent(await this.world.trustContract(accountId, contract, false, {
                         from: account
-                    }), 'UntrustContract', {
-                        id: accountId,
-                        safeContract: contract
+                    }), 'TrustContract', {
+                        accountId: accountId,
+                        safeContract: contract,
+                        isTrustContract: false,
+                        isBWO: false,
+                        sender: account
                     });
                     expect(await this.world.isTrust(contract, accountId)).to.equal(false);
                 });
@@ -269,35 +284,40 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
                 it('conrtact is safe contract and user not trust world  trust contract  BWO', async function () {
                     const accountW = Wallet.generate();
                     const account = accountW.getChecksumAddressString();
-                    await this.world.getOrCreateAccountId(account)
+                    await this.Metaverse.getOrCreateAccountId(account)
                     const accountId = new BN(await this.Metaverse.getAccountIdByAddress(account));
                     await this.world.addOperator(operator)
+
                     const nonce = await this.world.getNonce(account);
                     const signature = signContractData(this.chainId, this.world.address, this.tokenName,
-                        accountW.getPrivateKey(), this.tokenVersion, contract, account, nonce, deadline);
+                        accountW.getPrivateKey(), this.tokenVersion, accountId, contract, true, account, nonce, deadline);
 
 
                     await this.world.addSafeContract(contract, "");
-                    expectEvent(await this.world.trustContractBWO(contract, account, deadline, signature, {
+                    expectEvent(await this.world.trustContractBWO(accountId, contract, true, account, deadline, signature, {
                         from: operator
-                    }), 'TrustContractBWO', {
-                        id: accountId,
+                    }), 'TrustContract', {
+                        accountId: accountId,
                         safeContract: contract,
+                        isTrustContract: true,
+                        isBWO: true,
                         sender: account,
                         nonce: nonce,
                     });
                     expect(await this.world.isTrust(contract, accountId)).to.equal(true);
 
                     const nonce1 = await this.world.getNonce(account);
-                    const signature1 = signUnContractData(this.chainId, this.world.address, this.tokenName,
-                        accountW.getPrivateKey(), this.tokenVersion, accountId, contract, account, nonce1, deadline);
+                    const signature1 = signContractData(this.chainId, this.world.address, this.tokenName,
+                        accountW.getPrivateKey(), this.tokenVersion, accountId, contract, false, account, nonce1, deadline);
 
 
-                    expectEvent(await this.world.untrustContractBWO(accountId, contract, account, deadline, signature1, {
+                    expectEvent(await this.world.trustContractBWO(accountId, contract,false, account, deadline, signature1, {
                         from: operator
-                    }), 'UntrustContractBWO', {
-                        id: accountId,
+                    }), 'TrustContract', {
+                        accountId: accountId,
                         safeContract: contract,
+                        isTrustContract: false,
+                        isBWO: true,
                         sender: account,
                         nonce: nonce1,
                     });
@@ -314,42 +334,21 @@ function shouldBehaveLikeWorldAsset() {
         describe('registerAsset', function () {
             context('zero addres', function () {
                 it('revert', async function () {
-                    await expectRevert(this.world.registerAsset(ZERO_ADDRESS, ""), 'World: zero address');
+                    await expectRevert(this.world.registerAsset(ZERO_ADDRESS), 'World: zero address');
                 });
             });
 
             context('addres is exist', function () {
                 it('revert', async function () {
-                    await this.world.registerAsset(this.cash.address, "")
-                    await expectRevert(this.world.registerAsset(this.cash.address, ""), 'World: asset is exist');
+                    await this.world.registerAsset(this.asset20.address)
+                    await expectRevert(this.world.registerAsset(this.asset20.address), 'World: asset is exist');
                 });
             });
 
             context('RegisterAsset event', function () {
                 it('revert', async function () {
-                    expectEvent(await this.world.registerAsset(this.cash.address, "test image"), 'RegisterAsset', {
-                        asset: this.cash.address,
-                        name: "MTKN",
-                        image: "test image",
-                        protocol: new BN(0)
-                    });
-                });
-            });
-        });
-
-        describe('updateAsset', function () {
-            context('updateAsset', function () {
-                it('zero address', async function () {
-                    await expectRevert(this.world.updateAsset(ZERO_ADDRESS, ""), 'World: asset is not exist');
-                });
-                it('is not exist', async function () {
-                    await expectRevert(this.world.updateAsset(this.cash.address, ""), 'World: asset is not exist');
-                });
-                it('ChangeAsset event', async function () {
-                    await this.world.registerAsset(this.cash.address, "test image")
-                    expectEvent(await this.world.updateAsset(this.cash.address, "test image"), 'UpdateAsset', {
-                        asset: this.cash.address,
-                        image: "test image"
+                    expectEvent(await this.world.registerAsset(this.asset20.address), 'RegisterAsset', {
+                        asset: this.asset20.address,
                     });
                 });
             });
@@ -357,17 +356,17 @@ function shouldBehaveLikeWorldAsset() {
 
         describe('disableAsset', function () {
             it('call disable asset', async function () {
-                await this.world.registerAsset(this.cash.address, "")
-                expectEvent(await this.world.disableAsset(this.cash.address), "DisableAsset", {
-                    asset: this.cash.address
+                await this.world.registerAsset(this.asset20.address)
+                expectEvent(await this.world.disableAsset(this.asset20.address), "DisableAsset", {
+                    asset: this.asset20.address
                 });
-                expect(await this.world.getAsset(this.cash.address)).to.deep.equal([true, false, this.cash.address, "MTKN", "", '0']);
+                expect(await this.world.getAsset(this.asset20.address)).to.deep.equal([true, false, this.asset20.address, '0']);
             });
 
             it('disable asset', async function () {
-                await this.world.registerAsset(this.cash.address, "")
-                await this.world.disableAsset(this.cash.address);
-                await expectRevert(this.cash.allowanceCash(1, ZERO_ADDRESS), 'World: asset is not exist or disabled');
+                await this.world.registerAsset(this.asset20.address)
+                await this.world.disableAsset(this.asset20.address);
+                await expectRevert(this.asset20.methods['allowance(uint256,address)'](1, ZERO_ADDRESS), 'World: asset is not exist or disabled');
             });
 
 
@@ -375,8 +374,8 @@ function shouldBehaveLikeWorldAsset() {
         describe('getAsset', function () {
             context('get asset ', function () {
                 it('get asset', async function () {
-                    await this.world.registerAsset(this.cash.address, "test image")
-                    expect(await this.world.getAsset(this.cash.address)).to.deep.equal([true, true, this.cash.address, "MTKN", "test image", '0']);
+                    await this.world.registerAsset(this.asset20.address)
+                    expect(await this.world.getAsset(this.asset20.address)).to.deep.equal([true, true, this.asset20.address, '0']);
                 });
             });
         });
@@ -384,11 +383,11 @@ function shouldBehaveLikeWorldAsset() {
         describe('update world', function () {
             context('item update world ', function () {
                 it('update', async function () {
-                    await this.world.registerAsset(this.item.address, "test image")
+                    await this.world.registerAsset(this.asset721.address)
 
-                    await this.item.updateWorld(this.newWorld.address)
+                    await this.asset721.updateWorld(this.newWorld.address)
 
-                    expect(await this.item.worldAddress()).to.equal(this.newWorld.address);
+                    expect(await this.asset721.worldAddress()).to.equal(this.newWorld.address);
 
                 });
             });
@@ -396,11 +395,11 @@ function shouldBehaveLikeWorldAsset() {
             context('cash update world ', function () {
                 it('update', async function () {
 
-                    await this.world.registerAsset(this.cash.address, "test image")
+                    await this.world.registerAsset(this.asset20.address)
 
-                    await this.cash.updateWorld(this.newWorld.address)
+                    await this.asset20.updateWorld(this.newWorld.address)
 
-                    expect(await this.cash.worldAddress()).to.equal(this.newWorld.address);
+                    expect(await this.asset20.worldAddress()).to.equal(this.newWorld.address);
 
                 });
             });
@@ -409,24 +408,25 @@ function shouldBehaveLikeWorldAsset() {
 }
 
 
-function signData(chainId, verifyingContract, name, key, version,
-    sender, nonce, deadline) {
+function signTrustWorldData(chainId, verifyingContract, name, key, version,
+    id, flag, sender, nonce, deadline) {
     const data = {
         types: {
             EIP712Domain,
-            BWO: [
-                {
-                    name: 'sender',
-                    type: 'address'
-                },
-                {
-                    name: 'nonce',
-                    type: 'uint256'
-                },
-                {
-                    name: 'deadline',
-                    type: 'uint256'
-                },
+            BWO: [{ name: 'id', type: 'uint256' },
+            { name: "flag", type: "bool" },
+            {
+                name: 'sender',
+                type: 'address'
+            },
+            {
+                name: 'nonce',
+                type: 'uint256'
+            },
+            {
+                name: 'deadline',
+                type: 'uint256'
+            },
             ],
         },
         domain: {
@@ -437,6 +437,8 @@ function signData(chainId, verifyingContract, name, key, version,
         },
         primaryType: 'BWO',
         message: {
+            id,
+            flag,
             sender,
             nonce,
             deadline
@@ -495,53 +497,7 @@ function signUnData(chainId, verifyingContract, name, key, version, id,
     return signature;
 }
 function signContractData(chainId, verifyingContract, name, key, version,
-    contract, sender, nonce, deadline) {
-    const data = {
-        types: {
-            EIP712Domain,
-            BWO: [
-                {
-                    name: 'contract',
-                    type: 'address'
-                },
-                {
-                    name: 'sender',
-                    type: 'address'
-                },
-                {
-                    name: 'nonce',
-                    type: 'uint256'
-                },
-                {
-                    name: 'deadline',
-                    type: 'uint256'
-                },
-            ],
-        },
-        domain: {
-            name,
-            version,
-            chainId,
-            verifyingContract
-        },
-        primaryType: 'BWO',
-        message: {
-            contract,
-            sender,
-            nonce,
-            deadline
-        },
-    };
-
-    const signature = ethSigUtil.signTypedMessage(key, {
-        data
-    });
-
-    return signature;
-}
-
-function signUnContractData(chainId, verifyingContract, name, key, version,
-    id, contract, sender, nonce, deadline) {
+    id, contract, flag, sender, nonce, deadline) {
     const data = {
         types: {
             EIP712Domain,
@@ -552,6 +508,10 @@ function signUnContractData(chainId, verifyingContract, name, key, version,
             {
                 name: 'contract',
                 type: 'address'
+            },
+            {
+                name: 'flag',
+                type: 'bool'
             },
             {
                 name: 'sender',
@@ -577,6 +537,7 @@ function signUnContractData(chainId, verifyingContract, name, key, version,
         message: {
             id,
             contract,
+            flag,
             sender,
             nonce,
             deadline

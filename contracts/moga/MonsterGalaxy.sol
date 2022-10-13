@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
-    string public initName;
+    string public override name;
     IMetaverse public metaverse;
     WorldStorage public worldStorage;
 
@@ -27,7 +27,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
     ) EIP712(name_, version_) {
         metaverse = IMetaverse(metaverse_);
         _owner = msg.sender;
-        initName = name_;
+        name = name_;
         emit SetName(name_);
         worldStorage = WorldStorage(worldStorage_);
     }
@@ -43,15 +43,6 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
      */
     function getStorageAddress() external view override returns (address) {
         return address(worldStorage);
-    }
-
-    function name() external view override returns (string memory) {
-        return worldStorage.name();
-    }
-
-    function setName(string memory name_) public onlyOwner {
-        worldStorage.setName(name_);
-        emit SetName(name_);
     }
 
     function registerAsset(address _address) public onlyOwner {
@@ -283,6 +274,10 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
 
     function checkBWO(address _address) public view returns (bool) {
         return worldStorage.isOperator(_address) || _owner == _address;
+    }
+
+    function isOperator(address _address) public view returns (bool) {
+        return worldStorage.isOperator(_address);
     }
 
     function getNonce(address _address) public view returns (uint256) {

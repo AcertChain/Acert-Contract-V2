@@ -12,7 +12,7 @@ const {
 } = require('./Asset721BWO.behavior');
 
 const {
-  shouldBehaveLikeAsset721ProxyBWO,
+  shouldBehaveLikeAsset721Proxy,
 } = require('./Asset721BWO.proxy');
 
 const Asset721 = artifacts.require('MogaNFT');
@@ -32,17 +32,17 @@ contract('Asset721', function (accounts) {
 
   beforeEach(async function () {
     this.MetaverseStorage = await MetaverseStorage.new();
-    this.Metaverse = await Metaverse.new("metaverse", "1.0", 0,this.MetaverseStorage.address);
+    this.Metaverse = await Metaverse.new("metaverse", "1.0", 0, this.MetaverseStorage.address);
     await this.MetaverseStorage.updateMetaverse(this.Metaverse.address);
 
     this.WorldStorage = await WorldStorage.new();
-    this.world = await World.new(this.Metaverse.address,this.WorldStorage.address, "world", "1.0");
+    this.world = await World.new(this.Metaverse.address, this.WorldStorage.address, "world", "1.0");
     await this.WorldStorage.updateWorld(this.world.address);
 
     this.tokenStorage = await Asset721Storage.new();
-    this.token = await Asset721.new(name, symbol, version, "testURI", this.world.address,this.tokenStorage.address);
+    this.token = await Asset721.new(name, symbol, version, "testURI", this.world.address, this.tokenStorage.address);
     await this.tokenStorage.updateAsset(this.token.address);
-    
+
     this.chainId = await this.token.getChainId();
     this.tokenName = name;
     this.tokenVersion = version;
@@ -56,9 +56,9 @@ contract('Asset721', function (accounts) {
     await this.world.addOperator(op);
   });
 
-  shouldBehaveLikeERC721('Asset721', ...accounts);
-  shouldBehaveLikeERC721Metadata('Asset721', name, symbol, ...accounts);
+  // shouldBehaveLikeERC721('Asset721', ...accounts);
+  // shouldBehaveLikeERC721Metadata('Asset721', name, symbol, ...accounts);
   // shouldBehaveLikeAsset721('Asset721', ...accounts);
-  // shouldBehaveLikeAsset721BWO();
-  // shouldBehaveLikeAsset721ProxyBWO();
+  // shouldBehaveLikeAsset721BWO(...accounts);
+  shouldBehaveLikeAsset721Proxy(...accounts);
 });

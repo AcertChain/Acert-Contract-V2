@@ -4,10 +4,6 @@ pragma solidity ^0.8.0;
 import "../common/Ownable.sol";
 import "../interfaces/IAsset.sol";
 
-interface IWorldContract {
-    function initName() external view returns (string memory);
-}
-
 contract WorldStorage is Ownable {
     // struct Asset
     struct Asset {
@@ -37,7 +33,6 @@ contract WorldStorage is Ownable {
 
     mapping(address => bool) public isOperator;
 
-    string public name;
     address public world;
 
     constructor() {
@@ -52,11 +47,6 @@ contract WorldStorage is Ownable {
     function updateWorld(address _address) public onlyOwner {
         require(_address != address(0));
         world = _address;
-        name = IWorldContract(_address).initName();
-    }
-
-    function setName(string memory _name) public onlyWorld {
-        name = _name;
     }
 
     function setOperator(address _operator, bool _isOperator) public onlyWorld {

@@ -1,28 +1,18 @@
 const {
-    BN,
-    constants,
-    expectEvent,
-    expectRevert
-} = require('@openzeppelin/test-helpers');
-
-const {
-    expect
-} = require('chai');
-
-const {
     shouldBehaveLikeWorld,
     shouldBehaveLikeWorldOperator,
     shouldBehaveLikeWorldTrust,
     shouldBehaveLikeWorldAsset,
 } = require('./World.behavior');
 
-const Cash20 = artifacts.require('Cash20Mock');
-const Item721 = artifacts.require('Item721Mock');
+const Asset20 = artifacts.require('MogaToken');
+const Asset20Storage = artifacts.require('Asset20Storage');
+const Asset721 = artifacts.require('MogaNFT');
+const Asset721Storage = artifacts.require('Asset721Storage');
 const World = artifacts.require('MonsterGalaxy');
 const WorldStorage = artifacts.require('WorldStorage');
 const Metaverse = artifacts.require('MogaMetaverse');
 const MetaverseStorage = artifacts.require('MetaverseStorage');
-
 
 contract('World', function (accounts) {
     const itemName = 'Non Fungible Token';
@@ -46,16 +36,23 @@ contract('World', function (accounts) {
 
         this.newTokenName = "newWorld";
         this.newWorldStorage = await WorldStorage.new();
-        this.newWorld = await World.new(this.Metaverse.address, this.newWorldStorage.address,this.newTokenName, this.tokenVersion);
+        this.newWorld = await World.new(this.Metaverse.address, this.newWorldStorage.address, this.newTokenName, this.tokenVersion);
         await this.newWorldStorage.updateWorld(this.newWorld.address);
 
         this.chainId = await this.world.getChainId();
 
-        this.item = await Item721.new(itemName, itemSymbol, itemVersion, "", this.world.address);
-        this.cash = await Cash20.new(cashName, cashSymbol, cashVersion, this.world.address);
+        this.token721Storage = await Asset721Storage.new();
+        this.asset721 = await Asset721.new(itemName, itemSymbol, itemVersion, "", this.world.address, this.token721Storage.address);
+
+        await this.token721Storage.updateAsset(this.asset721.address);
+
+        this.token20Storage = await Asset20Storage.new();
+        this.asset20 = await Asset20.new(cashName, cashSymbol, cashVersion, this.world.address, this.token20Storage.address);
+        await this.token20Storage.updateAsset(this.asset20.address);
+
 
         // register world
-        await this.Metaverse.registerWorld(this.world.address, "", "", "", "");
+        await this.Metaverse.registerWorld(this.world.address);
 
     });
 

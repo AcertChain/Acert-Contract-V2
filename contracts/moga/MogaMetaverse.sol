@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
     MetaverseStorage public metaStorage;
 
-    string public initName;
+    string public override name;
     uint256 public startId;
 
     constructor(
@@ -22,28 +22,18 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         uint256 startId_,
         address metaStorage_
     ) EIP712(name_, version_) {
-        initName = name_;
+        name = name_;
         emit SetName(name_);
-
         _owner = _msgSender();
         startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
     }
-    
+
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
     function getStorageAddress() external view override returns (address) {
         return address(metaStorage);
-    }
-
-    function name() external view override returns (string memory) {
-        return metaStorage.name();
-    }
-
-    function setName(string memory name_) public onlyOwner {
-        metaStorage.setName(name_);
-        emit SetName(name_);
     }
 
     function registerWorld(address _world) public onlyOwner {
@@ -94,7 +84,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         emit RemoveOperator(_operator);
     }
 
-    function createAccount(address _address, bool _isTrustAdmin) public virtual returns (uint256 id) {
+    function createAccount(address _address, bool _isTrustAdmin) public returns (uint256 id) {
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
         metaStorage.IncrementTotalAccount();
@@ -116,7 +106,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
-        checkBWO(_msgSender());
+        require(checkBWO(_msgSender()), "Metaverse: address is not BWO");
         trustAdminBWOParamsVerify(_id, _isTrustAdmin, sender, deadline, signature);
         _trustAdmin(_id, _isTrustAdmin, true, sender);
     }
@@ -180,7 +170,8 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
-        checkBWO(_msgSender());
+        require(checkBWO(_msgSender()), "Metaverse: address is not BWO");
+
         freezeAccountBWOParamsVerify(_id, sender, deadline, signature);
         _freezeAccount(_id, true, sender);
     }
@@ -246,6 +237,8 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
+        checkAddressIsNotZero(_address);
+        checkAddressIsNotUsed(_address);
         checkSender(_id, _msgSender());
         checkAuthAddressSignature(_id, _address, _msgSender(), deadline, signature);
         _addAuthAddress(_id, _address, false, _msgSender());
@@ -259,7 +252,8 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         bytes memory signature,
         bytes memory authSignature
     ) public {
-        checkBWO(_msgSender());
+        require(checkBWO(_msgSender()), "Metaverse: address is not BWO");
+
         addAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
         checkAuthAddressSignature(_id, _address, sender, deadline, authSignature);
         _addAuthAddress(_id, _address, true, sender);
@@ -338,6 +332,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
     }
 
     function removeAuthAddress(uint256 _id, address _address) public {
+        checkAddressIsNotZero(_address);
         checkSender(_id, _msgSender());
         _removeAuthAddress(_id, _address, false, _msgSender());
     }
@@ -349,7 +344,8 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
-        checkBWO(_msgSender());
+        require(checkBWO(_msgSender()), "Metaverse: address is not BWO");
+        checkAddressIsNotZero(_address);
         removeAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
         _removeAuthAddress(_id, _address, true, sender);
     }
@@ -450,12 +446,24 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         require(metaStorage.authAddressContains(_id, _sender), "Metaverse: Sender is not authorized");
     }
 
-    function checkBWO(address _address) internal view {
-        require((metaStorage.isOperator(_address) || _owner == _address), "Metaverse: address is not BWO");
+    function checkBWO(address _address) public view returns (bool) {
+        return (metaStorage.isOperator(_address) || _owner == _address);
     }
 
     function getNonce(address _address) public view returns (uint256) {
         return metaStorage.nonces(_address);
+    }
+
+    function getTotalAccount() public view returns (uint256) {
+        return metaStorage.totalAccount();
+    }
+
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
+    }
+
+    function isOperator(address _address) public view returns (bool) {
+        return metaStorage.isOperator(_address);
     }
 
     function _recoverSig(

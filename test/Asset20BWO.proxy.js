@@ -44,8 +44,6 @@ const EIP712Domain = [{
 
 function shouldBehaveLikeAsset20ProxyBWO(errorPrefix, initialSupply, initialHolder, initialHolderId,
   recipient, recipientId, authAccount, BWOKey) {
-  console.log("initialHolder:", initialHolder)
-  console.log("authAccount:", authAccount)
 
   describe('transferCashBWO proxy and approveCashBWO proxy', function () {
 

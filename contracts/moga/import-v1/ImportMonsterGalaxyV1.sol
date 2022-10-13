@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract ImportMonsterGalaxyV1 is IWorld, IApplyStorage, Ownable, EIP712 {
 
-    string public initName;
+    string public override name;
     IMetaverse public metaverse;
     WorldStorage public worldStorage;
 
@@ -28,14 +28,11 @@ contract ImportMonsterGalaxyV1 is IWorld, IApplyStorage, Ownable, EIP712 {
     ) EIP712(name_, version_) {
         metaverse = IMetaverse(metaverse_);
         _owner = msg.sender;
-        initName = name_;
+        name = name_;
         emit SetName(name_);
         worldStorage = WorldStorage(worldStorage_);
     }
 
-    function name() external view override returns (string memory) {
-        return worldStorage.name();
-    }
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
