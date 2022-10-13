@@ -5,29 +5,16 @@ const { saveToJSON } = require("./utils");
 
 dotenv.config();
 
-// bsc
-// const cash20Name = "Galaxy Gem";
-// const cash20Symbol = "GGM";
+const Asset20Name = "Galaxy Gem";
+const Asset20Symbol = "GGM";
 
-// const item721Name = "MOGA";
-// const item721Symbol = "MOGA";
-// const item721URI = "https://moga.taobaozx.net/moga/";
+const Asset721Name = "MOGA";
+const Asset721Symbol = "MOGA";
+const Asset721URI = "https://mintinfo.playmonstergalaxy.com/json/moga/";
 
-// const item721NameE = "MOGA Equipment";
-// const item721SymbolE = "eqpt";
-// const item721URIE = "https://moga.ggm.com/equipment";
-
-// heco
-const cash20Name = "Galaxy Gem";
-const cash20Symbol = "GGM";
-
-const item721Name = "MOGA";
-const item721Symbol = "MOGA";
-const item721URI = "https://mintinfo.playmonstergalaxy.com/json/moga/";
-
-const item721NameE = "MOGA Equipment";
-const item721SymbolE = "EQPT";
-const item721URIE = "https://mintinfo.playmonstergalaxy.com/json/equipment/";
+const Asset721NameE = "MOGA Equipment";
+const Asset721SymbolE = "EQPT";
+const Asset721URIE = "https://mintinfo.playmonstergalaxy.com/json/equipment/";
 
 
 async function main() {
@@ -79,49 +66,88 @@ async function main() {
 
   await (await WScontract.updateWorld(Wcontract.address)).wait()
   // register world
-  await (await Mcontract.registerWorld(Wcontract.address, "", "", "", "")).wait();
+  await (await Mcontract.registerWorld(Wcontract.address)).wait();
 
-  //deploy cash20
-  const Cash20 = (await ethers.getContractFactory("Cash20Mock")).connect(deployer);
-  const Ccontract = await Cash20.deploy(cash20Name, cash20Symbol, "1.0", Wcontract.address);
+  // deploy Asset20 Storage
+  const Asset20Storage = (await ethers.getContractFactory("Asset20Storage")).connect(deployer);
+
+  const A20Scontract = await Asset20Storage.deploy();
+  await A20Scontract.deployed();
+
+  saveToJSON("Asset20Storage", {
+    address: A20Scontract.address,
+    deployer: deployer.address
+  })
+
+  //deploy Asset20
+  const Asset20 = (await ethers.getContractFactory("MogaToken")).connect(deployer);
+  const Ccontract = await Asset20.deploy(Asset20Name, Asset20Symbol, "1.0", Wcontract.address, A20Scontract.address);
   await Ccontract.deployed();
 
-  saveToJSON(cash20Name, {
+  saveToJSON(Asset20Name, {
     address: Ccontract.address,
     deployer: deployer.address
   })
 
-  //deploy Item721
-  const Item721M = (await ethers.getContractFactory("Item721Mock")).connect(deployer);
-  const IMcontract = await Item721M.deploy(item721Name, item721Symbol, "1.0", item721URI, Wcontract.address);
+  await (await A20Scontract.updateToken(Ccontract.address)).wait();
+
+
+  // deploy Asset721M Storage
+  const Asset721MStorage = (await ethers.getContractFactory("Asset721Storage")).connect(deployer);
+
+  const A721MScontract = await Asset721MStorage.deploy();
+  await A721MScontract.deployed();
+
+  saveToJSON("Asset721MStorage", {
+    address: A721MScontract.address,
+    deployer: deployer.address
+  })
+
+  //deploy Asset721
+  const Asset721M = (await ethers.getContractFactory("MogaNFT")).connect(deployer);
+  const IMcontract = await Asset721M.deploy(Asset721Name, Asset721Symbol, "1.0", Asset721URI, Wcontract.address);
   await IMcontract.deployed();
 
-  saveToJSON(item721Name, {
+  saveToJSON(Asset721Name, {
     address: IMcontract.address,
     deployer: deployer.address
   })
 
+  await (await A721Scontract.updateToken(IMcontract.address)).wait();
 
-  // world register asset
-  const Item721E = (await ethers.getContractFactory("Item721Mock")).connect(deployer);
-  const IEcontract = await Item721E.deploy(item721NameE, item721SymbolE, "1.0", item721URIE, Wcontract.address);
+  // deploy Asset721E Storage
+  const Asset721EStorage = (await ethers.getContractFactory("Asset721Storage")).connect(deployer);
+
+  const A721EScontract = await Asset721EStorage.deploy();
+  await A721EScontract.deployed();
+
+  saveToJSON("Asset721EStorage", {
+    address: A721EScontract.address,
+    deployer: deployer.address
+  })
+
+  //deploy Asset721
+  const Asset721E = (await ethers.getContractFactory("MogaNFT")).connect(deployer);
+  const IEcontract = await Asset721E.deploy(Asset721NameE, Asset721SymbolE, "1.0", Asset721URIE, Wcontract.address);
   await IEcontract.deployed();
 
-  saveToJSON(item721NameE, {
+  saveToJSON(Asset721NameE, {
     address: IEcontract.address,
     deployer: deployer.address
   })
 
-  await (await Wcontract.registerAsset(IMcontract.address, "")).wait();
-  await (await Wcontract.registerAsset(IEcontract.address, "")).wait();
-  await (await Wcontract.registerAsset(Ccontract.address, "")).wait();
+  await (await A721EScontract.updateToken(IEcontract.address)).wait();
+
+  await (await Wcontract.registerAsset(IMcontract.address)).wait();
+  await (await Wcontract.registerAsset(IEcontract.address)).wait();
+  await (await Wcontract.registerAsset(Ccontract.address)).wait();
 
 
   console.log("Metaverse deployed to", Mcontract.address);
   console.log("World deployed to", Wcontract.address);
-  console.log("Cash20 GGM deployed to", Ccontract.address);
-  console.log("Item721 MOGA deployed to", IMcontract.address);
-  console.log("Item721 MOGA Equipment deployed to", IEcontract.address);
+  console.log("Asset20 GGM deployed to", Ccontract.address);
+  console.log("Asset721 MOGA deployed to", IMcontract.address);
+  console.log("Asset721 MOGA Equipment deployed to", IEcontract.address);
   console.log("deployer address:", deployer.address);
 }
 

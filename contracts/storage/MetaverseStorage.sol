@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "../common/Ownable.sol";
 
 interface IMetaverseContract {
-    function initName() external view returns (string memory);
-
     function startId() external view returns (uint256);
 }
 
@@ -42,7 +40,6 @@ contract MetaverseStorage is Ownable {
     mapping(address => bool) public isOperator;
 
     address public metaverse;
-    string public name;
     address public admin;
     uint256 public startId;
     uint256 public totalAccount;
@@ -53,17 +50,12 @@ contract MetaverseStorage is Ownable {
 
     function updateMetaverse(address addr) public onlyOwner {
         metaverse = addr;
-        name = IMetaverseContract(addr).initName();
         startId = IMetaverseContract(addr).startId();
     }
 
     modifier onlyMetaverse() {
         require(metaverse == msg.sender);
         _;
-    }
-
-    function setName(string memory _name) public onlyMetaverse {
-        name = _name;
     }
 
     function setAdmin(address _admin) public onlyMetaverse {
