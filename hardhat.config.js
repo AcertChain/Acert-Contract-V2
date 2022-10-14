@@ -1,6 +1,7 @@
 require("@nomiclabs/hardhat-waffle");
 require("solidity-docgen")
 require('solidity-coverage')
+require('hardhat-abi-exporter');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
@@ -31,6 +32,14 @@ require('hardhat-contract-sizer');
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
+  abiExporter: {
+    path: './data/abi',
+    runOnCompile: true,
+    flat: true,
+    clear: true,
+    spacing: 2,
+    format: "json",
+  },
   docgen: {
     output: 'docs',
     pages: 'files',
