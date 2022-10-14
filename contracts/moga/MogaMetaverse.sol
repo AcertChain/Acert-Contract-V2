@@ -466,6 +466,10 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         return metaStorage.isOperator(_address);
     }
 
+    function getAdmin() public view returns (address) {
+        return metaStorage.admin();
+    }
+
     function _recoverSig(
         uint256 deadline,
         address signer,
