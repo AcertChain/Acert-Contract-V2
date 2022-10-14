@@ -22,7 +22,6 @@ contract ImportMogaMetaverseV1 is IMetaverse, IApplyStorage, Context, Ownable, E
         address metaStorage_
     ) EIP712(name_, version_) {
         name = name_;
-        emit SetName(name_);
         _owner = _msgSender();
         startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);

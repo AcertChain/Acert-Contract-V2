@@ -28,7 +28,6 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         metaverse = IMetaverse(metaverse_);
         _owner = msg.sender;
         name = name_;
-        emit SetName(name_);
         worldStorage = WorldStorage(worldStorage_);
     }
 
