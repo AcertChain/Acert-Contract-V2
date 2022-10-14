@@ -89,7 +89,7 @@ async function main() {
     deployer: deployer.address
   })
 
-  await (await A20Scontract.updateToken(Ccontract.address)).wait();
+  await (await A20Scontract.updateAsset(Ccontract.address)).wait();
 
 
   // deploy Asset721M Storage
@@ -105,7 +105,7 @@ async function main() {
 
   //deploy Asset721
   const Asset721M = (await ethers.getContractFactory("MogaNFT")).connect(deployer);
-  const IMcontract = await Asset721M.deploy(Asset721Name, Asset721Symbol, "1.0", Asset721URI, Wcontract.address);
+  const IMcontract = await Asset721M.deploy(Asset721Name, Asset721Symbol, "1.0", Asset721URI, Wcontract.address, A721MScontract.address);
   await IMcontract.deployed();
 
   saveToJSON(Asset721Name, {
@@ -113,7 +113,7 @@ async function main() {
     deployer: deployer.address
   })
 
-  await (await A721Scontract.updateToken(IMcontract.address)).wait();
+  await (await A721MScontract.updateAsset(IMcontract.address)).wait();
 
   // deploy Asset721E Storage
   const Asset721EStorage = (await ethers.getContractFactory("Asset721Storage")).connect(deployer);
@@ -128,7 +128,7 @@ async function main() {
 
   //deploy Asset721
   const Asset721E = (await ethers.getContractFactory("MogaNFT")).connect(deployer);
-  const IEcontract = await Asset721E.deploy(Asset721NameE, Asset721SymbolE, "1.0", Asset721URIE, Wcontract.address);
+  const IEcontract = await Asset721E.deploy(Asset721NameE, Asset721SymbolE, "1.0", Asset721URIE, Wcontract.address, A721EScontract.address);
   await IEcontract.deployed();
 
   saveToJSON(Asset721NameE, {
@@ -136,7 +136,7 @@ async function main() {
     deployer: deployer.address
   })
 
-  await (await A721EScontract.updateToken(IEcontract.address)).wait();
+  await (await A721EScontract.updateAsset(IEcontract.address)).wait();
 
   await (await Wcontract.registerAsset(IMcontract.address)).wait();
   await (await Wcontract.registerAsset(IEcontract.address)).wait();
