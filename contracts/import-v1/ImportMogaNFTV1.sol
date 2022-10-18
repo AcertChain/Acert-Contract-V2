@@ -12,8 +12,7 @@ contract ImportMogaNFTV1 is MogaNFT {
         string memory tokenURI,
         address world,
         address storage_
-    ) MogaNFT(name, symbol, version, tokenURI, world, storage_) {
-    }
+    ) MogaNFT(name, symbol, version, tokenURI, world, storage_) {}
 
     function mintBatch(uint256[] calldata tos, uint256[][] calldata tokenIds) public onlyOwner {
         for (uint256 i = 0; i < tos.length; i++) {

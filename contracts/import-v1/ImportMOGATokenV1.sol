@@ -11,8 +11,7 @@ contract ImportMogaTokenV1 is MogaToken {
         string memory version,
         address world,
         address storage_
-    ) MogaToken(name, symbol, version, world, storage_) {
-    }
+    ) MogaToken(name, symbol, version, world, storage_) {}
 
     function mintBatch(uint256[] calldata accountIds, uint256[] calldata amounts) public onlyOwner {
         require(accountIds.length == amounts.length, "MogaToken: accounts length not equal amounts length");
