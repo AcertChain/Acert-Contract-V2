@@ -210,7 +210,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         bool _isTrustWorld,
         bool _isBWO,
         address _sender
-    ) private {
+    ) internal {
         worldStorage.setTrustWorld(_id, _isTrustWorld);
         emit TrustWorld(_id, _isTrustWorld, _isBWO, _sender, getNonce(_sender));
         worldStorage.IncrementNonce(_sender);
