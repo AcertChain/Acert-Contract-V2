@@ -97,6 +97,7 @@ contract('Asset20', function (accounts) {
     this.chainId = await this.token.getChainId();
 
     // 注册operater
+    await this.world.addOperator(initialHolder);
     await this.Metaverse.addOperator(initialHolder);
     await this.Metaverse.getOrCreateAccountId(initialHolder);
     await this.Metaverse.getOrCreateAccountId(recipient);

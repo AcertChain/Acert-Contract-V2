@@ -203,7 +203,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(_checkBWOByAsset(_msgSender()), "Asset: address is not BWO");
+        _checkBWOByAsset(_msgSender());
         approveBWOParamsVerify(spender, tokenId, sender, deadline, signature);
         _approve(spender, tokenId, true, sender);
     }
@@ -292,7 +292,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(_checkBWOByAsset(_msgSender()), "Asset: address is not BWO");
+        _checkBWOByAsset(_msgSender());
         setApprovalForAllBWOParamsVerify(accountId, operator, approved, sender, deadline, signature);
         _setApprovalForAll(accountId, operator, approved, true, sender);
     }
@@ -410,7 +410,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(_checkBWOByAsset(_msgSender()), "Asset: address is not BWO");
+        _checkBWOByAsset(_msgSender());
         transferFromBWOParamsVerify(fromAccount, toAccount, tokenId, sender, deadline, signature);
         if (toAccount == 0) {
             _burn(tokenId, sender);
@@ -532,7 +532,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         uint256 deadline,
         bytes memory signature
     ) public virtual override {
-        require(_checkBWOByAsset(_msgSender()), "Asset: address is not BWO");
+        _checkBWOByAsset(_msgSender());
         safeTransferFromBWOParamsVerify(from, to, tokenId, data, sender, deadline, signature);
 
         if (to == 0) {
@@ -799,8 +799,8 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         return metaverse.accountIsExist(_id);
     }
 
-    function _checkBWOByAsset(address _sender) internal view returns (bool) {
-        return world.checkBWOByAsset(_sender);
+    function _checkBWOByAsset(address _sender) internal view {
+        require(world.checkBWOByAsset(_sender), "Asset721: sender is not BWO");
     }
 
     function _recoverSig(

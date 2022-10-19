@@ -10,11 +10,12 @@ import "../interfaces/IAsset20.sol";
 import "../interfaces/IAsset.sol";
 import "../storage/WorldStorage.sol";
 import "../common/Ownable.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
+contract MonsterGalaxy is Context, IWorld, IApplyStorage, Ownable, EIP712 {
     string public override name;
     IMetaverse public metaverse;
     WorldStorage public worldStorage;
@@ -26,13 +27,13 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         string memory version_
     ) EIP712(name_, version_) {
         metaverse = IMetaverse(metaverse_);
-        _owner = msg.sender;
+        _owner = _msgSender();
         name = name_;
         worldStorage = WorldStorage(worldStorage_);
     }
 
     modifier onlyAsset() {
-        WorldStorage.Asset memory asset = worldStorage.getAsset(msg.sender);
+        WorldStorage.Asset memory asset = worldStorage.getAsset(_msgSender());
         require(asset.isExist && asset.isEnabled, "World: asset is not exist or disabled");
         _;
     }
@@ -97,8 +98,8 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         address _address,
         bool _isTrustContract
     ) public {
-        metaverse.checkSender(_id, msg.sender);
-        _trustContract(_id, _address, _isTrustContract, false, msg.sender);
+        metaverse.checkSender(_id, _msgSender());
+        _trustContract(_id, _address, _isTrustContract, false, _msgSender());
     }
 
     function trustContractBWO(
@@ -109,7 +110,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
-        require(checkBWO(msg.sender), "World: address is not BWO");
+        require(checkBWO(_msgSender()), "World: address is not BWO");
         trustContractBWOParamsVerify(_id, _address, _isTrustContract, sender, deadline, signature);
         _trustContract(_id, _address, _isTrustContract, true, sender);
     }
@@ -160,8 +161,8 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
     }
 
     function trustWorld(uint256 _id, bool _isTrustWorld) public {
-        metaverse.checkSender(_id, msg.sender);
-        _trustWorld(_id, _isTrustWorld, false, msg.sender);
+        metaverse.checkSender(_id, _msgSender());
+        _trustWorld(_id, _isTrustWorld, false, _msgSender());
     }
 
     function trustWorldBWO(
@@ -171,7 +172,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
-        require(checkBWO(msg.sender), "World: address is not BWO");
+        require(checkBWO(_msgSender()), "World: address is not BWO");
         trustWorldBWOParamsVerify(_id, _isTrustWorld, sender, deadline, signature);
         _trustWorld(_id, _isTrustWorld, true, sender);
     }
