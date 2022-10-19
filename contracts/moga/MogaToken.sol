@@ -21,7 +21,7 @@ contract MogaToken is Asset20 {
 
     function burn(address account, uint256 amount) public {
         _checkSender(_getAccountIdByAddress(account), _msgSender());
-        _burn(account, amount);
+        _burn(account, amount, _msgSender());
     }
 
     function mint(uint256 accountId, uint256 amount) public onlyOwner {
@@ -30,7 +30,7 @@ contract MogaToken is Asset20 {
 
     function burn(uint256 accountId, uint256 amount) public {
         _checkSender(accountId, _msgSender());
-        _burn(accountId, amount);
+        _burn(accountId, amount, _msgSender());
     }
 
     function getChainId() external view returns (uint256) {

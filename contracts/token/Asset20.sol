@@ -188,7 +188,7 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
     ) internal virtual {
         require(from != address(0), "Asset20: transfer from the zero address");
         if (to == address(0)) {
-            _burn(_getOrCreateAccountId(from), amount);
+            _burn(_getOrCreateAccountId(from), amount, sender);
         } else {
             _transferAsset(_getOrCreateAccountId(from), _getOrCreateAccountId(to), amount, false, sender, from, to);
         }
@@ -214,7 +214,7 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         }
 
         if (toAccount == 0) {
-            _burn(fromAccount, amount);
+            _burn(fromAccount, amount, _msgSender());
         } else {
             _transferAsset(
                 fromAccount,
@@ -248,7 +248,7 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         }
 
         if (toAccount == 0) {
-            _burn(fromAccount, amount);
+            _burn(fromAccount, amount, sender);
         } else {
             _transferAsset(
                 fromAccount,
@@ -528,12 +528,20 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
      * - `account` cannot be the zero address.
      * - `account` must have at least `amount` tokens.
      */
-    function _burn(address _address, uint256 amount) internal virtual {
+    function _burn(
+        address _address,
+        uint256 amount,
+        address sender
+    ) internal virtual {
         require(_address != address(0), "Asset20: burn from the zero address");
-        _burn(_getAccountIdByAddress(_address), amount);
+        _burn(_getAccountIdByAddress(_address), amount, sender);
     }
 
-    function _burn(uint256 accountId, uint256 amount) internal virtual {
+    function _burn(
+        uint256 accountId,
+        uint256 amount,
+        address sender
+    ) internal virtual {
         require(accountId != 0, "Asset20: burn from the zero Id");
         require(_isExist(accountId), "Asset20: to account is not exist");
 
@@ -542,8 +550,8 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         _setBalance(accountId, accountBalance - amount);
         _setTotalSupply(totalSupply() - amount);
         emit Transfer(_getAddressByAccountId(accountId), address(0), amount);
-        emit AssetTransfer(accountId, 0, amount, false, _msgSender(), getNonce(_msgSender()));
-        _incrementNonce(_msgSender());
+        emit AssetTransfer(accountId, 0, amount, false, sender, getNonce(sender));
+        _incrementNonce(sender);
     }
 
     function _checkIdIsNotZero(uint256 _id, string memory _msg) internal pure {
@@ -612,7 +620,7 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         bytes32 digest,
         bytes memory signature
     ) internal view {
-        require(block.timestamp < deadline, "Asset20: BWO call expired");
+        require(deadline == 0 || block.timestamp < deadline, "Asset20: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "Asset20: recoverSig failed");
     }
 

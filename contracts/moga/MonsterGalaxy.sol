@@ -293,7 +293,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         bytes32 digest,
         bytes memory signature
     ) internal view {
-        require(block.timestamp < deadline, "World: BWO call expired");
+        require(deadline == 0 || block.timestamp < deadline, "World: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "World: recoverSig failed");
     }
 }

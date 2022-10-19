@@ -375,7 +375,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
     ) public virtual override {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "Asset721: transfer caller is not owner nor approved");
         if (to == address(0)) {
-            _burn(tokenId);
+            _burn(tokenId, _msgSender());
         } else {
             _transfer(_getOrCreateAccountId(from), _getOrCreateAccountId(to), tokenId, false, _msgSender(), from, to);
         }
@@ -388,7 +388,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
     ) public virtual override {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "Asset721: transfer caller is not owner nor approved");
         if (toAccount == 0) {
-            _burn(tokenId);
+            _burn(tokenId, _msgSender());
         } else {
             _transfer(
                 fromAccount,
@@ -413,7 +413,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         _checkBWOByAsset(_msgSender());
         transferFromBWOParamsVerify(fromAccount, toAccount, tokenId, sender, deadline, signature);
         if (toAccount == 0) {
-            _burn(tokenId);
+            _burn(tokenId, sender);
         } else {
             _transfer(
                 fromAccount,
@@ -517,7 +517,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
     ) public virtual override {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "Asset721: transfer caller is not owner nor approved");
         if (to == 0) {
-            _burn(tokenId);
+            _burn(tokenId, _msgSender());
         } else {
             _safeTransfer(from, to, tokenId, false, _msgSender(), data);
         }
@@ -536,7 +536,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         safeTransferFromBWOParamsVerify(from, to, tokenId, data, sender, deadline, signature);
 
         if (to == 0) {
-            _burn(tokenId);
+            _burn(tokenId, sender);
         } else {
             _safeTransfer(from, to, tokenId, true, sender, data);
         }
@@ -676,7 +676,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
      *
      * Emits a {Transfer} event.
      */
-    function _burn(uint256 tokenId) internal virtual {
+    function _burn(uint256 tokenId, address sender) internal virtual {
         address owner = Asset721.ownerOf(tokenId);
         // Clear approvals
 
@@ -688,9 +688,9 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         storageContract.deleteOwnerById(tokenId);
 
         emit Transfer(_getAddressByAccountId(ownerId), address(0), tokenId);
-        emit AssetTransfer(ownerId, 0, tokenId, false, _msgSender(), getNonce(_msgSender()));
+        emit AssetTransfer(ownerId, 0, tokenId, false, sender, getNonce(sender));
 
-        _incrementNonce(_msgSender());
+        _incrementNonce(sender);
     }
 
     /**
@@ -809,7 +809,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         bytes32 digest,
         bytes memory signature
     ) internal view {
-        require(block.timestamp < deadline, "Asset721: BWO call expired");
+        require(deadline == 0 || block.timestamp < deadline, "Asset721: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "Asset721: recoverSig failed");
     }
 }

@@ -16,7 +16,8 @@ const {
 } = require('hardhat');
 
 
-const deadline = new BN(parseInt(new Date().getTime() / 1000) + 36000);
+//const deadline = new BN(parseInt(new Date().getTime() / 1000) + 36000);
+const deadline = new BN(0);
 
 const EIP712Domain = [{
     name: 'name',

@@ -475,7 +475,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         bytes32 digest,
         bytes memory signature
     ) internal view {
-        require(block.timestamp < deadline, "Metaverse: BWO call expired");
+        require(deadline == 0 || block.timestamp < deadline, "Metaverse: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "Metaverse: recoverSig failed");
     }
 

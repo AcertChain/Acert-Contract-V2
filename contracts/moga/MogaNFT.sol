@@ -28,7 +28,7 @@ contract MogaNFT is Asset721 {
         address owner = Asset721.ownerOf(tokenId);
         uint256 ownerId = _getAccountIdByAddress(owner);
         _checkSender(ownerId, _msgSender());
-        _burn(tokenId);
+        _burn(tokenId, _msgSender());
     }
 
     function safeMint(
