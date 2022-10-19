@@ -240,7 +240,7 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
-        _checkBWOByAsset(_msgSender());
+        require(_checkBWOByAsset(_msgSender()), "Asset: address is not BWO");
         transferBWOParamsVerify(fromAccount, toAccount, amount, sender, deadline, signature);
 
         if (_getAccountIdByAddress(sender) != fromAccount) {
@@ -357,7 +357,7 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         uint256 deadline,
         bytes memory signature
     ) public virtual override returns (bool) {
-        _checkBWOByAsset(_msgSender());
+        require(_checkBWOByAsset(_msgSender()), "Asset: address is not BWO");
         approveBWOParamsVerify(ownerId, spender, amount, sender, deadline, signature);
         _approveId(ownerId, _getAddressByAccountId(ownerId), spender, amount, true, sender);
         return true;
@@ -606,8 +606,8 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         return metaverse.accountIsExist(_id);
     }
 
-    function _checkBWOByAsset(address _sender) internal view {
-        world.checkBWOByAsset(_sender);
+    function _checkBWOByAsset(address _sender) internal view returns (bool) {
+        return world.checkBWOByAsset(_sender);
     }
 
     function _isTrust(address _address, uint256 _id) internal view returns (bool) {

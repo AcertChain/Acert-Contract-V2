@@ -109,7 +109,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
-        checkBWO(msg.sender);
+        require(checkBWO(msg.sender), "World: address is not BWO");
         trustContractBWOParamsVerify(_id, _address, _isTrustContract, sender, deadline, signature);
         _trustContract(_id, _address, _isTrustContract, true, sender);
     }
@@ -171,7 +171,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, Ownable, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public {
-        checkBWO(msg.sender);
+        require(checkBWO(msg.sender), "World: address is not BWO");
         trustWorldBWOParamsVerify(_id, _isTrustWorld, sender, deadline, signature);
         _trustWorld(_id, _isTrustWorld, true, sender);
     }

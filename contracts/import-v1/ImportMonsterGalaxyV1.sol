@@ -12,7 +12,7 @@ contract ImportMonsterGalaxyV1 is MonsterGalaxy {
     ) MonsterGalaxy(metaverse_, worldStorage_, name_, version_) {}
 
     function trustWorldBatch(uint256[] calldata _ids, bool _isTrustWorld) public {
-        checkBWO(msg.sender);
+        require(checkBWO(msg.sender), "World: address is not BWO");
         for (uint256 i = 0; i < _ids.length; i++) {
             _trustWorld(_ids[i], _isTrustWorld, true, msg.sender);
         }
