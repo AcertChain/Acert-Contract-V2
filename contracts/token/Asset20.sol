@@ -157,7 +157,7 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         bool isBWO,
         address sender
     ) internal virtual {
-        uint256 currentAllowance = allowance(ownerId, _msgSender());
+        uint256 currentAllowance = allowance(ownerId, sender);
         if (currentAllowance != type(uint256).max) {
             require(currentAllowance >= amount, "Asset20: insufficient allowance");
             unchecked {
