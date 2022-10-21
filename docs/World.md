@@ -312,10 +312,10 @@ function isTrustWorld(uint256 _id) public view returns (bool _isTrust)
 function isTrust(address _contract, uint256 _id) public view virtual returns (bool _isTrust)
 ```
 
-### getMetaverse
+### metaverseAddress
 
 ```solidity
-function getMetaverse() public view returns (address)
+function metaverseAddress() public view returns (address)
 ```
 
 ### checkAddress

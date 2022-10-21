@@ -3,13 +3,15 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "../common/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IAcertContract.sol";
+import "../interfaces/IMetaverse.sol";
 
 interface IMetaverseContract {
     function startId() external view returns (uint256);
 }
 
-contract MetaverseStorage is Ownable {
+contract MetaverseStorage is IAcertContract, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private worlds;
 
@@ -45,7 +47,13 @@ contract MetaverseStorage is Ownable {
     uint256 public totalAccount;
 
     constructor() {
-        _owner = msg.sender;
+    }
+
+    /**
+     * @dev See {IAcertContract-metaverseAddress}.
+     */
+    function metaverseAddress() public view override returns (address) {
+        return address(IAcertContract(metaverse).metaverseAddress());
     }
 
     function updateMetaverse(address addr) public onlyOwner {

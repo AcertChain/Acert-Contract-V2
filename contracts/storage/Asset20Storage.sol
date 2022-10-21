@@ -1,9 +1,11 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "../common/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IAsset20.sol";
+import "../interfaces/IAcertContract.sol";
 
-contract Asset20Storage is Ownable {
+contract Asset20Storage is IAcertContract, Ownable {
     mapping(uint256 => uint256) public balancesById;
     mapping(uint256 => mapping(address => uint256)) public allowancesById;
     mapping(address => uint256) public nonces;
@@ -12,12 +14,18 @@ contract Asset20Storage is Ownable {
     address public asset;
 
     constructor() {
-        _owner = msg.sender;
     }
 
     modifier onlyAsset() {
         require(asset == msg.sender);
         _;
+    }
+
+    /**
+     * @dev See {IAcertContract-metaverseAddress}.
+     */
+    function metaverseAddress() public view override returns (address) {
+        return address(IAcertContract(asset).metaverseAddress());
     }
 
     function updateAsset(address _address) public onlyOwner {

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IMetaverse.sol";
 import "../interfaces/IApplyStorage.sol";
-import "../common/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Acert is Ownable {
     event SetMetaverse(address indexed metaverse, string name, address indexed storageAddress, bool enabled);
@@ -12,7 +12,6 @@ contract Acert is Ownable {
     mapping(address => bool) public metaverseEnabled;
 
     constructor() {
-        _owner = msg.sender;
     }
 
     function setMetaverse(address _address, bool _enabled) public onlyOwner {

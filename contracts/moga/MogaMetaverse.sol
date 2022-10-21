@@ -2,15 +2,16 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "../common/Ownable.sol";
 import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IMetaverse.sol";
 import "../interfaces/IWorld.sol";
+import "../interfaces/IAcertContract.sol";
 import "../storage/MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
+contract MogaMetaverse is IMetaverse, IApplyStorage, IAcertContract, Context, Ownable, EIP712 {
     MetaverseStorage public metaStorage;
 
     string public override name;
@@ -23,9 +24,15 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
         address metaStorage_
     ) EIP712(name_, version_) {
         name = name_;
-        _owner = _msgSender();
         startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
+    }
+
+    /**
+     * @dev See {IAcertContract-metaverseAddress}.
+     */
+    function metaverseAddress() external view override returns (address) {
+        return address(this);
     }
 
     /**
@@ -38,7 +45,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
     function registerWorld(address _world) public onlyOwner {
         checkAddressIsNotZero(_world);
         require(containsWorld(_world) == false, "Metaverse: world is exist");
-        require(IWorld(_world).getMetaverse() == address(this), "Metaverse: metaverse is not match");
+        require(IAcertContract(_world).metaverseAddress() == address(this), "Metaverse: metaverse is not match");
         string memory _name = IWorld(_world).name();
         metaStorage.add(_world, _name);
         emit RegisterWorld(_world, _name);
@@ -446,7 +453,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, Context, Ownable, EIP712 {
     }
 
     function checkBWO(address _address) public view returns (bool) {
-        return (metaStorage.isOperator(_address) || _owner == _address);
+        return (metaStorage.isOperator(_address) || owner() == _address);
     }
 
     function getNonce(address _address) public view returns (uint256) {

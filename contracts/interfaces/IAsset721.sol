@@ -98,4 +98,6 @@ interface IAsset721 is IERC721Metadata, IAsset {
         uint256 startAt,
         uint256 endAt
     ) external view returns (uint256[] memory tokenIds);
+
+    function getNFTMetadataContract() external view returns (address);
 }

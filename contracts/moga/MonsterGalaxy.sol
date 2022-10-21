@@ -8,14 +8,15 @@ import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAsset721.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IAsset.sol";
+import "../interfaces/IAcertContract.sol";
 import "../storage/WorldStorage.sol";
-import "../common/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MonsterGalaxy is Context, IWorld, IApplyStorage, Ownable, EIP712 {
+contract MonsterGalaxy is Context, IWorld, IApplyStorage, IAcertContract, Ownable, EIP712 {
     string public override name;
     IMetaverse public metaverse;
     WorldStorage public worldStorage;
@@ -27,7 +28,6 @@ contract MonsterGalaxy is Context, IWorld, IApplyStorage, Ownable, EIP712 {
         string memory version_
     ) EIP712(name_, version_) {
         metaverse = IMetaverse(metaverse_);
-        _owner = _msgSender();
         name = name_;
         worldStorage = WorldStorage(worldStorage_);
     }
@@ -266,14 +266,14 @@ contract MonsterGalaxy is Context, IWorld, IApplyStorage, Ownable, EIP712 {
     }
 
     /**
-     * @dev See {IWorld-getMetaverse}.
+     * @dev See {IAcertContract-metaverseAddress}.
      */
-    function getMetaverse() public view override returns (address) {
+    function metaverseAddress() public view override returns (address) {
         return address(metaverse);
     }
 
     function checkBWO(address _address) public view returns (bool) {
-        return worldStorage.isOperator(_address) || _owner == _address;
+        return worldStorage.isOperator(_address) || owner() == _address;
     }
 
     function isOperator(address _address) public view returns (bool) {

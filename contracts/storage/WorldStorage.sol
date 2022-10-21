@@ -1,10 +1,12 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "../common/Ownable.sol";
 import "../interfaces/IAsset.sol";
+import "../interfaces/IWorld.sol";
+import "../interfaces/IAcertContract.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract WorldStorage is Ownable {
+contract WorldStorage is IAcertContract, Ownable {
     // struct Asset
     struct Asset {
         bool isExist;
@@ -36,12 +38,18 @@ contract WorldStorage is Ownable {
     address public world;
 
     constructor() {
-        _owner = msg.sender;
     }
 
     modifier onlyWorld() {
         require(world == msg.sender);
         _;
+    }
+
+    /**
+     * @dev See {IAcertContract-metaverseAddress}.
+     */
+    function metaverseAddress() public view override returns (address) {
+        return address(IAcertContract(world).metaverseAddress());
     }
 
     function updateWorld(address _address) public onlyOwner {

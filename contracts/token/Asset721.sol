@@ -6,7 +6,7 @@ import "../interfaces/IAsset721.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
 import "../interfaces/IApplyStorage.sol";
-import "../common/Ownable.sol";
+import "../interfaces/IAcertContract.sol";
 import "../storage/Asset721Storage.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -15,9 +15,9 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable {
+contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, Ownable {
     using Address for address;
     using Strings for uint256;
 
@@ -48,7 +48,14 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
         _tokenURI = tokenURI_;
         world = IWorld(world_);
         storageContract = Asset721Storage(storage_);
-        metaverse = IMetaverse(world.getMetaverse());
+        metaverse = IMetaverse(IAcertContract(world_).metaverseAddress());
+    }
+
+    /**
+     * @dev See {IAcertContract-metaverseAddress}.
+     */
+    function metaverseAddress() external view override returns (address) {
+        return address(metaverse);
     }
 
     /**
@@ -59,7 +66,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
     }
 
     function updateWorld(address _world) public onlyOwner {
-        require(address(metaverse) == IWorld(_world).getMetaverse(), "Asset721: metaverse not match");
+        require(address(metaverse) == IAcertContract(_world).metaverseAddress(), "Asset721: metaverse not match");
         world = IWorld(_world);
     }
 
@@ -150,6 +157,13 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, Ownable 
             items[i] = _ownedTokens(owner, startAt + i);
         }
         return items;
+    }
+
+    /**
+     * @dev See {IAsset721-getNFTMetadataContract}.
+     */
+    function getNFTMetadataContract() public view virtual override returns (address) {
+        return storageContract.nftMetadata.address;
     }
 
     function _beforeTokenTransfer(

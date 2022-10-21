@@ -6,13 +6,15 @@ import "../interfaces/IAsset20.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
 import "../interfaces/IApplyStorage.sol";
-import "../common/Ownable.sol";
+import "../interfaces/IAcertContract.sol";
 import "../storage/Asset20Storage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
+contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
     IWorld public world;
     IMetaverse public metaverse;
     Asset20Storage public storageContract;
@@ -31,7 +33,14 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
         _symbol = symbol_;
         world = IWorld(world_);
         storageContract = Asset20Storage(storage_);
-        metaverse = IMetaverse(world.getMetaverse());
+        metaverse = IMetaverse(IAcertContract(world_).metaverseAddress());
+    }
+
+    /**
+     * @dev See {IAcertContract-metaverseAddress}.
+     */
+    function metaverseAddress() external view override returns (address) {
+        return address(metaverse);
     }
 
     /**
@@ -42,7 +51,7 @@ contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, Ownable {
     }
 
     function updateWorld(address _address) public onlyOwner {
-        require(address(metaverse) == IWorld(_address).getMetaverse(), "Asset20: metaverse not match");
+        require(address(metaverse) == IAcertContract(_address).metaverseAddress(), "Asset20: metaverse not match");
         world = IWorld(_address);
     }
 

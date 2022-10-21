@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
-import "../interfaces/IAsset.sol";
+import "./IAsset.sol";
 
 interface IWorld {
     event AddOperator(address indexed operator);
@@ -30,6 +30,4 @@ interface IWorld {
     function checkBWOByAsset(address _address) external view returns (bool _isBWO);
 
     function isTrustByAsset(address _address, uint256 _id) external view returns (bool _isTrust);
-
-    function getMetaverse() external view returns (address _metaverse);
 }

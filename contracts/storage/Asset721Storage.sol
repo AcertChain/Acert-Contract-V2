@@ -1,9 +1,12 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "../common/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "../token/NFTMetadata.sol";
+import "../interfaces/IAsset721.sol";
+import "../interfaces/IAcertContract.sol";
 
-contract Asset721Storage is Ownable {
+contract Asset721Storage is IAcertContract, Ownable {
     // nonce
     mapping(address => uint256) public nonces;
 
@@ -26,14 +29,26 @@ contract Asset721Storage is Ownable {
     mapping(uint256 => uint256) public ownedTokensIndex;
 
     address public asset;
+    INFTMetadata public nftMetadata;
 
     constructor() {
-        _owner = msg.sender;
+        nftMetadata = new NFTMetadata(address(this));
     }
 
     modifier onlyAsset() {
         require(asset == msg.sender);
         _;
+    }
+
+    /**
+     * @dev See {IAcertContract-metaverseAddress}.
+     */
+    function metaverseAddress() public view override returns (address) {
+        return address(IAcertContract(asset).metaverseAddress());
+    }
+
+    function updateNFTMetadataContract() public onlyOwner {
+        nftMetadata = new NFTMetadata(address(this));
     }
 
     function updateAsset(address _address) public onlyOwner {
