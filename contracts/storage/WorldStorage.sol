@@ -37,8 +37,7 @@ contract WorldStorage is IAcertContract, Ownable {
 
     address public world;
 
-    constructor() {
-    }
+    constructor() {}
 
     modifier onlyWorld() {
         require(world == msg.sender);

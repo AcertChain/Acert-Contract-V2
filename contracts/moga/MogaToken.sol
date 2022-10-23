@@ -11,8 +11,7 @@ contract MogaToken is Asset20 {
         string memory version,
         address world,
         address storage_
-    ) Asset20(name, symbol, version, world, storage_) {
-    }
+    ) Asset20(name, symbol, version, world, storage_) {}
 
     function mint(address account, uint256 amount) public onlyOwner {
         _mint(account, amount);

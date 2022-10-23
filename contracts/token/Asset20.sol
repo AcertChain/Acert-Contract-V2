@@ -9,12 +9,11 @@ import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAcertContract.sol";
 import "../storage/Asset20Storage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Asset20 is Context, EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
+contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
     IWorld public world;
     IMetaverse public metaverse;
     Asset20Storage public storageContract;

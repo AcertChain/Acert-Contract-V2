@@ -12,12 +12,11 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, Ownable {
+contract Asset721 is EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, Ownable {
     using Address for address;
     using Strings for uint256;
 
@@ -163,7 +162,7 @@ contract Asset721 is Context, EIP712, ERC165, IAsset721, IApplyStorage, IAcertCo
      * @dev See {IAsset721-getNFTMetadataContract}.
      */
     function getNFTMetadataContract() public view virtual override returns (address) {
-        return storageContract.nftMetadata.address;
+        return address(storageContract.nftMetadata());
     }
 
     function _beforeTokenTransfer(

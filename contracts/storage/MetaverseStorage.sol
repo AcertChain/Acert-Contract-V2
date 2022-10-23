@@ -46,8 +46,7 @@ contract MetaverseStorage is IAcertContract, Ownable {
     uint256 public startId;
     uint256 public totalAccount;
 
-    constructor() {
-    }
+    constructor() {}
 
     /**
      * @dev See {IAcertContract-metaverseAddress}.

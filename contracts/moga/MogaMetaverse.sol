@@ -7,11 +7,10 @@ import "../interfaces/IMetaverse.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IAcertContract.sol";
 import "../storage/MetaverseStorage.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MogaMetaverse is IMetaverse, IApplyStorage, IAcertContract, Context, Ownable, EIP712 {
+contract MogaMetaverse is IMetaverse, IApplyStorage, IAcertContract, Ownable, EIP712 {
     MetaverseStorage public metaStorage;
 
     string public override name;

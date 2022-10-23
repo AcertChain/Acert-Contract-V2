@@ -12,8 +12,7 @@ contract MogaNFT is Asset721 {
         string memory tokenURI,
         address world,
         address storage_
-    ) Asset721(name, symbol, version, tokenURI, world, storage_) {
-    }
+    ) Asset721(name, symbol, version, tokenURI, world, storage_) {}
 
     function mint(address to, uint256 tokenId) public onlyOwner {
         _mint(to, tokenId);

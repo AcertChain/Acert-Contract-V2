@@ -13,8 +13,7 @@ contract Asset20Storage is IAcertContract, Ownable {
     uint256 public totalSupply;
     address public asset;
 
-    constructor() {
-    }
+    constructor() {}
 
     modifier onlyAsset() {
         require(asset == msg.sender);

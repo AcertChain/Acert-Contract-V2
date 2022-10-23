@@ -10,13 +10,12 @@ import "../interfaces/IAsset20.sol";
 import "../interfaces/IAsset.sol";
 import "../interfaces/IAcertContract.sol";
 import "../storage/WorldStorage.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MonsterGalaxy is Context, IWorld, IApplyStorage, IAcertContract, Ownable, EIP712 {
+contract MonsterGalaxy is IWorld, IApplyStorage, IAcertContract, Ownable, EIP712 {
     string public override name;
     IMetaverse public metaverse;
     WorldStorage public worldStorage;
