@@ -2,9 +2,18 @@
 pragma solidity ^0.8.0;
 
 interface INFTMetadata {
-    event SetString(address indexed assetContract, uint256 indexed tokenId, string key, string value);
+    enum ValueType {
+        STRING,
+        UINT256
+    }
 
-    event SetMetadata(address indexed assetContract, uint256 indexed tokenId, string key, uint256 value, string valueType);
+    event SetMetadata(
+        address indexed assetContract,
+        uint256 indexed tokenId,
+        string key,
+        string value,
+        ValueType valueType
+    );
 
     event RemoveMetadata(address indexed assetContract, uint256 indexed tokenId, string key);
 
@@ -14,22 +23,21 @@ interface INFTMetadata {
         uint256 tokenId,
         string memory key,
         string memory value,
-        string memory valueType
+        INFTMetadata.ValueType valueType
     ) external returns (bool);
 
     function batchSetMetadata(
-        uint256[] memory tokenId,
+        uint256[] memory tokenIds,
         string[][] memory keys,
         string[][] memory values,
-        string[][] memory valueTypes
+        INFTMetadata.ValueType[][] memory valueTypes
     ) external returns (bool);
 
     function getKeys(uint256 tokenId) external returns (string[] memory);
 
-    function getValue(uint256 tokenId, string memory key) external returns (string memory);
+    function getValue(uint256 tokenId, string memory key) external returns (string memory, INFTMetadata.ValueType);
 
     function removeMetadata(uint256 tokenId, string memory key) external returns (bool);
 
     function clearMetadata(uint256 tokenId) external returns (bool);
-
 }

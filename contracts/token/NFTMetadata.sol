@@ -32,10 +32,9 @@ library Utils {
 }
 
 contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
-    mapping(uint256 => mapping(string => string)) public stringMetadata;
-    mapping(uint256 => string[]) public stringMetadataKeys;
-    mapping(uint256 => mapping(string => uint256)) public uint256Metadata;
-    mapping(uint256 => string[]) public uint256MetadataKeys;
+    mapping(uint256 => mapping(string => string)) public metadata;
+    mapping(uint256 => mapping(string => INFTMetadata.ValueType)) public metadataTypes;
+    mapping(uint256 => string[]) public metadataKeys;
 
     address public assetStorageContract;
 
@@ -51,113 +50,86 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
         return address(IAcertContract(assetStorageContract).metaverseAddress());
     }
 
-    function setString(
+    function setMetadata(
         uint256 tokenId,
         string memory key,
-        string memory value
+        string memory value,
+        INFTMetadata.ValueType valueType
     ) public override onlyOwner returns (bool) {
-        stringMetadata[tokenId][key] = value;
-        stringMetadataKeys[tokenId].push(key);
-        emit SetString(assetStorageContract, tokenId, key, value);
+        require(tokenId > 0, "tokenId must be greater than 0");
+        require(bytes(key).length > 0, "key cannot be empty");
+        require(bytes(value).length > 0, "value cannot be empty");
+
+        metadata[tokenId][key] = value;
+        metadataKeys[tokenId].push(key);
+        metadataTypes[tokenId][key] = valueType;
+        emit SetMetadata(assetStorageContract, tokenId, key, value, valueType);
         return true;
     }
 
-    function setStringBatch(
+    function batchSetMetadata(
         uint256[] memory tokenIds,
         string[][] memory keys,
-        string[][] memory values
+        string[][] memory values,
+        INFTMetadata.ValueType[][] memory valueTypes
     ) public override onlyOwner returns (bool) {
-        require(tokenIds.length == keys.length, "tokenIds and keys length mismatch");
-        require(tokenIds.length == values.length, "tokenIds and values length mismatch");
+        require(
+            tokenIds.length == keys.length && tokenIds.length == values.length && tokenIds.length == valueTypes.length,
+            "tokenIds and keys and values and types length mismatch"
+        );
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             for (uint256 j = 0; j < keys[i].length; j++) {
-                setString(tokenIds[i], keys[i][j], values[i][j]);
+                uint256 tokenId = tokenIds[i];
+                string memory key = keys[i][j];
+                string memory value = values[i][j];
+                INFTMetadata.ValueType valueType = valueTypes[i][j];
+                require(tokenId > 0, "tokenId must be greater than be 0");
+                require(bytes(key).length > 0, "key cannot be empty");
+                require(bytes(value).length > 0, "value cannot be empty");
+
+                metadata[tokenId][key] = value;
+                metadataKeys[tokenId].push(key);
+                metadataTypes[tokenId][key] = valueType;
+                emit SetMetadata(assetStorageContract, tokenId, key, value, valueType);
             }
         }
-
         return true;
     }
 
-    function deleteString(uint256 tokenId, string memory key) public override onlyOwner returns (bool) {
-        delete stringMetadata[tokenId][key];
+    function getKeys(uint256 tokenId) public view override onlyOwner returns (string[] memory) {
+        return metadataKeys[tokenId];
+    }
 
-        (bool found, uint256 index) = Utils.search(stringMetadataKeys[tokenId], key);
+    function getValue(uint256 tokenId, string memory key)
+        public
+        view
+        override
+        onlyOwner
+        returns (string memory, INFTMetadata.ValueType)
+    {
+        return (metadata[tokenId][key], metadataTypes[tokenId][key]);
+    }
+
+    function removeMetadata(uint256 tokenId, string memory key) public override onlyOwner returns (bool) {
+        (bool found, uint256 index) = Utils.search(metadataKeys[tokenId], key);
         if (found) {
-            Utils.remove(stringMetadataKeys[tokenId], index);
+            Utils.remove(metadataKeys[tokenId], index);
         }
-
-        emit DeleteStringByKey(assetStorageContract, tokenId, key);
-        return true;
-    }
-
-    function getStringKeys(uint256 tokenId) public view override returns (string[] memory) {
-        return stringMetadataKeys[tokenId];
-    }
-
-    function getString(uint256 tokenId, string memory key) public view override returns (string memory) {
-        return stringMetadata[tokenId][key];
-    }
-
-    function setUint256(
-        uint256 tokenId,
-        string memory key,
-        uint256 value
-    ) public override onlyOwner returns (bool) {
-        uint256Metadata[tokenId][key] = value;
-        uint256MetadataKeys[tokenId].push(key);
-        emit SetUint256(assetStorageContract, tokenId, key, value);
-        return true;
-    }
-
-    function setUint256Batch(
-        uint256[] memory tokenIds,
-        string[][] memory keys,
-        uint256[][] memory values
-    ) public override onlyOwner returns (bool) {
-        require(tokenIds.length == keys.length, "tokenIds and keys length mismatch");
-        require(tokenIds.length == values.length, "tokenIds and values length mismatch");
-
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            for (uint256 j = 0; j < keys[i].length; j++) {
-                setUint256(tokenIds[i], keys[i][j], values[i][j]);
-            }
-        }
-
-        return true;
-    }
-
-    function deleteUint256(uint256 tokenId, string memory key) public override onlyOwner returns (bool) {
-        delete uint256Metadata[tokenId][key];
-
-        (bool found, uint256 index) = Utils.search(uint256MetadataKeys[tokenId], key);
-        if (found) {
-            Utils.remove(uint256MetadataKeys[tokenId], index);
-        }
-
-        emit DeleteUint256ByKey(assetStorageContract, tokenId, key);
+        delete metadata[tokenId][key];
+        delete metadataTypes[tokenId][key];
         return true;
     }
 
     function clearMetadata(uint256 tokenId) public override onlyOwner returns (bool) {
-        for (uint256 i = 0; i < stringMetadataKeys[tokenId].length; i++) {
-            delete stringMetadata[tokenId][stringMetadataKeys[tokenId][i]];
+        for (uint256 i = 0; i < metadataKeys[tokenId].length; i++) {
+            string memory key =  metadataKeys[tokenId][i];
+            delete metadata[tokenId][key];
+            delete metadataTypes[tokenId][key];
         }
-        delete stringMetadataKeys[tokenId];
-        
-        for (uint256 i = 0; i < uint256MetadataKeys[tokenId].length; i++) {
-            delete uint256Metadata[tokenId][uint256MetadataKeys[tokenId][i]];
-        }
-        delete uint256MetadataKeys[tokenId];
+        delete metadataKeys[tokenId];
+
         emit ClearMetadata(assetStorageContract, tokenId);
         return true;
-    }
-
-    function getUint256Keys(uint256 tokenId) public view override returns (string[] memory) {
-        return uint256MetadataKeys[tokenId];
-    }
-
-    function getUint256(uint256 tokenId, string memory key) public view override returns (uint256) {
-        return uint256Metadata[tokenId][key];
     }
 }
