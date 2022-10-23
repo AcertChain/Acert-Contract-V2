@@ -91,14 +91,6 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
         return true;
     }
 
-    function deleteString(uint256 tokenId) public override onlyOwner returns (bool) {
-        for (uint256 i = 0; i < stringMetadataKeys[tokenId].length; i++) {
-            delete stringMetadata[tokenId][stringMetadataKeys[tokenId][i]];
-        }
-        delete stringMetadataKeys[tokenId];
-        return true;
-    }
-
     function getStringKeys(uint256 tokenId) public view override returns (string[] memory) {
         return stringMetadataKeys[tokenId];
     }
@@ -147,12 +139,17 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
         return true;
     }
 
-    function deleteUint256(uint256 tokenId) public override onlyOwner returns (bool) {
+    function clearMetadata(uint256 tokenId) public override onlyOwner returns (bool) {
+        for (uint256 i = 0; i < stringMetadataKeys[tokenId].length; i++) {
+            delete stringMetadata[tokenId][stringMetadataKeys[tokenId][i]];
+        }
+        delete stringMetadataKeys[tokenId];
+        
         for (uint256 i = 0; i < uint256MetadataKeys[tokenId].length; i++) {
             delete uint256Metadata[tokenId][uint256MetadataKeys[tokenId][i]];
         }
         delete uint256MetadataKeys[tokenId];
-        emit DeleteUint256(assetStorageContract, tokenId);
+        emit ClearMetadata(assetStorageContract, tokenId);
         return true;
     }
 
