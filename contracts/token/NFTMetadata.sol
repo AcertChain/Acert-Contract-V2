@@ -8,6 +8,15 @@ import "../interfaces/IAcertContract.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 library Utils {
+    function set(string[] storage arr, string memory value) internal {
+        for (uint256 i = 0; i < arr.length; i++) {
+            if (keccak256(abi.encodePacked(arr[i])) == keccak256(abi.encodePacked(value))) {
+                return;
+            }
+        }
+        arr.push(value);
+    }
+
     function remove(string[] storage arr, uint256 _index) public {
         require(_index < arr.length, "index out of bound");
 
@@ -39,6 +48,8 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
     address public assetStorageContract;
 
     constructor(address _assetStorageContract, address _owner) {
+        require(_assetStorageContract != address(0), "AssetStorage contract address cannot be 0");
+        require(_owner != address(0), "Owner address cannot be 0");
         assetStorageContract = _assetStorageContract;
         _transferOwnership(_owner);
     }
@@ -61,7 +72,7 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
         require(bytes(value).length > 0, "value cannot be empty");
 
         metadata[tokenId][key] = value;
-        metadataKeys[tokenId].push(key);
+        Utils.set(metadataKeys[tokenId], key);
         metadataTypes[tokenId][key] = valueType;
         emit SetMetadata(assetStorageContract, tokenId, key, value, valueType);
         return true;
@@ -89,7 +100,7 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
                 require(bytes(value).length > 0, "value cannot be empty");
 
                 metadata[tokenId][key] = value;
-                metadataKeys[tokenId].push(key);
+                Utils.set(metadataKeys[tokenId], key);
                 metadataTypes[tokenId][key] = valueType;
                 emit SetMetadata(assetStorageContract, tokenId, key, value, valueType);
             }
@@ -112,6 +123,9 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
     }
 
     function removeMetadata(uint256 tokenId, string memory key) public override onlyOwner returns (bool) {
+        require(tokenId > 0, "tokenId must be greater than 0");
+        require(bytes(key).length > 0, "key cannot be empty");
+
         (bool found, uint256 index) = Utils.search(metadataKeys[tokenId], key);
         if (found) {
             Utils.remove(metadataKeys[tokenId], index);
@@ -122,8 +136,9 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
     }
 
     function clearMetadata(uint256 tokenId) public override onlyOwner returns (bool) {
+        require(tokenId > 0, "tokenId must be greater than 0");
         for (uint256 i = 0; i < metadataKeys[tokenId].length; i++) {
-            string memory key =  metadataKeys[tokenId][i];
+            string memory key = metadataKeys[tokenId][i];
             delete metadata[tokenId][key];
             delete metadataTypes[tokenId][key];
         }
