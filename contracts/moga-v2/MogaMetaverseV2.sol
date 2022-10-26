@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../moga/MogaMetaverse.sol";
 
-contract ImportMogaMetaverseV1 is MogaMetaverse {
+contract MogaMetaverseV2 is MogaMetaverse {
     constructor(
         string memory name_,
         string memory version_,

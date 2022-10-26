@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../moga/MogaNFT.sol";
 
-contract ImportMogaNFTV1 is MogaNFT {
+contract MogaNFTV2 is MogaNFT {
     constructor(
         string memory name,
         string memory symbol,

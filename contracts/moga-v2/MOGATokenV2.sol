@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../moga/MogaToken.sol";
 
-contract ImportMogaTokenV1 is MogaToken {
+contract MogaTokenV2 is MogaToken {
     constructor(
         string memory name,
         string memory symbol,
