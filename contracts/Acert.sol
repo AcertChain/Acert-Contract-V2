@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Acert is Ownable {
     event SetMetaverse(address indexed metaverse, string name, address indexed storageAddress, bool enabled);
-    event RemarkAddress(address indexed adddr, string remark, string class);
+    event RemarkAddress(address indexed addr, string remark, string class);
 
     mapping(address => bool) public metaverseEnabled;
     mapping(address => string) public remarks;
