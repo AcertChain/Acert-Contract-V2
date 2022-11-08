@@ -131,7 +131,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, IAcertContract, Ownable, EI
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("trustAdminBWOParamsVerify(uint256 id,bool isTrustAdmin,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256("trustAdminBWO(uint256 id,bool isTrustAdmin,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         _isTrustAdmin,
                         sender,
@@ -195,7 +195,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, IAcertContract, Ownable, EI
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("freezeAccountBWOParamsVerify(uint256 id,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256("freezeAccountBWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         sender,
                         nonce,
@@ -279,7 +279,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, IAcertContract, Ownable, EI
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("addAuthAddressBWOParamsVerfiy(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256("addAuthAddressBWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         _address,
                         sender,
@@ -370,7 +370,7 @@ contract MogaMetaverse is IMetaverse, IApplyStorage, IAcertContract, Ownable, EI
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("removeAuthAddressBWOParamsVerfiy(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256("removeAuthAddressBWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         _address,
                         sender,
