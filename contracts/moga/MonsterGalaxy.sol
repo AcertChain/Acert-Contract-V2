@@ -131,7 +131,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, IAcertContract, Ownable, EIP712
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 id,address contract,bool flag,address sender,uint256 nonce,uint256 deadline)"
+                            "trustContractBWOParamsVerify(uint256 id,address contract,bool flag,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         _id,
                         _address,
@@ -191,7 +191,7 @@ contract MonsterGalaxy is IWorld, IApplyStorage, IAcertContract, Ownable, EIP712
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("BWO(uint256 id,bool flag,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256("trustWorldBWOParamsVerify(uint256 id,bool flag,address sender,uint256 nonce,uint256 deadline)"),
                         _id,
                         _isTrustWorld,
                         sender,

@@ -240,7 +240,7 @@ contract Asset721 is EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, O
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("BWO(address spender,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256("approveBWOParamsVerify(address spender,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"),
                         spender,
                         tokenId,
                         sender,
@@ -327,7 +327,7 @@ contract Asset721 is EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, O
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 from,address to,bool approved,address sender,uint256 nonce,uint256 deadline)"
+                            "setApprovalForAllBWOParamsVerify(uint256 from,address to,bool approved,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         accountId,
                         operator,
@@ -457,7 +457,7 @@ contract Asset721 is EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, O
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
+                            "transferFromBWOParamsVerify(uint256 from,uint256 to,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         fromAccount,
                         toAccount,
@@ -574,7 +574,7 @@ contract Asset721 is EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, O
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 from,uint256 to,uint256 tokenId,bytes data,address sender,uint256 nonce,uint256 deadline)"
+                            "safeTransferFromBWOParamsVerify(uint256 from,uint256 to,uint256 tokenId,bytes data,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         from,
                         to,

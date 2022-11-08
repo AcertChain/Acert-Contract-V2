@@ -287,7 +287,7 @@ contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 from,uint256 to,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
+                            "transferBWOParamsVerify(uint256 from,uint256 to,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         fromAccount,
                         toAccount,
@@ -388,7 +388,7 @@ contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "BWO(uint256 ownerId,address spender,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
+                            "approveBWOParamsVerify(uint256 ownerId,address spender,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         ownerId,
                         spender,
