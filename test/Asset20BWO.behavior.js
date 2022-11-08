@@ -392,7 +392,7 @@ function signApproveData(chainId, verifyingContract, name, key, version,
   const data = {
     types: {
       EIP712Domain,
-      BWO: [{
+      approveBWO: [{
         name: 'ownerId',
         type: 'uint256'
       },
@@ -424,7 +424,7 @@ function signApproveData(chainId, verifyingContract, name, key, version,
       chainId,
       verifyingContract
     },
-    primaryType: 'BWO',
+    primaryType: 'approveBWO',
     message: {
       ownerId,
       spender,
@@ -447,7 +447,7 @@ function signTransferData(chainId, verifyingContract, name, key, version,
   const data = {
     types: {
       EIP712Domain,
-      BWO: [{
+      transferFromBWO: [{
         name: 'from',
         type: 'uint256'
       },
@@ -479,7 +479,7 @@ function signTransferData(chainId, verifyingContract, name, key, version,
       chainId,
       verifyingContract
     },
-    primaryType: 'BWO',
+    primaryType: 'transferFromBWO',
     message: {
       from,
       to,

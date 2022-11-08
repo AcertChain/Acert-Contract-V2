@@ -45,8 +45,6 @@ const {
 } = require('./Asset20BWO.proxy');
 
 contract('Asset20', function (accounts) {
-  // deploy World contract
-  beforeEach(async function () { });
 
   const [initialHolder, recipient, anotherAccount, authAccount] = accounts;
 

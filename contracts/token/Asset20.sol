@@ -249,7 +249,7 @@ contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
         bytes memory signature
     ) public virtual override returns (bool) {
         _checkBWOByAsset(_msgSender());
-        transferBWOParamsVerify(fromAccount, toAccount, amount, sender, deadline, signature);
+        transferFromBWOParamsVerify(fromAccount, toAccount, amount, sender, deadline, signature);
 
         if (_getAccountIdByAddress(sender) != fromAccount) {
             _spendAllowance(fromAccount, _getAddressByAccountId(fromAccount), sender, amount, true, sender);
@@ -271,7 +271,7 @@ contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
         return true;
     }
 
-    function transferBWOParamsVerify(
+    function transferFromBWOParamsVerify(
         uint256 fromAccount,
         uint256 toAccount,
         uint256 amount,
@@ -287,7 +287,7 @@ contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "transferBWO(uint256 from,uint256 to,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
+                            "transferFromBWO(uint256 from,uint256 to,uint256 amount,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         fromAccount,
                         toAccount,

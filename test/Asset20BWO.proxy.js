@@ -111,7 +111,7 @@ function shouldBehaveLikeAsset20ProxyBWO(errorPrefix, initialSupply, initialHold
       const nonce = await this.Metaverse.getNonce(initialHolder);
 
       const BWOType = {
-        BWO: [
+        addAuthAddressBWO: [
           {
             name: 'id',
             type: 'uint256'
@@ -196,7 +196,7 @@ function shouldBehaveLikeAsset20ProxyBWO(errorPrefix, initialSupply, initialHold
 
     it('approveAssetBWO proxy', async function () {
       const nonce = await this.token.getNonce(authAccount);
-      
+
       domain = {
         name: this.tokenName,
         version: this.tokenVersion,
@@ -205,7 +205,7 @@ function shouldBehaveLikeAsset20ProxyBWO(errorPrefix, initialSupply, initialHold
       };
 
       const BWOType = {
-        BWO: [
+        approveBWO: [
           {
             name: 'ownerId',
             type: 'uint256'
@@ -263,7 +263,7 @@ function shouldBehaveLikeAsset20ProxyBWO(errorPrefix, initialSupply, initialHold
       };
 
       const BWOType = {
-        BWO: [
+        transferFromBWO: [
           {
             name: 'from',
             type: 'uint256'
@@ -302,265 +302,6 @@ function shouldBehaveLikeAsset20ProxyBWO(errorPrefix, initialSupply, initialHold
 
   });
 }
-
-function signApproveData(chainId, verifyingContract, name, key, version,
-  ownerId, spender, amount, sender, deadline, nonce) {
-  const data = {
-    types: {
-      EIP712Domain,
-      BWO: [{
-        name: 'ownerId',
-        type: 'uint256'
-      },
-      {
-        name: 'spender',
-        type: 'address'
-      },
-      {
-        name: 'amount',
-        type: 'uint256'
-      },
-      {
-        name: 'sender',
-        type: 'address'
-      },
-      {
-        name: 'nonce',
-        type: 'uint256'
-      },
-      {
-        name: 'deadline',
-        type: 'uint256'
-      },
-      ],
-    },
-    domain: {
-      name,
-      version,
-      chainId,
-      verifyingContract
-    },
-    primaryType: 'BWO',
-    message: {
-      ownerId,
-      spender,
-      amount,
-      sender,
-      nonce,
-      deadline
-    },
-  };
-
-  const signature = ethSigUtil.signTypedMessage(key, {
-    data
-  });
-
-  return signature;
-}
-
-function signTransferData(chainId, verifyingContract, name, key, version,
-  sender, from, to, value, deadline, nonce) {
-  const data = {
-    types: {
-      EIP712Domain,
-      BWO: [{
-        name: 'from',
-        type: 'uint256'
-      },
-      {
-        name: 'to',
-        type: 'uint256'
-      },
-      {
-        name: 'value',
-        type: 'uint256'
-      },
-      {
-        name: 'sender',
-        type: 'address'
-      },
-      {
-        name: 'nonce',
-        type: 'uint256'
-      },
-      {
-        name: 'deadline',
-        type: 'uint256'
-      },
-      ],
-    },
-    domain: {
-      name,
-      version,
-      chainId,
-      verifyingContract
-    },
-    primaryType: 'BWO',
-    message: {
-      from,
-      to,
-      value,
-      sender,
-      nonce,
-      deadline
-    },
-  };
-
-  const signature = ethSigUtil.signTypedMessage(key, {
-    data
-  });
-
-  return signature;
-}
-
-function signAddAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
-  const data = {
-    types: {
-      EIP712Domain,
-      BWO: [{
-        name: 'id',
-        type: 'uint256'
-      },
-      {
-        name: 'addr',
-        type: 'address'
-      },
-      {
-        name: 'sender',
-        type: 'address'
-      },
-      {
-        name: 'nonce',
-        type: 'uint256'
-      },
-      {
-        name: 'deadline',
-        type: 'uint256'
-      },
-      ],
-    },
-    domain: {
-      name,
-      version,
-      chainId,
-      verifyingContract
-    },
-    primaryType: 'BWO',
-    message: {
-      id,
-      addr,
-      sender,
-      nonce,
-      deadline
-    },
-  };
-
-  const signature = ethSigUtil.signTypedMessage(key, {
-    data
-  });
-
-  return signature;
-}
-
-
-function signAddAuthAddress(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
-  const data = {
-    types: {
-      EIP712Domain,
-      AddAuth: [{
-        name: 'id',
-        type: 'uint256'
-      },
-      {
-        name: 'addr',
-        type: 'address'
-      },
-      {
-        name: 'sender',
-        type: 'address'
-      },
-      {
-        name: 'nonce',
-        type: 'uint256'
-      },
-      {
-        name: 'deadline',
-        type: 'uint256'
-      },
-      ],
-    },
-    domain: {
-      name,
-      version,
-      chainId,
-      verifyingContract
-    },
-    primaryType: 'AddAuth',
-    message: {
-      id,
-      addr,
-      sender,
-      nonce,
-      deadline
-    },
-  };
-
-  const signature = ethSigUtil.signTypedMessage(key, {
-    data
-  });
-
-  return signature;
-}
-
-function signRemoveAuthAddressBWO(chainId, verifyingContract, name, key, version, id, addr, sender, nonce, deadline) {
-  const data = {
-    types: {
-      EIP712Domain,
-      BWO: [{
-        name: 'id',
-        type: 'uint256'
-      },
-      {
-        name: 'addr',
-        type: 'address'
-      },
-      {
-        name: 'sender',
-        type: 'address'
-      },
-      {
-        name: 'nonce',
-        type: 'uint256'
-      },
-      {
-        name: 'deadline',
-        type: 'uint256'
-      },
-      ],
-    },
-    domain: {
-      name,
-      version,
-      chainId,
-      verifyingContract
-    },
-    primaryType: 'BWO',
-    message: {
-      id,
-      addr,
-      sender,
-      nonce,
-      deadline
-    },
-  };
-
-  const signature = ethSigUtil.signTypedMessage(key, {
-    data
-  });
-
-  return signature;
-}
-
 
 module.exports = {
   shouldBehaveLikeAsset20ProxyBWO,
