@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract WorldStorage is IAcertContract, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private assets;
+    EnumerableSet.AddressSet private safeContracts;
 
     // Mapping from address to trust contract
     mapping(address => bool) public isSafeContract;
@@ -41,7 +42,7 @@ contract WorldStorage is IAcertContract, Ownable {
     }
 
     function updateWorld(address _address) public onlyOwner {
-        require(_address != address(0));
+        require(_address != address(0), "Wrold: address is zero");
         world = _address;
     }
 
@@ -53,15 +54,14 @@ contract WorldStorage is IAcertContract, Ownable {
         nonces[_sender]++;
     }
 
-    function assetContains(address addr) public view returns (bool) {
-        return assets.contains(addr);
+    function assetContains(address _address) public view returns (bool) {
+        return assets.contains(_address);
     }
 
-    function addAsset(address addr) public onlyWorld {
-        if (!assets.contains(addr)) {
-            assets.add(addr);
-            isEnabledAsset[addr] = true;
-        }
+    function addAsset(address _address) public onlyWorld {
+        require(!assets.contains(_address), "World: asset is already exist");
+        assets.add(_address);
+        isEnabledAsset[_address] = true;
     }
 
     function getAssets() public view returns (address[] memory) {
@@ -72,23 +72,30 @@ contract WorldStorage is IAcertContract, Ownable {
         return assets.length();
     }
 
-    function enableAsset(address addr) public onlyWorld {
-        require(assets.contains(addr), "World: asset is not exist");
-        isEnabledAsset[addr] = true;
+    function enableAsset(address _address) public onlyWorld {
+        require(assets.contains(_address), "World: asset is not exist");
+        isEnabledAsset[_address] = true;
     }
 
-    function disableAsset(address addr) public onlyWorld {
-        require(assets.contains(addr), "World: asset is not exist");
-        isEnabledAsset[addr] = false;
+    function disableAsset(address _address) public onlyWorld {
+        require(assets.contains(_address), "World: asset is not exist");
+        isEnabledAsset[_address] = false;
     }
 
     function addSafeContract(address _address) public onlyWorld {
+        require(!safeContracts.contains(_address), "World: safeContract is already exist");
+        safeContracts.add(_address);
         isSafeContract[_address] = true;
     }
 
     function removeSafeContract(address _address) public onlyWorld {
-        require(isSafeContract[_address], "World: safeContract is not exist");
+        require(safeContracts.contains(_address), "World: safeContract is not exist");
+        safeContracts.remove(_address);
         isSafeContract[_address] = false;
+    }
+
+    function getSafeContracts() public view returns (address[] memory) {
+        return safeContracts.values();
     }
 
     function setTrustContractByAccountId (

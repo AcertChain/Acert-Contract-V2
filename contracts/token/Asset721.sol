@@ -795,7 +795,11 @@ contract Asset721 is EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, O
     }
 
     function _getOrCreateAccountId(address _address) internal returns (uint256) {
-        return metaverse.getOrCreateAccountId(_address);
+        if (_address != address(0) && metaverse.getAccountIdByAddress(_address) == 0) {
+            return metaverse.createAccount(_address, false);
+        } else {
+            return metaverse.getAccountIdByAddress(_address);
+        }
     }
 
     function _getAddressByAccountId(uint256 _id) internal view returns (address) {
@@ -803,7 +807,7 @@ contract Asset721 is EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, O
     }
 
     function _isFreeze(uint256 _id) internal view returns (bool) {
-        return metaverse.isFreeze(_id);
+        return metaverse.accountIsFreeze(_id);
     }
 
     function _checkSender(uint256 ownerId, address sender) internal view {
@@ -815,7 +819,7 @@ contract Asset721 is EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, O
     }
 
     function _checkBWOByAsset(address _sender) internal view {
-        require(world.checkBWOByAsset(_sender), "Asset721: sender is not BWO");
+        require(world.checkBWO(_sender), "Asset721: sender is not BWO");
     }
 
     function _recoverSig(

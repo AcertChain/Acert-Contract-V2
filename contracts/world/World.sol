@@ -1,49 +1,57 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "../interfaces/IMetaverse.sol";
+import "../interfaces/IWorld.sol";
 import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Metaverse is ShellContract, IMetaverse, IAcertContract {
+contract World is IWorld, IWorldShell, ShellContract, IAcertContract {
     
-    function core() internal view returns (IMetaverse) {
-        return IMetaverse(coreContract);
+    function core() internal view returns (IWorldCore) {
+        return IWorldCore(coreContract);
     }
-    function emitAddOperator(address operator_) public onlyCore {
+
+    //IWorldShell
+    function emitAddOperator(address operator_) public override onlyCore {
         emit AddOperator(operator_);
     }
-    function emitRemoveOperator(address operator_) public onlyCore {
-        emit RemoveOperator(operator_);
+    function emitRemoveOperator(address operator_) public override onlyCore {
+        emit AddOperator(operator_);
     }
-    function emitRegisterWorld(address world_, string memory name_) public onlyCore {
-        emit RegisterWorld(world_, name_);
+    function emitRegisterAsset(address _asset) public override onlyCore {
+        emit RegisterAsset(_asset);
     }
-    function emitDisableWorld(address world_) public onlyCore {
-        emit DisableWorld(world_);
+    function emitEnableAsset(address _asset) public override onlyCore {
+        emit EnableAsset(_asset);
     }
-    function emitCreateAccount(uint256 accountId_, address authAddress_, bool isTrustAdmin_) public onlyCore {
-        emit CreateAccount(accountId_, authAddress_, isTrustAdmin_);
+    function emitDisableAsset(address _asset) public override onlyCore {
+        emit DisableAsset(_asset);
     }
-    function emitTrustAdmin(uint256 accountId_, bool isTrustAdmin_, bool isBWO, address sender_, uint256 nonce_) public onlyCore {
-        emit TrustAdmin(accountId_, isTrustAdmin_,  isBWO, sender_, nonce_);
+    function emitAddSafeContract(address _contract) public override onlyCore {
+        emit AddSafeContract(_contract);
     }
-    function emitFreezeAccount(uint256 accountId_, bool isBWO_, address sender_, uint256 nonce_) public onlyCore {
-        emit FreezeAccount(accountId_,  isBWO_, sender_, nonce_);
+    function emitRemoveSafeContract(address _contract) public override onlyCore {
+        emit RemoveSafeContract(_contract);
     }
-    function emitUnFreezeAccount(uint256 accountId_, address newAuthAddress_) public onlyCore {
-        emit UnFreezeAccount(accountId_, newAuthAddress_);
+    function emitTrustWorld(
+        uint256 _accountId,
+        bool _isTrustWorld,
+        bool isBWO,
+        address sender,
+        uint256 nonce
+    ) public override onlyCore {
+        emit TrustWorld(_accountId, _isTrustWorld, isBWO, sender, nonce);
     }
-    function emitAuthAddressChanged(
-        uint256 accountId_,
-        address authAddress_,
-        OperationEnum operation_,
-        bool isBWO_,
-        address sender_,
-        uint256 nonce_
-    ) public onlyCore {
-        emit AuthAddressChanged(accountId_, authAddress_, operation_, isBWO_, sender_, nonce_);
+    function emitTrustContract(
+        uint256 _accountId,
+        address _safeContract,
+        bool _isTrustContract,
+        bool isBWO,
+        address sender,
+        uint256 nonce
+    ) public override onlyCore {
+        emit TrustContract(_accountId, _safeContract,_isTrustContract, isBWO, sender, nonce);
     }
 
     /**
@@ -53,157 +61,71 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
         return address(this);
     }
 
-    //metaverse
+    //IWorld
 
     /**
-     * @dev See {IMetaverse-name}.
+     * @dev See {IWorld-name}.
      */
     function name() public view override returns (string memory) {
-        return IMetaverse(coreContract).name();
+        return core().name();
     }
 
     /**
-     * @dev See {IMetaverse-version}.
+     * @dev See {IWorld-version}.
      */
     function version() public view override returns (string memory) {
-        return IMetaverse(coreContract).version();
+        return core().version();
     }
-
 
     // account
-
-    /**
-     * @dev See {IMetaverse-createAccount}.
-     */
-    function createAccount(address _address, bool _isTrustAdmin) public override returns (uint256 id) {
-        return core().createAccount(_address, _isTrustAdmin);
+    function isTrustWorld(uint256 _id) public view override returns (bool _isTrustWorld) {
+        return core().isTrustWorld(_id);
     }
 
-    /**
-     * @dev See {IMetaverse-getOrCreateAccountId}.
-     */
-    function getOrCreateAccountId(address _address) public override returns (uint256 id) {
-        return core().getOrCreateAccountId(_address);
+    function isTrustContract(address _contract, uint256 _id) public view override returns (bool _isTrustContract) {
+        return core().isTrustContract(_contract, _id);
+    }
+
+    function isTrust(address _contract, uint256 _id) public view override returns (bool _isTrust) {
+        return core().isTrust(_contract, _id);
+        
+    }
+
+    // asset
+    function getAssets() public view override returns (address[] memory) {
+        return core().getAssets();
+    }
+
+    function isEnabledAsset(address _address) public view override returns (bool) {
+        return core().isEnabledAsset(_address);
+    }
+
+    // safeContract
+    function getSafeContracts() public view override returns (address[] memory) {
+        return core().getSafeContracts();
+    }
+
+    function isSafeContract(address _address) public view override returns (bool) {
+        return core().isSafeContract(_address);
+    }
+
+    function checkBWO(address _address) public view override returns (bool) {
+        return core().checkBWO(_address);
+    }
+
+    function trustContract(uint256 _id, address _contract, bool _isTrustContract) public override {
+        return core().trustContract_(_msgSender(), _id, _contract, _isTrustContract);
     }
     
-    /**
-     * @dev See {IMetaverse-addAuthAddress}.
-     */
-    function addAuthAddress(uint256 _id, address _address, uint256 deadline, bytes memory signature) public override {
-        return core().addAuthAddress(_id, _address, deadline, signature);
-    }
-
-    /**
-     * @dev See {IMetaverse-addAuthAddressBWO}.
-     */
-    function addAuthAddressBWO(uint256 _id, address _address, address sender, uint256 deadline, bytes memory signature, bytes memory authSignature) public override {
-        return core().addAuthAddressBWO(_id, _address, sender, deadline, signature, authSignature);
+    function trustContractBWO(uint256 _id, address _contract, bool _isTrustContract, address sender, uint256 deadline, bytes memory signature) public override {
+        return core().trustContractBWO_(_msgSender(), _id, _contract, _isTrustContract, sender, deadline, signature);
     }
     
-    /**
-     * @dev See {IMetaverse-removeAuthAddress}.
-     */
-    function removeAuthAddress(uint256 _id, address _address) public override {
-        return core().removeAuthAddress(_id, _address);
-    }
-    
-    /**
-     * @dev See {IMetaverse-removeAuthAddressBWO}.
-     */
-    function removeAuthAddressBWO( uint256 _id, address _address, address sender, uint256 deadline, bytes memory signature) public override {
-        return core().removeAuthAddressBWO(_id, _address, sender, deadline, signature);
+    function trustWorld(uint256 _id, bool _isTrustWorld) public override {
+        return core().trustWorld_(_msgSender(), _id, _isTrustWorld);
     }
 
-    /**
-     * @dev See {IMetaverse-trustAdmin}.
-     */
-    function trustAdmin(uint256 _id, bool _isTrustAdmin) public override {
-        return core().trustAdmin(_id, _isTrustAdmin);
+    function trustWorldBWO(uint256 _id, bool _isTrustWorld, address sender, uint256 deadline, bytes memory signature) public override {
+        return core().trustWorldBWO_(_msgSender(), _id, _isTrustWorld, sender, deadline, signature);
     }
-
-    /**
-     * @dev See {IMetaverse-trustAdminBWO}.
-     */
-    function trustAdminBWO(uint256 _id, bool _isTrustAdmin, address sender, uint256 deadline, bytes memory signature) public override {
-        return core().trustAdminBWO(_id, _isTrustAdmin, sender, deadline, signature);
-    }
-
-    /**
-     * @dev See {IMetaverse-freezeAccount}.
-     */
-    function freezeAccount(uint256 _id) public override {
-        return core().freezeAccount(_id);
-    }
-
-    /**
-     * @dev See {IMetaverse-freezeAccountBWO}.
-     */
-    function freezeAccountBWO(uint256 _id, address sender, uint256 deadline, bytes memory signature) public override {
-        return core().freezeAccountBWO(_id, sender, deadline, signature);
-    }
-
-    /**
-     * @dev See {IMetaverse-getAccountIdByAddress}.
-     */
-    function getAccountIdByAddress(address _address) public view override returns (uint256 _id) {
-        return core().getAccountIdByAddress(_address);
-    }
-
-    /**
-     * @dev See {IMetaverse-getAddressByAccountId}.
-     */
-    function getAddressByAccountId(uint256 _id) public view override returns (address _address) {
-        return core().getAddressByAccountId(_id);
-    }
-
-    /**
-     * @dev See {IMetaverse-getAccountAuthAddress}.
-     */
-    function getAccountAuthAddress(uint256 _id) public view override returns (address[] memory) {
-        return core().getAccountAuthAddress(_id);
-    }
-
-    /**
-     * @dev See {IMetaverse-accountIsExist}.
-     */
-    function accountIsExist(uint256 _id) public view override returns (bool _isExist) {
-        return core().accountIsExist(_id);
-    }
-
-    /**
-     * @dev See {IMetaverse-accountIsTrustAdmin}.
-     */
-    function accountIsTrustAdmin(uint256 _id) public view override returns (bool _isFreeze) {
-        return core().accountIsTrustAdmin(_id);
-    }
-
-    /**
-     * @dev See {IMetaverse-accountIsFreeze}.
-     */
-    function accountIsFreeze(uint256 _id) public view override returns (bool _isFreeze) {
-        return core().accountIsFreeze(_id);
-    }
-
-    /**
-     * @dev See {IMetaverse-checkSender}.
-     */
-    function checkSender(uint256 _id, address _sender) public view override returns (bool) {
-        return core().checkSender(_id, _sender);
-    }
-
-    /**
-     * @dev See {IMetaverse-getTotalAccount}.
-     */
-    function getTotalAccount() public view override returns (uint256) {
-        return core().getTotalAccount();
-    }
-
-    // world
-    /**
-     * @dev See {IMetaverse-getWorlds}.
-     */
-    function getWorlds() public view override returns (address[] memory) {
-        return core().getWorlds();
-    }
-
 }

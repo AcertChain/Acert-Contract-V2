@@ -11,40 +11,40 @@ import "./World.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract WorldCore is IWorld, CoreContract, IAcertContract, IApplyStorage, EIP712 {
+contract WorldCore is IWorldCore, CoreContract, IAcertContract, IApplyStorage, EIP712 {
     string public worldName;
     string public worldVersion;
-    IMetaverse public metaverse;
-    WorldStorage metaStorage;
+    WorldStorage worldStorage;
+    IMetaverse metaverse;
 
     constructor(
         address metaverse_,
-        address _metaStorage,
+        address _worldStorage,
         string memory _name,
         string memory _version
     ) EIP712(_name, _version) {
         metaverse = IMetaverse(metaverse_);
         worldName = _name;
-        worldVersion = versi_versionon_;
-        metaStorage = WorldStorage(_metaStorage);
+        worldVersion = _version;
+        worldStorage = WorldStorage(_worldStorage);
     }
 
-    function shell() public view returns (World) {
-        return World(shellContract);
+    function shell() public view returns (IWorldShell) {
+        return IWorldShell(shellContract);
     }
 
     /**
      * @dev See {IApplyStorage-getStorageAddress}.
      */
     function getStorageAddress() public view override returns (address) {
-        return address(metaStorage);
+        return address(worldStorage);
     }
 
     /**
      * @dev See {IAcertContract-metaverseAddress}.
      */
     function metaverseAddress() public view override returns (address) {
-        return shellContract;
+        return IAcertContract(shellContract).metaverseAddress();
     }
 
     //world
@@ -90,31 +90,35 @@ contract WorldCore is IWorld, CoreContract, IAcertContract, IApplyStorage, EIP71
     }
 
     //trustContract
-    function trustContract(
+    function trustContract_(
+        address _msgSender,
         uint256 _id,
-        address _address,
+        address _contract,
         bool _isTrustContract
     ) public override onlyShell {
-        metaverse.checkSender(_id, _msgSender());
-        _trustContract(_id, _address, _isTrustContract, false, _msgSender());
+        checkAddressIsNotZero(_contract);
+        metaverse.checkSender(_id, _msgSender);
+        _trustContract(_id, _contract, _isTrustContract, false, _msgSender);
     }
 
-    function trustContractBWO(
+    function trustContractBWO_(
+        address _msgSender,
         uint256 _id,
-        address _address,
+        address _contract,
         bool _isTrustContract,
         address sender,
         uint256 deadline,
         bytes memory signature
     ) public override onlyShell {
-        require(checkBWO(_msgSender()), "World: address is not BWO");
-        trustContractBWOParamsVerify(_id, _address, _isTrustContract, sender, deadline, signature);
-        _trustContract(_id, _address, _isTrustContract, true, sender);
+        require(checkBWO(_msgSender), "World: address is not BWO");
+        checkAddressIsNotZero(_contract);
+        trustContractBWOParamsVerify(_id, _contract, _isTrustContract, sender, deadline, signature);
+        _trustContract(_id, _contract, _isTrustContract, true, sender);
     }
 
     function trustContractBWOParamsVerify(
         uint256 _id,
-        address _address,
+        address _contract,
         bool _isTrustContract,
         address sender,
         uint256 deadline,
@@ -132,7 +136,7 @@ contract WorldCore is IWorld, CoreContract, IAcertContract, IApplyStorage, EIP71
                             "trustContractBWO(uint256 id,address contract,bool flag,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         _id,
-                        _address,
+                        _contract,
                         _isTrustContract,
                         sender,
                         nonce,
@@ -153,24 +157,25 @@ contract WorldCore is IWorld, CoreContract, IAcertContract, IApplyStorage, EIP71
         address _sender
     ) private {
         worldStorage.setTrustContractByAccountId(_id, _address, _isTrustContract);
-        emit TrustContract(_id, _address, _isTrustContract, _isBWO, _sender, getNonce(_sender));
+        shell().emitTrustContract(_id, _address, _isTrustContract, _isBWO, _sender, getNonce(_sender));
         worldStorage.IncrementNonce(_sender);
     }
 
     //account
-    function trustWorld(uint256 _id, bool _isTrustWorld) public override onlyShell {
-        metaverse.checkSender(_id, _msgSender());
-        _trustWorld(_id, _isTrustWorld, false, _msgSender());
+    function trustWorld_(address _msgSender, uint256 _id, bool _isTrustWorld) public override onlyShell {
+        metaverse.checkSender(_id, _msgSender);
+        _trustWorld(_id, _isTrustWorld, false, _msgSender);
     }
 
-    function trustWorldBWO(
+    function trustWorldBWO_(
+        address _msgSender,
         uint256 _id,
         bool _isTrustWorld,
         address sender,
         uint256 deadline,
         bytes memory signature
     ) public override onlyShell {
-        require(checkBWO(_msgSender()), "World: address is not BWO");
+        require(checkBWO(_msgSender), "World: address is not BWO");
         trustWorldBWOParamsVerify(_id, _isTrustWorld, sender, deadline, signature);
         _trustWorld(_id, _isTrustWorld, true, sender);
     }
@@ -211,7 +216,7 @@ contract WorldCore is IWorld, CoreContract, IAcertContract, IApplyStorage, EIP71
         address _sender
     ) internal {
         worldStorage.setTrustWorld(_id, _isTrustWorld);
-        emit TrustWorld(_id, _isTrustWorld, _isBWO, _sender, getNonce(_sender));
+        shell().emitTrustWorld(_id, _isTrustWorld, _isBWO, _sender, getNonce(_sender));
         worldStorage.IncrementNonce(_sender);
     }
 
@@ -220,7 +225,37 @@ contract WorldCore is IWorld, CoreContract, IAcertContract, IApplyStorage, EIP71
      * @dev See {IWorld-getAssets}.
      */
     function getAssets() public view override returns (address[] memory) {
-        return metaStorage.getAssets();
+        return worldStorage.getAssets();
+    }
+
+    /**
+     * @dev See {IWorld-isEnabledAsset}.
+     */
+    function isEnabledAsset(address _address) public view override returns (bool)  {
+        return worldStorage.isEnabledAsset(_address);
+    }
+
+    //safeContract
+    /**
+     * @dev See {IWorld-getSafeContracts}.
+     */
+    function getSafeContracts() public view override returns (address[] memory) {
+        return worldStorage.getSafeContracts();
+    }
+
+    /**
+     * @dev See {IWorld-isSafeContract}.
+     */
+    function isSafeContract(address _address) public view override returns (bool) {
+        return worldStorage.isSafeContract(_address);
+    }
+
+    /**
+     * @dev See {IWorld-checkBWO}.
+     */
+    function checkBWO(address _address) public view override returns (bool) {
+        require(worldStorage.isOperator(_address) || owner() == _address, "World: address is not BWO");
+        return true;
     }
 
     // Owner functions
@@ -228,38 +263,34 @@ contract WorldCore is IWorld, CoreContract, IAcertContract, IApplyStorage, EIP71
         require(_address != address(0), "World: zero address");
         require(worldStorage.assetContains(_address) == false, "World: asset is exist");
         require(IAsset(_address).worldAddress() == address(this), "World: world address is not match");
-        metaStorage.addAsset(_address);
-        emit RegisterAsset(_address, IAsset(_address).name(), IAsset(_address).protocol());
+        worldStorage.addAsset(_address);
+        shell().emitRegisterAsset(_address);
     }
 
     function disableAsset(address _address) public onlyOwner {
         worldStorage.disableAsset(_address);
-        emit DisableAsset(_address);
+        shell().emitDisableAsset(_address);
     }
 
     function enableAsset(address _address) public onlyOwner {
         worldStorage.enableAsset(_address);
-        emit EnableAsset(_address);
+        shell().emitEnableAsset(_address);
     }
 
     function addSafeContract(address _address) public onlyOwner {
         require(_address != address(0), "World: zero address");
         worldStorage.addSafeContract(_address);
-        emit AddSafeContract(_address);
+        shell().emitAddSafeContract(_address);
     }
 
     function removeSafeContract(address _address) public onlyOwner {
         worldStorage.removeSafeContract(_address);
-        emit RemoveSafeContract(_address);
+        shell().emitRemoveSafeContract(_address);
     }
 
     // utils
-    function checkBWO(address _address) public view returns (bool) {
-        return (worldStorage.isOperator(_address) || owner() == _address);
-    }
-
-    function checkAsset(address _address) public view returns (bool)  {
-        return worldStorage.isEnabledAsset(_address);
+    function getNonce(address _address) public view returns (uint256) {
+        return worldStorage.nonces(_address);
     }
 
     function _recoverSig(
@@ -268,8 +299,12 @@ contract WorldCore is IWorld, CoreContract, IAcertContract, IApplyStorage, EIP71
         bytes32 digest,
         bytes memory signature
     ) internal view {
-        require(deadline == 0 || block.timestamp < deadline, "Metaverse: BWO call expired");
-        require(signer == ECDSA.recover(digest, signature), "Metaverse: recoverSig failed");
+        require(deadline == 0 || block.timestamp < deadline, "World: BWO call expired");
+        require(signer == ECDSA.recover(digest, signature), "World: recoverSig failed");
+    }
+
+    function checkAddressIsNotZero(address _address) internal pure {
+        require(_address != address(0), "Metaverse: address is zero");
     }
 
     function getChainId() public view returns (uint256) {

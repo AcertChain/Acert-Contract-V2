@@ -595,7 +595,11 @@ contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
     }
 
     function _getOrCreateAccountId(address _address) internal returns (uint256) {
-        return metaverse.getOrCreateAccountId(_address);
+        if (_address != address(0) && metaverse.getAccountIdByAddress(_address) == 0) {
+            return metaverse.createAccount(_address, false);
+        } else {
+            return metaverse.getAccountIdByAddress(_address);
+        }
     }
 
     function _getAddressByAccountId(uint256 _id) internal view returns (address) {
@@ -603,7 +607,7 @@ contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
     }
 
     function _isFreeze(uint256 _id) internal view returns (bool) {
-        return metaverse.isFreeze(_id);
+        return metaverse.accountIsFreeze(_id);
     }
 
     function _checkSender(uint256 ownerId, address sender) internal view {
@@ -615,11 +619,11 @@ contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
     }
 
     function _checkBWOByAsset(address _sender) internal view {
-        require(world.checkBWOByAsset(_sender), "Asset20: BWO is not allowed");
+        require(world.checkBWO(_sender), "Asset20: BWO is not allowed");
     }
 
     function _isTrust(address _address, uint256 _id) internal view returns (bool) {
-        return world.isTrustByAsset(_address, _id);
+        return world.isTrust(_address, _id);
     }
 
     function _recoverSig(
