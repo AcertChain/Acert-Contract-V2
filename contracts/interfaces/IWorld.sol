@@ -19,15 +19,34 @@ interface IWorld {
         uint256 nonce
     );
 
+    //metaverse
     function name() external view returns (string memory);
 
-    function isTrustWorld(uint256 _id) external view returns (bool _isTrustWorld);
+    function version() external view returns (string memory);
 
-    function isTrust(address _contract, uint256 _id) external view returns (bool _isTrust);
+    // account
+    function trustContract(uint256 _id, address _address, bool _isTrustContract) external;
+    
+    function trustContractBWO(uint256 _id, address _address, bool _isTrustContract, address sender, uint256 deadline, bytes memory signature) external;
+    
+    function trustWorld(uint256 _id, bool _isTrustWorld) external;
+
+    function trustWorld(uint256 _id, bool _isTrustWorld, address sender, uint256 deadline, bytes memory signature) external;
+    
+    function isTrustWorld(uint256 _id) external view returns (bool _isTrustWorld);
 
     function isTrustContract(address _contract, uint256 _id) external view returns (bool _isTrustContract);
 
-    function checkBWOByAsset(address _address) external view returns (bool _isBWO);
+    function isTrust(address _contract, uint256 _id) external view returns (bool _isTrust);
 
-    function isTrustByAsset(address _address, uint256 _id) external view returns (bool _isTrust);
+    // asset
+    function getAssets() external view returns (address[] memory);
+
+    // safeContract
+    function getSafeContracts() external view returns (address[] memory);
+
+    function checkBWO(address _address) external view returns (bool);
+
+    function checkAsset(address _address) external view returns (bool);
+
 }

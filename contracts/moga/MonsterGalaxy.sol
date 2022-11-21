@@ -9,7 +9,7 @@ import "../interfaces/IAsset721.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IAsset.sol";
 import "../interfaces/IAcertContract.sol";
-import "../storage/WorldStorage.sol";
+import "../world/WorldStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -56,10 +56,6 @@ contract MonsterGalaxy is IWorld, IApplyStorage, IAcertContract, Ownable, EIP712
     function disableAsset(address _address) public onlyOwner {
         worldStorage.updateAsset(_address, false);
         emit DisableAsset(_address);
-    }
-
-    function getAsset(address _address) public view returns (WorldStorage.Asset memory) {
-        return worldStorage.getAsset(_address);
     }
 
     function addSafeContract(address _address, string calldata _name) public onlyOwner {

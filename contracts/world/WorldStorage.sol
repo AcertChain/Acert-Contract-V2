@@ -4,30 +4,19 @@ pragma solidity ^0.8.0;
 import "../interfaces/IAsset.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IAcertContract.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract WorldStorage is IAcertContract, Ownable {
-    // struct Asset
-    struct Asset {
-        bool isExist;
-        bool isEnabled;
-        address addr;
-        IAsset.ProtocolEnum _protocol;
-    }
-
-    // struct Contract
-    struct Contract {
-        bool isExist;
-        address addr;
-        string name;
-    }
+    using EnumerableSet for EnumerableSet.AddressSet;
+    EnumerableSet.AddressSet private assets;
 
     // Mapping from address to trust contract
-    mapping(address => Contract) public safeContracts;
+    mapping(address => bool) public isSafeContract;
     // Mapping from account Id to contract
     mapping(uint256 => mapping(address => bool)) public isTrustContractByAccountId;
     // Mapping from address to Asset
-    mapping(address => Asset) public assets;
+    mapping(address => bool) public isEnabledAsset;
     // Mapping from is trust world
     mapping(uint256 => bool) public isTrustWorld;
     // nonce
@@ -48,7 +37,7 @@ contract WorldStorage is IAcertContract, Ownable {
      * @dev See {IAcertContract-metaverseAddress}.
      */
     function metaverseAddress() public view override returns (address) {
-        return address(IAcertContract(world).metaverseAddress());
+        return IAcertContract(world).metaverseAddress();
     }
 
     function updateWorld(address _address) public onlyOwner {
@@ -64,34 +53,45 @@ contract WorldStorage is IAcertContract, Ownable {
         nonces[_sender]++;
     }
 
-    function getAsset(address _address) public view returns (Asset memory) {
-        return assets[_address];
+    function assetContains(address addr) public view returns (bool) {
+        return assets.contains(addr);
     }
 
-    function setAsset(address _address) public onlyWorld {
-        IAsset.ProtocolEnum protocol = IAsset(_address).protocol();
-        assets[_address] = Asset(true, true, _address, protocol);
+    function addAsset(address addr) public onlyWorld {
+        if (!assets.contains(addr)) {
+            assets.add(addr);
+            isEnabledAsset[addr] = true;
+        }
     }
 
-    function updateAsset(address _address, bool _enabled) public onlyWorld {
-        require(assets[_address].isExist == true, "World: asset is not exist");
-        assets[_address].isEnabled = _enabled;
+    function getAssets() public view returns (address[] memory) {
+        return assets.values();
     }
 
-    function addSafeContract(address _address, string calldata _name) public onlyWorld {
-        safeContracts[_address] = Contract(true, _address, _name);
+    function assetCount() public view returns (uint256) {
+        return assets.length();
+    }
+
+    function enableAsset(address addr) public onlyWorld {
+        require(assets.contains(addr), "World: asset is not exist");
+        isEnabledAsset[addr] = true;
+    }
+
+    function disableAsset(address addr) public onlyWorld {
+        require(assets.contains(addr), "World: asset is not exist");
+        isEnabledAsset[addr] = false;
+    }
+
+    function addSafeContract(address _address) public onlyWorld {
+        isSafeContract[_address] = true;
     }
 
     function removeSafeContract(address _address) public onlyWorld {
-        require(safeContracts[_address].isExist == true, "World: safeContract is not exist");
-        safeContracts[_address].isExist = false;
+        require(isSafeContract[_address], "World: safeContract is not exist");
+        isSafeContract[_address] = false;
     }
 
-    function getSafeContract(address _address) public view returns (Contract memory) {
-        return safeContracts[_address];
-    }
-
-    function setTrustContractByAccountId(
+    function setTrustContractByAccountId (
         uint256 _accountId,
         address _address,
         bool _isTrust
