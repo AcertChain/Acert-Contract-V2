@@ -7,10 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IAcertContract.sol";
 import "../interfaces/IMetaverse.sol";
 
-interface IMetaverseContract {
-    function startId() external view returns (uint256);
-}
-
 contract MetaverseStorage is IAcertContract, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private worlds;
@@ -43,10 +39,7 @@ contract MetaverseStorage is IAcertContract, Ownable {
 
     address public metaverse;
     address public admin;
-    uint256 public startId;
     uint256 public totalAccount;
-
-    constructor() {}
 
     /**
      * @dev See {IAcertContract-metaverseAddress}.
@@ -57,7 +50,6 @@ contract MetaverseStorage is IAcertContract, Ownable {
 
     function updateMetaverse(address addr) public onlyOwner {
         metaverse = addr;
-        startId = IMetaverseContract(addr).startId();
     }
 
     modifier onlyMetaverse() {
@@ -81,22 +73,22 @@ contract MetaverseStorage is IAcertContract, Ownable {
         nonces[sender]++;
     }
 
-    function contains(address addr) public view returns (bool) {
+    function worldContains(address addr) public view returns (bool) {
         return worlds.contains(addr);
     }
 
-    function add(address addr, string calldata name) public onlyMetaverse {
+    function addWorld(address addr, string calldata name) public onlyMetaverse {
         if (!worlds.contains(addr)) {
             worlds.add(addr);
             worldInfos[addr] = WorldInfo(addr, name, true);
         }
     }
 
-    function values() public view returns (address[] memory) {
+    function getWorlds() public view returns (address[] memory) {
         return worlds.values();
     }
 
-    function length() public view returns (uint256) {
+    function worldCount() public view returns (uint256) {
         return worlds.length();
     }
 
