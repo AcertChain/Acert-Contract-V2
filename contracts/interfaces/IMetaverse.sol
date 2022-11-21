@@ -164,7 +164,8 @@ interface IMetaverseShell {
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
-    event RegisterWorld(address indexed world, string name);
+    event RegisterWorld(address indexed world);
+    event EnableWorld(address indexed world);
     event DisableWorld(address indexed world);
     event CreateAccount(
         uint256 indexed accountId,
@@ -198,7 +199,9 @@ interface IMetaverseShell {
 
     function emitRemoveOperator(address operator_) external;
 
-    function emitRegisterWorld(address world_, string memory name_) external;
+    function emitRegisterWorld(address world_) external;
+
+    function emitEnableWorld(address world_) external;
 
     function emitDisableWorld(address world_) external;
 

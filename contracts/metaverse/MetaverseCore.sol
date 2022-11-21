@@ -11,8 +11,8 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplyStorage, EIP712 {
-    string public _name;
-    string public _version;
+    string public metverseName;
+    string public metverseVersion;
     uint256 public _startId;
     MetaverseStorage public metaStorage;
 
@@ -27,8 +27,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
         uint256 startId_,
         address metaStorage_
     ) EIP712(name_, version_) {
-        _name = name_;
-        _version = version_;
+        metverseName = name_;
+        metverseVersion = version_;
         _startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
     }
@@ -48,7 +48,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
      * @dev See {IAcertContract-metaverseAddress}.
      */
     function metaverseAddress() public view override returns (address) {
-        return shellContract;
+        return IAcertContract(shellContract).metaverseAddress();
     }
 
     //metaverse
@@ -56,19 +56,19 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
      * @dev See {IMetaverse-name}.
      */
     function name() public view override returns (string memory) {
-        return _name;
+        return metverseName;
     }
 
     /**
      * @dev See {IMetaverse-version}.
      */
     function version() public view override returns (string memory) {
-        return _version;
+        return metverseVersion;
     }
 
     // account
     /**
-     * @dev See {IMetaverse-createAccount}.
+     * @dev See {IMetaverseCore-createAccount_}.
      */
     function createAccount_(address _msgSender, address _address, bool _isTrustAdmin) public override onlyShell returns (uint256 id) {
         checkAddressIsNotZero(_address);
@@ -77,7 +77,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     }
 
     /**
-     * @dev See {IMetaverse-getOrCreateAccountId}.
+     * @dev See {IMetaverseCore-createAccountBWO_}.
      */
     function createAccountBWO_(
         address _msgSender,
@@ -142,7 +142,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     }
 
     /**
-     * @dev See {IMetaverse-addAuthAddress}.
+     * @dev See {IMetaverseCore-addAuthAddress_}.
      */
     function addAuthAddress_(
         address _msgSender,
@@ -159,7 +159,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     }
 
     /**
-     * @dev See {IMetaverse-addAuthAddressBWO}.
+     * @dev See {IMetaverseCore-addAuthAddressBWO_}.
      */
     function addAuthAddressBWO_(
         address _msgSender,
@@ -252,7 +252,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     }
 
     /**
-     * @dev See {IMetaverse-removeAuthAddress}.
+     * @dev See {IMetaverseCore-removeAuthAddress_}.
      */
     function removeAuthAddress_(
         address _msgSender,
@@ -265,7 +265,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     }
 
     /**
-     * @dev See {IMetaverse-removeAuthAddressBWO}.
+     * @dev See {IMetaverseCore-removeAuthAddressBWO_}.
      */
     function removeAuthAddressBWO_(
         address _msgSender,
@@ -325,7 +325,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     }
 
     /**
-     * @dev See {IMetaverse-trustAdmin}.
+     * @dev See {IMetaverseCore-trustAdmin_}.
      */
     function trustAdmin_(
         address _msgSender,
@@ -337,7 +337,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     }
 
     /**
-     * @dev See {IMetaverse-trustAdminBWO}.
+     * @dev See {IMetaverseCore-trustAdminBWO_}.
      */
     function trustAdminBWO_(
         address _msgSender,
@@ -398,7 +398,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     }
 
     /**
-     * @dev See {IMetaverse-freezeAccount}.
+     * @dev See {IMetaverseCore-freezeAccount_}.
      */
     function freezeAccount_(address _msgSender, uint256 _id) public override onlyShell {
         MetaverseStorage.Account memory account = metaStorage.getAccount(_id);
@@ -411,7 +411,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     }
 
     /**
-     * @dev See {IMetaverse-freezeAccountBWO}.
+     * @dev See {IMetaverseCore-freezeAccountBWO_}.
      */
     function freezeAccountBWO_(
         address _msgSender,
@@ -554,9 +554,13 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
         checkAddressIsNotZero(_world);
         require(metaStorage.worldContains(_world) == false, "Metaverse: world is exist");
         require(IAcertContract(_world).metaverseAddress() == address(this), "Metaverse: metaverse is not match");
-        string memory worldName = IWorld(_world).name();
-        metaStorage.addWorld(_world, worldName);
-        shell().emitRegisterWorld(_world, worldName);
+        metaStorage.addWorld(_world);
+        shell().emitRegisterWorld(_world);
+    }
+
+    function enableWorld(address _world) public onlyOwner {
+        metaStorage.enableWorld(_world);
+        shell().emitEnableWorld(_world);
     }
 
     function disableWorld(address _world) public onlyOwner {

@@ -11,12 +11,6 @@ contract MetaverseStorage is IAcertContract, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private worlds;
 
-    struct WorldInfo {
-        address world;
-        string name;
-        bool isEnabled;
-    }
-
     struct Account {
         bool isExist;
         bool isTrustAdmin;
@@ -24,7 +18,8 @@ contract MetaverseStorage is IAcertContract, Ownable {
         uint256 id;
     }
 
-    mapping(address => WorldInfo) public worldInfos;
+    // Mapping from address to Asset
+    mapping(address => bool) public isEnabledWorld;
     // Mapping from account ID to Account
     mapping(uint256 => Account) public accounts;
     // nonce
@@ -41,6 +36,13 @@ contract MetaverseStorage is IAcertContract, Ownable {
     address public admin;
     uint256 public totalAccount;
 
+    constructor() {}
+
+    modifier onlyMetaverse() {
+        require(metaverse == msg.sender);
+        _;
+    }
+
     /**
      * @dev See {IAcertContract-metaverseAddress}.
      */
@@ -48,13 +50,9 @@ contract MetaverseStorage is IAcertContract, Ownable {
         return address(IAcertContract(metaverse).metaverseAddress());
     }
 
-    function updateMetaverse(address addr) public onlyOwner {
-        metaverse = addr;
-    }
-
-    modifier onlyMetaverse() {
-        require(metaverse == msg.sender);
-        _;
+    function updateMetaverse(address _address) public onlyOwner {
+        require(_address != address(0), "Metaverse: address is zero");
+        metaverse = _address;
     }
 
     function setAdmin(address _admin) public onlyMetaverse {
@@ -69,18 +67,18 @@ contract MetaverseStorage is IAcertContract, Ownable {
         totalAccount++;
     }
 
-    function IncrementNonce(address sender) public onlyMetaverse {
-        nonces[sender]++;
+    function IncrementNonce(address _sender) public onlyMetaverse {
+        nonces[_sender]++;
     }
 
-    function worldContains(address addr) public view returns (bool) {
-        return worlds.contains(addr);
+    function worldContains(address _address) public view returns (bool) {
+        return worlds.contains(_address);
     }
 
-    function addWorld(address addr, string calldata name) public onlyMetaverse {
-        if (!worlds.contains(addr)) {
-            worlds.add(addr);
-            worldInfos[addr] = WorldInfo(addr, name, true);
+    function addWorld(address _address) public onlyMetaverse {
+        if (!worlds.contains(_address)) {
+            worlds.add(_address);
+            isEnabledWorld[_address] = true;
         }
     }
 
@@ -92,26 +90,26 @@ contract MetaverseStorage is IAcertContract, Ownable {
         return worlds.length();
     }
 
-    function disableWorld(address addr) public onlyMetaverse {
-        if (worlds.contains(addr)) {
-            worldInfos[addr].isEnabled = false;
-        }
+    function enableWorld(address _address) public onlyMetaverse {
+        require(worlds.contains(_address), "Metaverse: world is not exist");
+        isEnabledWorld[_address] = true;
+    }
+
+    function disableWorld(address _address) public onlyMetaverse {
+        require(worlds.contains(_address), "Metaverse: world is not exist");
+        isEnabledWorld[_address] = false;
     }
 
     function setAccount(Account calldata account) public onlyMetaverse {
         accounts[account.id] = account;
     }
 
-    function getWorldInfo(address addr) public view returns (WorldInfo memory) {
-        return worldInfos[addr];
-    }
-
     function getAccount(uint256 id) public view returns (Account memory) {
         return accounts[id];
     }
 
-    function authAddressContains(uint256 id, address addr) public view returns (bool) {
-        return authAddress[id].contains(addr);
+    function authAddressContains(uint256 id, address _address) public view returns (bool) {
+        return authAddress[id].contains(_address);
     }
 
     function getAuthAddresses(uint256 id) public view returns (address[] memory) {
@@ -122,22 +120,22 @@ contract MetaverseStorage is IAcertContract, Ownable {
         return (authAddress[id].length() != 0) ? authAddress[id].at(0) : address(0);
     }
 
-    function addAuthAddress(uint256 id, address addr) public onlyMetaverse {
-        authAddress[id].add(addr);
-        authToId[addr] = id;
+    function addAuthAddress(uint256 id, address _address) public onlyMetaverse {
+        authAddress[id].add(_address);
+        authToId[_address] = id;
     }
 
-    function removeAuthAddress(uint256 id, address addr) public onlyMetaverse {
-        authAddress[id].remove(addr);
-        delete authToId[addr];
+    function removeAuthAddress(uint256 id, address _address) public onlyMetaverse {
+        authAddress[id].remove(_address);
+        delete authToId[_address];
     }
 
     function removeAllAuthAddress(uint256 id) public onlyMetaverse {
         EnumerableSet.AddressSet storage addrs = authAddress[id];
         for (uint256 i = 0; i < addrs.length(); i++) {
-            address addr = addrs.at(i);
-            delete authToId[addr];
-            addrs.remove(addr);
+            address _address = addrs.at(i);
+            delete authToId[_address];
+            addrs.remove(_address);
         }
     }
 }

@@ -11,6 +11,7 @@ contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract
         return IMetaverseCore(coreContract);
     }
 
+    //IMetaverseShell
     function emitAddOperator(address operator_) public override onlyCore {
         emit AddOperator(operator_);
     }
@@ -19,8 +20,12 @@ contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract
         emit RemoveOperator(operator_);
     }
 
-    function emitRegisterWorld(address world_, string memory name_) public override onlyCore {
-        emit RegisterWorld(world_, name_);
+    function emitRegisterWorld(address world_) public override onlyCore {
+        emit RegisterWorld(world_);
+    }
+
+    function emitEnableWorld(address world_) public override onlyCore {
+        emit EnableWorld(world_);
     }
 
     function emitDisableWorld(address world_) public override onlyCore {
@@ -92,20 +97,20 @@ contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract
         return address(this);
     }
 
-    //metaverse
+    //IMetaverse
 
     /**
      * @dev See {IMetaverse-name}.
      */
     function name() public view override returns (string memory) {
-        return IMetaverse(coreContract).name();
+        return core().name();
     }
 
     /**
      * @dev See {IMetaverse-version}.
      */
     function version() public view override returns (string memory) {
-        return IMetaverse(coreContract).version();
+        return core().version();
     }
 
     // account
@@ -118,7 +123,7 @@ contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract
     }
 
     /**
-     * @dev See {IMetaverse-getOrCreateAccountId}.
+     * @dev See {IMetaverse-createAccountBWO}.
      */
     function createAccountBWO(
         address _address,
