@@ -70,11 +70,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     /**
      * @dev See {IMetaverse-createAccount}.
      */
-    function createAccount_(
-        address _msgSender,
-        address _address,
-        bool _isTrustAdmin
-    ) public override onlyShell returns (uint256 id) {
+    function createAccount_(address _address, bool _isTrustAdmin) public override onlyShell returns (uint256 id) {
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
         metaStorage.IncrementTotalAccount();
@@ -87,14 +83,9 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     /**
      * @dev See {IMetaverse-getOrCreateAccountId}.
      */
-    function getOrCreateAccountId_(address _msgSender, address _address)
-        public
-        override
-        onlyShell
-        returns (uint256 id)
-    {
+    function getOrCreateAccountId_(address _address) public override onlyShell returns (uint256 id) {
         if (_address != address(0) && getAccountIdByAddress(_address) == 0) {
-            id = createAccount_(msg.sender, _address, false);
+            id = createAccount_(_address, false);
         } else {
             id = getAccountIdByAddress(_address);
         }

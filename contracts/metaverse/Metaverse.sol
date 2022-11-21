@@ -111,14 +111,14 @@ contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract
      * @dev See {IMetaverse-createAccount}.
      */
     function createAccount(address _address, bool _isTrustAdmin) public override returns (uint256 id) {
-        return core().createAccount_(_msgSender(), _address, _isTrustAdmin);
+        return core().createAccount_(_address, _isTrustAdmin);
     }
 
     /**
      * @dev See {IMetaverse-getOrCreateAccountId}.
      */
     function getOrCreateAccountId(address _address) public override returns (uint256 id) {
-        return core().getOrCreateAccountId_(_msgSender(), _address);
+        return core().getOrCreateAccountId_(_address);
     }
 
     /**
@@ -274,5 +274,3 @@ contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract
         return core().isFreeze(_id);
     }
 }
-
-

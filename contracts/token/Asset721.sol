@@ -240,7 +240,9 @@ contract Asset721 is EIP712, ERC165, IAsset721, IApplyStorage, IAcertContract, O
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("approveBWO(address spender,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256(
+                            "approveBWO(address spender,uint256 tokenId,address sender,uint256 nonce,uint256 deadline)"
+                        ),
                         spender,
                         tokenId,
                         sender,

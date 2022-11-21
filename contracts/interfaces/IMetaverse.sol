@@ -23,58 +23,129 @@ interface IMetaverseBase {
     function checkSender(uint256 _id, address _sender) external view returns (bool);
 
     function getTotalAccount() external view returns (uint256);
-    
+
     function isFreeze(uint256 _id) external view returns (bool);
+
     // world
     function getWorlds() external view returns (address[] memory);
-
 }
+
 interface IMetaverse is IMetaverseBase {
     function createAccount(address _address, bool _isTrustAdmin) external returns (uint256 id);
 
     function getOrCreateAccountId(address _address) external returns (uint256 id);
-    
-    function addAuthAddress(uint256 _id, address _address, uint256 deadline, bytes memory signature) external;
 
-    function addAuthAddressBWO(uint256 _id, address _address, address sender, uint256 deadline, bytes memory signature, bytes memory authSignature) external;
-    
+    function addAuthAddress(
+        uint256 _id,
+        address _address,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
+
+    function addAuthAddressBWO(
+        uint256 _id,
+        address _address,
+        address sender,
+        uint256 deadline,
+        bytes memory signature,
+        bytes memory authSignature
+    ) external;
+
     function removeAuthAddress(uint256 _id, address _address) external;
-    
-    function removeAuthAddressBWO(uint256 _id, address _address, address sender, uint256 deadline, bytes memory signature) external;
+
+    function removeAuthAddressBWO(
+        uint256 _id,
+        address _address,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
 
     function trustAdmin(uint256 _id, bool _isTrustAdmin) external;
 
-    function trustAdminBWO(uint256 _id, bool _isTrustAdmin, address sender, uint256 deadline, bytes memory signature) external;
+    function trustAdminBWO(
+        uint256 _id,
+        bool _isTrustAdmin,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
 
     function freezeAccount(uint256 _id) external;
 
-    function freezeAccountBWO(uint256 _id, address sender, uint256 deadline, bytes memory signature) external;
+    function freezeAccountBWO(
+        uint256 _id,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
+}
 
- }
- interface IMetaverseCore is IMetaverseBase {
-    function createAccount_(address _msgSender, address _address, bool _isTrustAdmin) external returns (uint256 id);
+interface IMetaverseCore is IMetaverseBase {
+    function createAccount_(address _address, bool _isTrustAdmin) external returns (uint256 id);
 
-    function getOrCreateAccountId_(address _msgSender, address _address) external returns (uint256 id);
-    
-    function addAuthAddress_(address _msgSender, uint256 _id, address _address, uint256 deadline, bytes memory signature) external;
+    function getOrCreateAccountId_(address _address) external returns (uint256 id);
 
-    function addAuthAddressBWO_(address _msgSender, uint256 _id, address _address, address sender, uint256 deadline, bytes memory signature, bytes memory authSignature) external;
-    
-    function removeAuthAddress_(address _msgSender, uint256 _id, address _address) external;
-    
-    function removeAuthAddressBWO_(address _msgSender, uint256 _id, address _address, address sender, uint256 deadline, bytes memory signature) external;
+    function addAuthAddress_(
+        address _msgSender,
+        uint256 _id,
+        address _address,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
 
-    function trustAdmin_(address _msgSender, uint256 _id, bool _isTrustAdmin) external;
+    function addAuthAddressBWO_(
+        address _msgSender,
+        uint256 _id,
+        address _address,
+        address sender,
+        uint256 deadline,
+        bytes memory signature,
+        bytes memory authSignature
+    ) external;
 
-    function trustAdminBWO_(address _msgSender, uint256 _id, bool _isTrustAdmin, address sender, uint256 deadline, bytes memory signature) external;
+    function removeAuthAddress_(
+        address _msgSender,
+        uint256 _id,
+        address _address
+    ) external;
+
+    function removeAuthAddressBWO_(
+        address _msgSender,
+        uint256 _id,
+        address _address,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
+
+    function trustAdmin_(
+        address _msgSender,
+        uint256 _id,
+        bool _isTrustAdmin
+    ) external;
+
+    function trustAdminBWO_(
+        address _msgSender,
+        uint256 _id,
+        bool _isTrustAdmin,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
 
     function freezeAccount_(address _msgSender, uint256 _id) external;
 
-    function freezeAccountBWO_(address _msgSender, uint256 _id, address sender, uint256 deadline, bytes memory signature) external;
+    function freezeAccountBWO_(
+        address _msgSender,
+        uint256 _id,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
+}
 
- }
-
- interface IMetaverseShell {
+interface IMetaverseShell {
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
@@ -84,18 +155,67 @@ interface IMetaverse is IMetaverseBase {
     event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed sender, uint256 nonce);
     event FreezeAccount(uint256 indexed accountId, bool isBWO, address indexed sender, uint256 nonce);
     event UnFreezeAccount(uint256 indexed accountId, address indexed newAuthAddress);
-    event AddAuthAddress(uint256 indexed accountId, address indexed authAddress, bool isBWO, address indexed sender, uint256 nonce);
-    event RemoveAuthAddress(uint256 indexed accountId, address indexed authAddress, bool isBWO, address indexed sender, uint256 nonce);
+    event AddAuthAddress(
+        uint256 indexed accountId,
+        address indexed authAddress,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
+    event RemoveAuthAddress(
+        uint256 indexed accountId,
+        address indexed authAddress,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
 
     function emitSetAdmin(address admin) external;
+
     function emitAddOperator(address operator_) external;
+
     function emitRemoveOperator(address operator_) external;
+
     function emitRegisterWorld(address world_, string memory name_) external;
+
     function emitDisableWorld(address world_) external;
-    function emitCreateAccount(uint256 accountId_, address authAddress_, bool isTrustAdmin_) external;
-    function emitTrustAdmin(uint256 accountId_, bool isTrustAdmin_, bool isBWO, address sender_, uint256 nonce_) external;
-    function emitFreezeAccount(uint256 accountId_, bool isBWO_, address sender_, uint256 nonce_) external;
+
+    function emitCreateAccount(
+        uint256 accountId_,
+        address authAddress_,
+        bool isTrustAdmin_
+    ) external;
+
+    function emitTrustAdmin(
+        uint256 accountId_,
+        bool isTrustAdmin_,
+        bool isBWO,
+        address sender_,
+        uint256 nonce_
+    ) external;
+
+    function emitFreezeAccount(
+        uint256 accountId_,
+        bool isBWO_,
+        address sender_,
+        uint256 nonce_
+    ) external;
+
     function emitUnFreezeAccount(uint256 accountId_, address newAuthAddress_) external;
-    function emitAddAuthAddress(uint256 accountId_, address authAddress_, bool isBWO_, address sender_, uint256 nonce_) external;
-    function emitRemoveAuthAddress(uint256 accountId_, address authAddress_, bool isBWO_, address sender_, uint256 nonce_) external;
- }
+
+    function emitAddAuthAddress(
+        uint256 accountId_,
+        address authAddress_,
+        bool isBWO_,
+        address sender_,
+        uint256 nonce_
+    ) external;
+
+    function emitRemoveAuthAddress(
+        uint256 accountId_,
+        address authAddress_,
+        bool isBWO_,
+        address sender_,
+        uint256 nonce_
+    ) external;
+}

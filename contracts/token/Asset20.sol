@@ -603,7 +603,7 @@ contract Asset20 is EIP712, IAsset20, IApplyStorage, IAcertContract, Ownable {
     }
 
     function _isFreeze(uint256 _id) internal view returns (bool) {
-       return metaverse.isFreeze(_id);
+        return metaverse.isFreeze(_id);
     }
 
     function _checkSender(uint256 ownerId, address sender) internal view {
