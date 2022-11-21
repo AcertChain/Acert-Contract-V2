@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-abstract contract ShellContract is Ownable {
+contract ShellContract is Ownable {
 
     event UpdateCore(address indexed _contract);
 
@@ -20,7 +20,7 @@ abstract contract ShellContract is Ownable {
     }
 }
 
-abstract contract CoreContract is Ownable {
+contract CoreContract is Ownable {
 
     event UpdateShell(address indexed _contract);
 

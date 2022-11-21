@@ -15,7 +15,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     string public _version;
     uint256 public _startId;
     MetaverseStorage public metaStorage;
-    
+
     modifier onlyAdmin() {
         require(metaStorage.admin() == _msgSender(), "Metaverse: caller is not the admin");
         _;
@@ -70,7 +70,11 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     /**
      * @dev See {IMetaverse-createAccount}.
      */
-    function createAccount_(address _msgSender, address _address, bool _isTrustAdmin) public override onlyShell returns (uint256 id) {
+    function createAccount_(
+        address _msgSender,
+        address _address,
+        bool _isTrustAdmin
+    ) public override onlyShell returns (uint256 id) {
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
         metaStorage.IncrementTotalAccount();
@@ -83,14 +87,19 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     /**
      * @dev See {IMetaverse-getOrCreateAccountId}.
      */
-    function getOrCreateAccountId_(address _msgSender, address _address) public override onlyShell returns (uint256 id) {
+    function getOrCreateAccountId_(address _msgSender, address _address)
+        public
+        override
+        onlyShell
+        returns (uint256 id)
+    {
         if (_address != address(0) && getAccountIdByAddress(_address) == 0) {
             id = createAccount_(msg.sender, _address, false);
         } else {
             id = getAccountIdByAddress(_address);
         }
     }
-    
+
     /**
      * @dev See {IMetaverse-addAuthAddress}.
      */
@@ -142,7 +151,9 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("addAuthAddressBWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256(
+                            "addAuthAddressBWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"
+                        ),
                         _id,
                         _address,
                         sender,
@@ -198,16 +209,20 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
         metaStorage.IncrementNonce(_address);
         metaStorage.IncrementNonce(_sender);
     }
-    
+
     /**
      * @dev See {IMetaverse-removeAuthAddress}.
      */
-    function removeAuthAddress_(address _msgSender, uint256 _id, address _address) public override onlyShell {
+    function removeAuthAddress_(
+        address _msgSender,
+        uint256 _id,
+        address _address
+    ) public override onlyShell {
         checkAddressIsNotZero(_address);
         checkSender(_id, _msgSender);
         _removeAuthAddress(_id, _address, false, _msgSender);
     }
-    
+
     /**
      * @dev See {IMetaverse-removeAuthAddressBWO}.
      */
@@ -240,7 +255,9 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("removeAuthAddressBWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256(
+                            "removeAuthAddressBWO(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"
+                        ),
                         _id,
                         _address,
                         sender,
@@ -269,7 +286,11 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     /**
      * @dev See {IMetaverse-trustAdmin}.
      */
-    function trustAdmin_(address _msgSender, uint256 _id, bool _isTrustAdmin) public override onlyShell {
+    function trustAdmin_(
+        address _msgSender,
+        uint256 _id,
+        bool _isTrustAdmin
+    ) public override onlyShell {
         checkSender(_id, _msgSender);
         _trustAdmin(_id, _isTrustAdmin, false, _msgSender);
     }
@@ -305,7 +326,9 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("trustAdminBWO(uint256 id,bool isTrustAdmin,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256(
+                            "trustAdminBWO(uint256 id,bool isTrustAdmin,address sender,uint256 nonce,uint256 deadline)"
+                        ),
                         _id,
                         _isTrustAdmin,
                         sender,
@@ -552,4 +575,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
         return block.chainid;
     }
 
+    function isFreeze(uint256 _id) external view override returns (bool) {
+        return metaStorage.getAccount(_id).isFreeze;
+    }
 }

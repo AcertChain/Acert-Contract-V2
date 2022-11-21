@@ -24,6 +24,7 @@ interface IMetaverseBase {
 
     function getTotalAccount() external view returns (uint256);
     
+    function isFreeze(uint256 _id) external view returns (bool);
     // world
     function getWorlds() external view returns (address[] memory);
 
