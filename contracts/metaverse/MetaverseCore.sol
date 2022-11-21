@@ -70,25 +70,75 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
     /**
      * @dev See {IMetaverse-createAccount}.
      */
-    function createAccount_(address _address, bool _isTrustAdmin) public override onlyShell returns (uint256 id) {
+    function createAccount_(address _msgSender, address _address, bool _isTrustAdmin) public override onlyShell returns (uint256 id) {
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
-        metaStorage.IncrementTotalAccount();
-        id = metaStorage.totalAccount() + _startId;
-        metaStorage.setAccount(MetaverseStorage.Account(true, _isTrustAdmin, false, id));
-        metaStorage.addAuthAddress(id, _address);
-        shell().emitCreateAccount(id, _address, _isTrustAdmin);
+        return _createAccount(_address, _isTrustAdmin, false, _msgSender);
     }
 
     /**
      * @dev See {IMetaverse-getOrCreateAccountId}.
      */
-    function getOrCreateAccountId_(address _address) public override onlyShell returns (uint256 id) {
-        if (_address != address(0) && getAccountIdByAddress(_address) == 0) {
-            id = createAccount_(_address, false);
-        } else {
-            id = getAccountIdByAddress(_address);
+    function createAccountBWO_(
+        address _msgSender,
+        address _address,
+        bool _isTrustAdmin,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public override onlyShell returns (uint256 id) {
+        require(checkBWO(_msgSender), "Metaverse: address is not BWO");
+        checkAddressIsNotZero(_address);
+        checkAddressIsNotUsed(_address);
+        createAccoutBWOParamsVerfiy(_address, _isTrustAdmin, sender, deadline, signature);
+        return _createAccount(_address, _isTrustAdmin, true, sender);
+    }
+
+    function createAccoutBWOParamsVerfiy(
+        address _address,
+        bool _isTrustAdmin,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public view returns (bool) {
+        uint256 nonce = getNonce(sender);
+        _recoverSig(
+            deadline,
+            sender,
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "createAccountBWO(address _address,bool _isTrustAdmin,address sender,uint256 nonce,uint256 deadline)"
+                        ),
+                        _address,
+                        _isTrustAdmin,
+                        sender,
+                        nonce,
+                        deadline
+                    )
+                )
+            ),
+            signature
+        );
+        return true;
+    }
+
+    function _createAccount(
+        address _address,
+        bool _isTrustAdmin,
+        bool _isBWO,
+        address _sender
+    ) private returns (uint256 id) {
+        if (_isTrustAdmin) {
+            require(_address == _sender, "Metaverse: Only AuthAddress can set trustAdmin to true");
         }
+        metaStorage.IncrementTotalAccount();
+        id = metaStorage.totalAccount() + _startId;
+        metaStorage.setAccount(MetaverseStorage.Account(true, _isTrustAdmin, false, id));
+        metaStorage.addAuthAddress(id, _address);
+        shell().emitCreateAccount(id, _address, _isTrustAdmin, _isBWO, _sender, getNonce(_sender));
+        metaStorage.IncrementNonce(_sender);
     }
 
     /**
@@ -564,9 +614,5 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
 
     function getChainId() public view returns (uint256) {
         return block.chainid;
-    }
-
-    function isFreeze(uint256 _id) external view override returns (bool) {
-        return metaStorage.getAccount(_id).isFreeze;
     }
 }

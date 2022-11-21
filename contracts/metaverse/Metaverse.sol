@@ -30,9 +30,12 @@ contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract
     function emitCreateAccount(
         uint256 accountId_,
         address authAddress_,
-        bool isTrustAdmin_
+        bool isTrustAdmin_,
+        bool isBWO,
+        address sender_,
+        uint256 nonce_
     ) public override onlyCore {
-        emit CreateAccount(accountId_, authAddress_, isTrustAdmin_);
+        emit CreateAccount(accountId_, authAddress_, isTrustAdmin_, isBWO, sender_, nonce_);
     }
 
     function emitTrustAdmin(
@@ -111,14 +114,20 @@ contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract
      * @dev See {IMetaverse-createAccount}.
      */
     function createAccount(address _address, bool _isTrustAdmin) public override returns (uint256 id) {
-        return core().createAccount_(_address, _isTrustAdmin);
+        return core().createAccount_(_msgSender(), _address, _isTrustAdmin);
     }
 
     /**
      * @dev See {IMetaverse-getOrCreateAccountId}.
      */
-    function getOrCreateAccountId(address _address) public override returns (uint256 id) {
-        return core().getOrCreateAccountId_(_address);
+    function createAccountBWO(
+        address _address,
+        bool _isTrustAdmin,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public override returns (uint256 id) {
+        return core().createAccountBWO_(_msgSender(), _address, _isTrustAdmin, sender, deadline, signature);
     }
 
     /**
@@ -268,9 +277,5 @@ contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract
      */
     function getWorlds() public view override returns (address[] memory) {
         return core().getWorlds();
-    }
-
-    function isFreeze(uint256 _id) external view override returns (bool) {
-        return core().isFreeze(_id);
     }
 }

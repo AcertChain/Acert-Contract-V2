@@ -24,8 +24,6 @@ interface IMetaverseBase {
 
     function getTotalAccount() external view returns (uint256);
 
-    function isFreeze(uint256 _id) external view returns (bool);
-
     // world
     function getWorlds() external view returns (address[] memory);
 }
@@ -33,7 +31,13 @@ interface IMetaverseBase {
 interface IMetaverse is IMetaverseBase {
     function createAccount(address _address, bool _isTrustAdmin) external returns (uint256 id);
 
-    function getOrCreateAccountId(address _address) external returns (uint256 id);
+    function createAccountBWO(
+        address _address,
+        bool _isTrustAdmin,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external returns (uint256 id);
 
     function addAuthAddress(
         uint256 _id,
@@ -82,9 +86,20 @@ interface IMetaverse is IMetaverseBase {
 }
 
 interface IMetaverseCore is IMetaverseBase {
-    function createAccount_(address _address, bool _isTrustAdmin) external returns (uint256 id);
+    function createAccount_(
+        address _msgSender,
+        address _address,
+        bool _isTrustAdmin
+    ) external returns (uint256 id);
 
-    function getOrCreateAccountId_(address _address) external returns (uint256 id);
+    function createAccountBWO_(
+        address _msgSender,
+        address _address,
+        bool _isTrustAdmin,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external returns (uint256 id);
 
     function addAuthAddress_(
         address _msgSender,
@@ -151,7 +166,14 @@ interface IMetaverseShell {
     event RemoveOperator(address indexed operator);
     event RegisterWorld(address indexed world, string name);
     event DisableWorld(address indexed world);
-    event CreateAccount(uint256 indexed accountId, address indexed authAddress, bool isTrustAdmin);
+    event CreateAccount(
+        uint256 indexed accountId,
+        address indexed authAddress,
+        bool isTrustAdmin,
+        bool isBWO_,
+        address indexed sender_,
+        uint256 nonce_
+    );
     event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed sender, uint256 nonce);
     event FreezeAccount(uint256 indexed accountId, bool isBWO, address indexed sender, uint256 nonce);
     event UnFreezeAccount(uint256 indexed accountId, address indexed newAuthAddress);
@@ -183,7 +205,10 @@ interface IMetaverseShell {
     function emitCreateAccount(
         uint256 accountId_,
         address authAddress_,
-        bool isTrustAdmin_
+        bool isTrustAdmin_,
+        bool isBWO_,
+        address sender_,
+        uint256 nonce_
     ) external;
 
     function emitTrustAdmin(
