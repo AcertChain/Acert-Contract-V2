@@ -2,58 +2,15 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IWorld.sol";
-import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract World is IWorld, IWorldShell, ShellContract, IAcertContract {
+contract World is IWorld, WorldShell, IAcertContract {
     
     function core() internal view returns (IWorldCore) {
         return IWorldCore(coreContract);
     }
-
-    //IWorldShell
-    function emitAddOperator(address operator_) public override onlyCore {
-        emit AddOperator(operator_);
-    }
-    function emitRemoveOperator(address operator_) public override onlyCore {
-        emit AddOperator(operator_);
-    }
-    function emitRegisterAsset(address _asset) public override onlyCore {
-        emit RegisterAsset(_asset);
-    }
-    function emitEnableAsset(address _asset) public override onlyCore {
-        emit EnableAsset(_asset);
-    }
-    function emitDisableAsset(address _asset) public override onlyCore {
-        emit DisableAsset(_asset);
-    }
-    function emitAddSafeContract(address _contract) public override onlyCore {
-        emit AddSafeContract(_contract);
-    }
-    function emitRemoveSafeContract(address _contract) public override onlyCore {
-        emit RemoveSafeContract(_contract);
-    }
-    function emitTrustWorld(
-        uint256 _accountId,
-        bool _isTrustWorld,
-        bool isBWO,
-        address sender,
-        uint256 nonce
-    ) public override onlyCore {
-        emit TrustWorld(_accountId, _isTrustWorld, isBWO, sender, nonce);
-    }
-    function emitTrustContract(
-        uint256 _accountId,
-        address _safeContract,
-        bool _isTrustContract,
-        bool isBWO,
-        address sender,
-        uint256 nonce
-    ) public override onlyCore {
-        emit TrustContract(_accountId, _safeContract,_isTrustContract, isBWO, sender, nonce);
-    }
-
+    
     /**
      * @dev See {IAcertContract-metaverseAddress}.
      */
@@ -88,7 +45,6 @@ contract World is IWorld, IWorldShell, ShellContract, IAcertContract {
 
     function isTrust(address _contract, uint256 _id) public view override returns (bool _isTrust) {
         return core().isTrust(_contract, _id);
-        
     }
 
     // asset

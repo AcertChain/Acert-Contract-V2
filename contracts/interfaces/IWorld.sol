@@ -1,7 +1,9 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
-import "./IAsset.sol";
-interface IWorldBase {
+//import "./IAsset.sol";
+import "./ShellCore.sol";
+
+interface IWorldMetadata {
     //metaverse
     function name() external view returns (string memory);
 
@@ -28,29 +30,65 @@ interface IWorldBase {
 
 }
 
-interface IWorld is IWorldBase{
-    function trustContract(uint256 _id, address _contract, bool _isTrustContract) external;
+interface IWorld is IWorldMetadata {
+    function trustContract(
+        uint256 _id,
+        address _contract,
+        bool _isTrustContract
+    ) external;
     
-    function trustContractBWO(uint256 _id, address _contract, bool _isTrustContract, address sender, uint256 deadline, bytes memory signature) external;
+    function trustContractBWO(
+        uint256 _id,
+        address _contract,
+        bool _isTrustContract,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
     
     function trustWorld(uint256 _id, bool _isTrustWorld) external;
 
-    function trustWorldBWO(uint256 _id, bool _isTrustWorld, address sender, uint256 deadline, bytes memory signature) external;
+    function trustWorldBWO(
+        uint256 _id, bool _isTrustWorld,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
     
 }
 
-interface IWorldCore is IWorldBase{
-    function trustContract_(address _msgSender, uint256 _id, address _contract, bool _isTrustContract) external;
+interface IWorldCore is IWorldMetadata {
+    function trustContract_(
+        address _msgSender,
+        uint256 _id,
+        address _contract,
+        bool _isTrustContract
+    ) external;
     
-    function trustContractBWO_(address _msgSender, uint256 _id, address _contract, bool _isTrustContract, address sender, uint256 deadline, bytes memory signature) external;
+    function trustContractBWO_(
+        address _msgSender,
+        uint256 _id,
+        address _contract,
+        bool _isTrustContract,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
     
     function trustWorld_(address _msgSender, uint256 _id, bool _isTrustWorld) external;
 
-    function trustWorldBWO_(address _msgSender, uint256 _id, bool _isTrustWorld, address sender, uint256 deadline, bytes memory signature) external;
+    function trustWorldBWO_(
+        address _msgSender,
+        uint256 _id,
+        bool _isTrustWorld,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) external;
     
 }
 
-interface IWorldShell{
+contract WorldShell is ShellContract {
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
     event RegisterAsset(address indexed asset);
@@ -58,7 +96,13 @@ interface IWorldShell{
     event DisableAsset(address indexed asset);
     event AddSafeContract(address indexed safeContract);
     event RemoveSafeContract(address indexed safeContract);
-    event TrustWorld(uint256 indexed accountId, bool isTrustWorld, bool isBWO, address indexed sender, uint256 nonce);
+    event TrustWorld(
+        uint256 indexed accountId,
+        bool isTrustWorld,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
     event TrustContract(
         uint256 indexed accountId,
         address indexed safeContract,
@@ -67,22 +111,47 @@ interface IWorldShell{
         address indexed sender,
         uint256 nonce
     );
-
-    function emitAddOperator(address operator) external;
-    function emitRemoveOperator(address operator) external;
-    function emitRegisterAsset(address asset) external;
-    function emitEnableAsset(address asset) external;
-    function emitDisableAsset(address asset) external;
-    function emitAddSafeContract(address safeContract) external;
-    function emitRemoveSafeContract(address safeContract) external;
-    function emitTrustWorld(uint256 accountId, bool isTrustWorld, bool isBWO, address sender, uint256 nonce) external;
-    function emitTrustContract(
-        uint256 accountId,
-        address safeContract,
-        bool isTrustContract,
+    
+    //IWorldShell
+    function emitAddOperator(address operator_) public onlyCore {
+        emit AddOperator(operator_);
+    }
+    function emitRemoveOperator(address operator_) public onlyCore {
+        emit AddOperator(operator_);
+    }
+    function emitRegisterAsset(address _asset) public onlyCore {
+        emit RegisterAsset(_asset);
+    }
+    function emitEnableAsset(address _asset) public onlyCore {
+        emit EnableAsset(_asset);
+    }
+    function emitDisableAsset(address _asset) public onlyCore {
+        emit DisableAsset(_asset);
+    }
+    function emitAddSafeContract(address _contract) public onlyCore {
+        emit AddSafeContract(_contract);
+    }
+    function emitRemoveSafeContract(address _contract) public onlyCore {
+        emit RemoveSafeContract(_contract);
+    }
+    function emitTrustWorld(
+        uint256 _accountId,
+        bool _isTrustWorld,
         bool isBWO,
         address sender,
         uint256 nonce
-    ) external;
+    ) public onlyCore {
+        emit TrustWorld(_accountId, _isTrustWorld, isBWO, sender, nonce);
+    }
+    function emitTrustContract(
+        uint256 _accountId,
+        address _safeContract,
+        bool _isTrustContract,
+        bool isBWO,
+        address sender,
+        uint256 nonce
+    ) public onlyCore {
+        emit TrustContract(_accountId, _safeContract,_isTrustContract, isBWO, sender, nonce);
+    }
 
 }

@@ -1,7 +1,8 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
+import "./ShellCore.sol";
 
-interface IMetaverseBase {
+interface IMetaverseMetadata {
     //metaverse
     function name() external view returns (string memory);
 
@@ -28,7 +29,7 @@ interface IMetaverseBase {
     function getWorlds() external view returns (address[] memory);
 }
 
-interface IMetaverse is IMetaverseBase {
+interface IMetaverse is IMetaverseMetadata {
     function createAccount(address _address, bool _isTrustAdmin) external returns (uint256 id);
 
     function createAccountBWO(
@@ -85,7 +86,7 @@ interface IMetaverse is IMetaverseBase {
     ) external;
 }
 
-interface IMetaverseCore is IMetaverseBase {
+interface IMetaverseCore is IMetaverseMetadata {
     function createAccount_(
         address _msgSender,
         address _address,
@@ -160,7 +161,7 @@ interface IMetaverseCore is IMetaverseBase {
     ) external;
 }
 
-interface IMetaverseShell {
+contract IMetaverseShell is ShellContract {
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
@@ -193,26 +194,37 @@ interface IMetaverseShell {
         uint256 nonce
     );
 
-    function emitSetAdmin(address admin) external;
+    //IMetaverseShell
+    function emitAddOperator(address operator_) public onlyCore {
+        emit AddOperator(operator_);
+    }
 
-    function emitAddOperator(address operator_) external;
+    function emitRemoveOperator(address operator_) public onlyCore {
+        emit RemoveOperator(operator_);
+    }
 
-    function emitRemoveOperator(address operator_) external;
+    function emitRegisterWorld(address world_) public onlyCore {
+        emit RegisterWorld(world_);
+    }
 
-    function emitRegisterWorld(address world_) external;
+    function emitEnableWorld(address world_) public onlyCore {
+        emit EnableWorld(world_);
+    }
 
-    function emitEnableWorld(address world_) external;
-
-    function emitDisableWorld(address world_) external;
+    function emitDisableWorld(address world_) public onlyCore {
+        emit DisableWorld(world_);
+    }
 
     function emitCreateAccount(
         uint256 accountId_,
         address authAddress_,
         bool isTrustAdmin_,
-        bool isBWO_,
+        bool isBWO,
         address sender_,
         uint256 nonce_
-    ) external;
+    ) public onlyCore {
+        emit CreateAccount(accountId_, authAddress_, isTrustAdmin_, isBWO, sender_, nonce_);
+    }
 
     function emitTrustAdmin(
         uint256 accountId_,
@@ -220,16 +232,22 @@ interface IMetaverseShell {
         bool isBWO,
         address sender_,
         uint256 nonce_
-    ) external;
+    ) public  onlyCore {
+        emit TrustAdmin(accountId_, isTrustAdmin_, isBWO, sender_, nonce_);
+    }
 
     function emitFreezeAccount(
         uint256 accountId_,
         bool isBWO_,
         address sender_,
         uint256 nonce_
-    ) external;
+    ) public onlyCore {
+        emit FreezeAccount(accountId_, isBWO_, sender_, nonce_);
+    }
 
-    function emitUnFreezeAccount(uint256 accountId_, address newAuthAddress_) external;
+    function emitUnFreezeAccount(uint256 accountId_, address newAuthAddress_) public onlyCore {
+        emit UnFreezeAccount(accountId_, newAuthAddress_);
+    }
 
     function emitAddAuthAddress(
         uint256 accountId_,
@@ -237,7 +255,9 @@ interface IMetaverseShell {
         bool isBWO_,
         address sender_,
         uint256 nonce_
-    ) external;
+    ) public onlyCore {
+        emit AddAuthAddress(accountId_, authAddress_, isBWO_, sender_, nonce_);
+    }
 
     function emitRemoveAuthAddress(
         uint256 accountId_,
@@ -245,5 +265,12 @@ interface IMetaverseShell {
         bool isBWO_,
         address sender_,
         uint256 nonce_
-    ) external;
+    ) public onlyCore {
+        emit RemoveAuthAddress(accountId_, authAddress_, isBWO_, sender_, nonce_);
+    }
+
+    function emitSetAdmin(address admin) external onlyCore {
+        emit SetAdmin(admin);
+    }
+
 }

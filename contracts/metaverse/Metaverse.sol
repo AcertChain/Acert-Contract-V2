@@ -2,93 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IMetaverse.sol";
-import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Metaverse is IMetaverse, IMetaverseShell, ShellContract, IAcertContract {
+contract Metaverse is IMetaverse, MetaverseShell, ShellContract, IAcertContract {
     function core() internal view returns (IMetaverseCore) {
         return IMetaverseCore(coreContract);
     }
 
-    //IMetaverseShell
-    function emitAddOperator(address operator_) public override onlyCore {
-        emit AddOperator(operator_);
-    }
-
-    function emitRemoveOperator(address operator_) public override onlyCore {
-        emit RemoveOperator(operator_);
-    }
-
-    function emitRegisterWorld(address world_) public override onlyCore {
-        emit RegisterWorld(world_);
-    }
-
-    function emitEnableWorld(address world_) public override onlyCore {
-        emit EnableWorld(world_);
-    }
-
-    function emitDisableWorld(address world_) public override onlyCore {
-        emit DisableWorld(world_);
-    }
-
-    function emitCreateAccount(
-        uint256 accountId_,
-        address authAddress_,
-        bool isTrustAdmin_,
-        bool isBWO,
-        address sender_,
-        uint256 nonce_
-    ) public override onlyCore {
-        emit CreateAccount(accountId_, authAddress_, isTrustAdmin_, isBWO, sender_, nonce_);
-    }
-
-    function emitTrustAdmin(
-        uint256 accountId_,
-        bool isTrustAdmin_,
-        bool isBWO,
-        address sender_,
-        uint256 nonce_
-    ) public override onlyCore {
-        emit TrustAdmin(accountId_, isTrustAdmin_, isBWO, sender_, nonce_);
-    }
-
-    function emitFreezeAccount(
-        uint256 accountId_,
-        bool isBWO_,
-        address sender_,
-        uint256 nonce_
-    ) public override onlyCore {
-        emit FreezeAccount(accountId_, isBWO_, sender_, nonce_);
-    }
-
-    function emitUnFreezeAccount(uint256 accountId_, address newAuthAddress_) public override onlyCore {
-        emit UnFreezeAccount(accountId_, newAuthAddress_);
-    }
-
-    function emitAddAuthAddress(
-        uint256 accountId_,
-        address authAddress_,
-        bool isBWO_,
-        address sender_,
-        uint256 nonce_
-    ) public override onlyCore {
-        emit AddAuthAddress(accountId_, authAddress_, isBWO_, sender_, nonce_);
-    }
-
-    function emitRemoveAuthAddress(
-        uint256 accountId_,
-        address authAddress_,
-        bool isBWO_,
-        address sender_,
-        uint256 nonce_
-    ) public override onlyCore {
-        emit RemoveAuthAddress(accountId_, authAddress_, isBWO_, sender_, nonce_);
-    }
-
-    function emitSetAdmin(address admin) external override onlyCore {
-        emit SetAdmin(admin);
-    }
 
     /**
      * @dev See {IAcertContract-metaverseAddress}.
