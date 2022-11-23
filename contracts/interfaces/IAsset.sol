@@ -7,7 +7,7 @@ interface IAsset {
         ASSET721
     }
 
-    function protocol() external pure returns (ProtocolEnum);
+    function protocol() external view returns (ProtocolEnum);
 
     function worldAddress() external view returns (address);
 
