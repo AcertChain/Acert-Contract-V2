@@ -5,7 +5,7 @@ import "../interfaces/IMetaverse.sol";
 import "../interfaces/IAcertContract.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Metaverse is IMetaverse, MetaverseShell, ShellContract, IAcertContract {
+contract Metaverse is IMetaverse, MetaverseShell, IAcertContract {
     function core() internal view returns (IMetaverseCore) {
         return IMetaverseCore(coreContract);
     }

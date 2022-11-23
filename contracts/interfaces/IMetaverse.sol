@@ -161,7 +161,7 @@ interface IMetaverseCore is IMetaverseMetadata {
     ) external;
 }
 
-contract IMetaverseShell is ShellContract {
+contract MetaverseShell is ShellContract {
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);

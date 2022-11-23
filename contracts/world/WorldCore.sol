@@ -29,8 +29,8 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, IApplyStorage, E
         worldStorage = WorldStorage(_worldStorage);
     }
 
-    function shell() public view returns (IWorldShell) {
-        return IWorldShell(shellContract);
+    function shell() public view returns (WorldShell) {
+        return WorldShell(shellContract);
     }
 
     /**

@@ -33,8 +33,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
         metaStorage = MetaverseStorage(metaStorage_);
     }
 
-    function shell() public view returns (IMetaverseShell) {
-        return IMetaverseShell(shellContract);
+    function shell() public view returns (MetaverseShell) {
+        return MetaverseShell(shellContract);
     }
 
     /**
