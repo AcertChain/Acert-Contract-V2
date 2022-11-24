@@ -3,15 +3,8 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "../interfaces/IAsset20.sol";
-import "../interfaces/IWorld.sol";
-import "../interfaces/IMetaverse.sol";
 import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAcertContract.sol";
-import "../interfaces/ShellCore.sol";
-import "../storage/Asset20Storage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract Asset20 is IAsset20, Asset20Shell, IAcertContract {
 
@@ -27,7 +20,7 @@ contract Asset20 is IAsset20, Asset20Shell, IAcertContract {
     }
 
     /**
-     * @dev See {IERC20-symbol}.
+     * @dev See {IERC20-name}.
      */
     function name() public view virtual override returns (string memory) {
         return core().name();
@@ -75,10 +68,16 @@ contract Asset20 is IAsset20, Asset20Shell, IAcertContract {
         return core().protocol();
     }
 
+    /**
+     * @dev See {IAsset-worldAddress}.
+     */
     function worldAddress() public view override returns (address) {
         return core().worldAddress();
     }
-
+    
+    /**
+     * @dev See {IAsset-getNonce}.
+     */
     function getNonce(address account) public view virtual override returns (uint256) {
         return core().getNonce(account);
     }
@@ -175,7 +174,7 @@ contract Asset20 is IAsset20, Asset20Shell, IAcertContract {
     }
 
 // mint & burn
-    function _mint(uint256 account, uint256 amount) private {
+    function _mint(uint256 account, uint256 amount) internal {
         return core().mint_(_msgSender(), account, amount);
     }
 }

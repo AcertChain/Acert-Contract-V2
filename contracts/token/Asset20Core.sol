@@ -8,8 +8,7 @@ import "../interfaces/IMetaverse.sol";
 import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAcertContract.sol";
 import "../interfaces/ShellCore.sol";
-import "../storage/Asset20Storage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Asset20Storage.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
@@ -230,7 +229,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorag
         uint256 deadline,
         bytes memory signature
     ) public override onlyShell returns (bool) {
-        _checkBWOByAsset(_msgSender);
+        _checkBWO(_msgSender);
         transferFromBWOParamsVerify(fromAccount, toAccount, amount, sender, deadline, signature);
 
         if (_getAccountIdByAddress(sender) != fromAccount) {
@@ -294,7 +293,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorag
         if (toAccount == 0) {
             return burn_(fromAccount, amount, _sender);
         }
-        require(_isExist(toAccount), "Asset20: to account is not exist");
+        require(_accountIsExist(toAccount), "Asset20: to account is not exist");
 
         uint256 fromBalance = _balanceOf(fromAccount);
         require(fromBalance >= amount, "Asset20: transfer amount exceeds balance");
@@ -342,7 +341,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorag
         uint256 deadline,
         bytes memory signature
     ) public override onlyShell returns (bool) {
-        _checkBWOByAsset(_msgSender);
+        _checkBWO(_msgSender);
         approveBWOParamsVerify(ownerId, spender, amount, sender, deadline, signature);
         _approveId(ownerId, _getAddressByAccountId(ownerId), spender, amount, true, sender);
         return true;
@@ -403,7 +402,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorag
 // mint & burn
     function mint_(address _msgSender, uint256 account, uint256 amount) public override onlyShell {
         _checkIdIsNotZero(account, "Asset20: mint to the zero Id");
-        require(_isExist(account), "Asset20: to account is not exist");
+        require(_accountIsExist(account), "Asset20: to account is not exist");
 
         _setBalance(account, _balanceOf(account) + amount);
         _setTotalSupply(totalSupply() + amount);
@@ -418,7 +417,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorag
         address sender
     ) internal virtual {
         _checkIdIsNotZero(account, "Asset20: burn from the zero Id");
-        require(_isExist(account), "Asset20: to account is not exist");
+        require(_accountIsExist(account), "Asset20: to account is not exist");
 
         uint256 accountBalance = _balanceOf(account);
         require(accountBalance >= amount, "Asset20: burn amount exceeds balance");
@@ -483,11 +482,11 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorag
         metaverse.checkSender(ownerId, sender);
     }
 
-    function _isExist(uint256 _id) internal view returns (bool) {
+    function _accountIsExist(uint256 _id) internal view returns (bool) {
         return metaverse.accountIsExist(_id);
     }
 
-    function _checkBWOByAsset(address _sender) internal view {
+    function _checkBWO(address _sender) internal view {
         require(world.checkBWO(_sender), "Asset20: BWO is not allowed");
     }
 
@@ -503,12 +502,5 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorag
     ) internal view {
         require(deadline == 0 || block.timestamp < deadline, "Asset20: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "Asset20: recoverSig failed");
-    }
-
-    function transfer(address to, uint256 amount) public override onlyShell returns (bool) {
-    }
-    function transferFrom(address from, address to, uint256 amount) public override onlyShell returns (bool) {
-    }
-    function approve(address spender, uint256 amount) public override onlyShell returns (bool) {
     }
 }

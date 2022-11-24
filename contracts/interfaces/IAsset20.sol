@@ -1,18 +1,18 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "./IERC20.sol";
 import "./ShellCore.sol";
 import "./IAsset.sol";
 
-interface IAsset20Metadata is IAsset , IERC20Metadata {
+interface IAsset20Metadata is IAsset {
 
     function balanceOf(uint256 account) external view returns (uint256);
 
     function allowance(uint256 account, address spender) external view returns (uint256);
 }
 
-interface IAsset20 is IAsset20Metadata {
+interface IAsset20 is IAsset20Metadata, IERC20 {
     function transferFrom(
         uint256 from,
         uint256 to,
@@ -44,7 +44,7 @@ interface IAsset20 is IAsset20Metadata {
     ) external returns (bool);
 }
 
-interface IAsset20Core is IAsset20Metadata {
+interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
     function transfer_(
         address _msgSender,
         address to,
@@ -97,17 +97,7 @@ interface IAsset20Core is IAsset20Metadata {
     function mint_(address _msgSender, uint256 account, uint256 amount) external;
 }
 
-contract Asset20Shell is ShellContract {
-    /**
-     * @dev See {IERC20-event-Transfer}.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev See {IERC20-event-Approval}.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-
+abstract contract Asset20Shell is IERC20Event, ShellContract {
     event AssetTransfer(
         uint256 indexed from,
         uint256 indexed to,
@@ -164,39 +154,3 @@ contract Asset20Shell is ShellContract {
         emit AssetApproval(owner, spender, value, isBWO, sender, nonce);
     }
 }
-// interface IERC20Metadata {
-
-//     /**
-//      * @dev Returns the amount of tokens in existence.
-//      */
-//     function totalSupply() external view returns (uint256);
-
-//     /**
-//      * @dev Returns the amount of tokens owned by `account`.
-//      */
-//     function balanceOf(address account) external view returns (uint256);
-
-//     /**
-//      * @dev Returns the remaining number of tokens that `spender` will be
-//      * allowed to spend on behalf of `owner` through {transferFrom}. This is
-//      * zero by default.
-//      *
-//      * This value changes when {approve} or {transferFrom} are called.
-//      */
-//     function allowance(address owner, address spender) external view returns (uint256);
-
-//     /**
-//      * @dev Returns the name of the token.
-//      */
-//     function name() external view returns (string memory);
-
-//     /**
-//      * @dev Returns the symbol of the token.
-//      */
-//     function symbol() external view returns (string memory);
-
-//     /**
-//      * @dev Returns the decimals places of the token.
-//      */
-//     function decimals() external view returns (uint8);
-// }
