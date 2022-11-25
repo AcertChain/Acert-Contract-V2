@@ -14,7 +14,7 @@ import "../token/NFTMetadata.sol";
 
 contract DeployNFT is Ownable {
 
-    Acert acert;
+    Acert public acert;
     
     constructor(address _acert) {
         acert = Acert(_acert);
