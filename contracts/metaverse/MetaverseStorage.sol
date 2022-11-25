@@ -5,7 +5,6 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IAcertContract.sol";
-import "../interfaces/IMetaverse.sol";
 
 contract MetaverseStorage is IAcertContract, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -35,8 +34,6 @@ contract MetaverseStorage is IAcertContract, Ownable {
     address public metaverse;
     address public admin;
     uint256 public totalAccount;
-
-    constructor() {}
 
     modifier onlyMetaverse() {
         require(metaverse == msg.sender);

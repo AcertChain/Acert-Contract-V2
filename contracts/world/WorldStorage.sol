@@ -1,8 +1,6 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "../interfaces/IAsset.sol";
-import "../interfaces/IWorld.sol";
 import "../interfaces/IAcertContract.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -26,8 +24,6 @@ contract WorldStorage is IAcertContract, Ownable {
     mapping(address => bool) public isOperator;
 
     address public world;
-
-    constructor() {}
 
     modifier onlyWorld() {
         require(world == msg.sender);

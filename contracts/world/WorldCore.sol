@@ -1,29 +1,26 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
+import "../interfaces/IAsset.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
-import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
-import "../interfaces/IApplyStorage.sol";
 import "./WorldStorage.sol";
-import "./World.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract WorldCore is IWorldCore, CoreContract, IAcertContract, IApplyStorage, EIP712 {
+contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     string public worldName;
     string public worldVersion;
     WorldStorage worldStorage;
     IMetaverse metaverse;
 
     constructor(
-        address metaverse_,
-        address _worldStorage,
         string memory _name,
-        string memory _version
+        string memory _version,
+        address _metaverse,
+        address _worldStorage
     ) EIP712(_name, _version) {
-        metaverse = IMetaverse(metaverse_);
+        metaverse = IMetaverse(_metaverse);
         worldName = _name;
         worldVersion = _version;
         worldStorage = WorldStorage(_worldStorage);
@@ -31,13 +28,6 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, IApplyStorage, E
 
     function shell() public view returns (WorldShell) {
         return WorldShell(shellContract);
-    }
-
-    /**
-     * @dev See {IApplyStorage-getStorageAddress}.
-     */
-    function getStorageAddress() public view override returns (address) {
-        return address(worldStorage);
     }
 
     /**

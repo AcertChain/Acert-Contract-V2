@@ -5,12 +5,10 @@ import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
 import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
-import "../interfaces/IApplyStorage.sol";
 import "./MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplyStorage, EIP712 {
+contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     string public metverseName;
     string public metverseVersion;
     uint256 public _startId;
@@ -35,13 +33,6 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, IApplySt
 
     function shell() public view returns (MetaverseShell) {
         return MetaverseShell(shellContract);
-    }
-
-    /**
-     * @dev See {IApplyStorage-getStorageAddress}.
-     */
-    function getStorageAddress() public view override returns (address) {
-        return address(metaStorage);
     }
 
     /**

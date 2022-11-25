@@ -5,14 +5,12 @@ import "hardhat/console.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
-import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAcertContract.sol";
-import "../interfaces/ShellCore.sol";
 import "./Asset20Storage.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorage, EIP712 {
+contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     IWorld public world;
     IMetaverse public metaverse;
     Asset20Storage public storageContract;
@@ -24,14 +22,14 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorag
         string memory name_,
         string memory symbol_,
         string memory version_,
-        address world_,
-        address storage_
+        address _world,
+        address _storage
     ) EIP712(name_, version_) {
         assetName = name_;
         assetSymbol = symbol_;
-        world = IWorld(world_);
-        storageContract = Asset20Storage(storage_);
-        metaverse = IMetaverse(IAcertContract(world_).metaverseAddress());
+        world = IWorld(_world);
+        storageContract = Asset20Storage(_storage);
+        metaverse = IMetaverse(IAcertContract(_world).metaverseAddress());
     }
 
     function shell() public view returns (Asset20Shell) {
@@ -48,13 +46,6 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, IApplyStorag
      */
     function metaverseAddress() external view override returns (address) {
         return address(metaverse);
-    }
-
-    /**
-     * @dev See {IApplyStorage-getStorageAddress}.
-     */
-    function getStorageAddress() external view override returns (address) {
-        return address(storageContract);
     }
 
     /**

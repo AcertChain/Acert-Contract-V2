@@ -47,11 +47,9 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
 
     address public assetStorageContract;
 
-    constructor(address _assetStorageContract, address _owner) {
+    constructor(address _assetStorageContract) {
         require(_assetStorageContract != address(0), "AssetStorage contract address cannot be 0");
-        require(_owner != address(0), "Owner address cannot be 0");
         assetStorageContract = _assetStorageContract;
-        _transferOwnership(_owner);
     }
 
     /**

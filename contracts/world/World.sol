@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IWorld.sol";
 import "../interfaces/IAcertContract.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract World is IWorld, WorldShell, IAcertContract {
     

@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "../interfaces/IAsset20.sol";
-import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAcertContract.sol";
 
 contract Asset20 is IAsset20, Asset20Shell, IAcertContract {
@@ -74,7 +73,7 @@ contract Asset20 is IAsset20, Asset20Shell, IAcertContract {
     function worldAddress() public view override returns (address) {
         return core().worldAddress();
     }
-    
+
     /**
      * @dev See {IAsset-getNonce}.
      */

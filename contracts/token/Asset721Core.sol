@@ -5,7 +5,6 @@ import "hardhat/console.sol";
 import "../interfaces/IAsset721.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
-import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAcertContract.sol";
 import "./Asset721Storage.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -14,8 +13,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, IApplyStorage, EIP712 {
-    using Address for address;
+contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
+//    using Address for address;
     using Strings for uint256;
 
     string private assetName;
@@ -54,13 +53,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, IApplyStor
      */
     function metaverseAddress() external view override returns (address) {
         return address(metaverse);
-    }
-
-    /**
-     * @dev See {IApplyStorage-getStorageAddress}.
-     */
-    function getStorageAddress() external view override returns (address) {
-        return address(storageContract);
     }
 
     function updateWorld(address _world) public onlyOwner {
@@ -159,7 +151,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, IApplyStor
      * @dev See {IAsset721-getNFTMetadataContract}.
      */
     function getNFTMetadataContract() public view virtual override returns (address) {
-        return address(storageContract.nftMetadata());
+        return storageContract.nftMetadata();
     }
 
     function _beforeTokenTransfer(

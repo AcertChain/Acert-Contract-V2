@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "../interfaces/IAsset721.sol";
-import "../interfaces/IApplyStorage.sol";
 import "../interfaces/IAcertContract.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
