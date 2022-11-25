@@ -22,10 +22,8 @@ import "../token/NFTMetadata.sol";
 
 contract DeployMoga is Ownable {
 
-    Acert acert;
+    Acert public acert;
     
-    mapping(address => bool) public isEnabledMetaverses;
-
     constructor(address _acert) {
         acert = Acert(_acert);
     }
