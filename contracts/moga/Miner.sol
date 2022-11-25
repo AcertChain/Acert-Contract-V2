@@ -13,8 +13,6 @@ contract Miner is Ownable {
     event MinerAdded(address indexed account);
     event MinerRemoved(address indexed account);
 
-    constructor() {}
-
     modifier onlyMiner() {
         require(miners[msg.sender], "Minter: caller is not the minter");
         _;
