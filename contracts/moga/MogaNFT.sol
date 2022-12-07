@@ -6,7 +6,6 @@ import "../token/Asset721.sol";
 import "../interfaces/Mineable.sol";
 
 contract MogaNFT_V3 is Asset721, Mineable {
-
     function mint(uint256 to, uint256 tokenId) public onlyMiner {
         _mint(to, tokenId);
     }

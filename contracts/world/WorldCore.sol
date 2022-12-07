@@ -152,7 +152,11 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     }
 
     //account
-    function trustWorld_(address _msgSender, uint256 _id, bool _isTrustWorld) public override onlyShell {
+    function trustWorld_(
+        address _msgSender,
+        uint256 _id,
+        bool _isTrustWorld
+    ) public override onlyShell {
         metaverse.checkSender(_id, _msgSender);
         _trustWorld(_id, _isTrustWorld, false, _msgSender);
     }
@@ -221,7 +225,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     /**
      * @dev See {IWorld-isEnabledAsset}.
      */
-    function isEnabledAsset(address _address) public view override returns (bool)  {
+    function isEnabledAsset(address _address) public view override returns (bool) {
         return worldStorage.isEnabledAsset(_address);
     }
 
@@ -300,5 +304,4 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     function getChainId() public view returns (uint256) {
         return block.chainid;
     }
-
 }

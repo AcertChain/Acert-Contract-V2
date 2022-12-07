@@ -61,7 +61,11 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     /**
      * @dev See {IMetaverseCore-createAccount_}.
      */
-    function createAccount_(address _msgSender, address _address, bool _isTrustAdmin) public override onlyShell returns (uint256 id) {
+    function createAccount_(
+        address _msgSender,
+        address _address,
+        bool _isTrustAdmin
+    ) public override onlyShell returns (uint256 id) {
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
         return _createAccount(_address, _isTrustAdmin, false, _msgSender);

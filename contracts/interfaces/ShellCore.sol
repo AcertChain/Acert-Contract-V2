@@ -13,7 +13,7 @@ abstract contract ShellContract is Ownable {
         _;
     }
 
-    function updateCore(address _address) virtual public onlyOwner {
+    function updateCore(address _address) public virtual onlyOwner {
         coreContract = _address;
         emit UpdateCore(_address);
     }

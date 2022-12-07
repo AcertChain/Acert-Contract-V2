@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-
 interface IERC721Event {
     /**
      * @dev Emitted when `tokenId` token is transferred from `from` to `to`.
@@ -20,6 +19,7 @@ interface IERC721Event {
      */
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
 }
+
 /**
  * @title ERC-721 Non-Fungible Token Standard, optional metadata extension
  * @dev See https://eips.ethereum.org/EIPS/eip-721
@@ -71,12 +71,10 @@ interface IERC721Metadata {
     function isApprovedForAll(address owner, address operator) external view returns (bool);
 }
 
-
 /**
  * @dev Required interface of an ERC721 compliant contract.
  */
 interface IERC721 is IERC721Metadata, IERC721Event, IERC165 {
-
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`.
      *

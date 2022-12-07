@@ -3,7 +3,6 @@
 
 pragma solidity ^0.8.0;
 
-
 interface IERC20Event {
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
@@ -18,10 +17,9 @@ interface IERC20Event {
      * a call to {approve}. `value` is the new allowance.
      */
     event Approval(address indexed owner, address indexed spender, uint256 value);
-
 }
 
-interface IERC20Metadata{
+interface IERC20Metadata {
     /**
      * @dev Returns the name of the token.
      */
@@ -55,11 +53,9 @@ interface IERC20Metadata{
      * This value changes when {approve} or {transferFrom} are called.
      */
     function allowance(address owner, address spender) external view returns (uint256);
-
 }
 
-interface IERC20 is IERC20Metadata, IERC20Event{
-
+interface IERC20 is IERC20Metadata, IERC20Event {
     /**
      * @dev Moves `amount` tokens from the caller's account to `to`.
      *

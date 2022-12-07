@@ -12,13 +12,12 @@ import "../token/Asset20Core.sol";
 import "../token/Asset20Storage.sol";
 
 contract DeployToken is Ownable {
-
     Acert public acert;
-    
+
     constructor(address _acert) {
         acert = Acert(_acert);
     }
-    
+
     function transferOwnership(address _contract, address _owner) public onlyOwner {
         Ownable(_contract).transferOwnership(_owner);
     }

@@ -5,11 +5,10 @@ import "../interfaces/IWorld.sol";
 import "../interfaces/IAcertContract.sol";
 
 contract World is IWorld, WorldShell, IAcertContract {
-    
     function core() internal view returns (IWorldCore) {
         return IWorldCore(coreContract);
     }
-    
+
     /**
      * @dev See {IAcertContract-metaverseAddress}.
      */
@@ -68,19 +67,36 @@ contract World is IWorld, WorldShell, IAcertContract {
         return core().checkBWO(_address);
     }
 
-    function trustContract(uint256 _id, address _contract, bool _isTrustContract) public override {
+    function trustContract(
+        uint256 _id,
+        address _contract,
+        bool _isTrustContract
+    ) public override {
         return core().trustContract_(_msgSender(), _id, _contract, _isTrustContract);
     }
-    
-    function trustContractBWO(uint256 _id, address _contract, bool _isTrustContract, address sender, uint256 deadline, bytes memory signature) public override {
+
+    function trustContractBWO(
+        uint256 _id,
+        address _contract,
+        bool _isTrustContract,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public override {
         return core().trustContractBWO_(_msgSender(), _id, _contract, _isTrustContract, sender, deadline, signature);
     }
-    
+
     function trustWorld(uint256 _id, bool _isTrustWorld) public override {
         return core().trustWorld_(_msgSender(), _id, _isTrustWorld);
     }
 
-    function trustWorldBWO(uint256 _id, bool _isTrustWorld, address sender, uint256 deadline, bytes memory signature) public override {
+    function trustWorldBWO(
+        uint256 _id,
+        bool _isTrustWorld,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public override {
         return core().trustWorldBWO_(_msgSender(), _id, _isTrustWorld, sender, deadline, signature);
     }
 }

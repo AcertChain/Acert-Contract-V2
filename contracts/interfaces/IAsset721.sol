@@ -6,7 +6,6 @@ import "./ShellCore.sol";
 import "./IAsset.sol";
 
 interface IAsset721Metadata is IAsset {
-
     function balanceOf(uint256 account) external view returns (uint256 balance);
 
     function ownerAccountOf(uint256 tokenId) external view returns (uint256 account);
@@ -78,7 +77,6 @@ interface IAsset721 is IAsset721Metadata, IERC721 {
         bytes memory signature
     ) external;
 }
-
 
 interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
     function transferFrom_(
@@ -177,9 +175,18 @@ interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
         bytes memory signature
     ) external;
 
-    function safeMint_(address _msgSender, uint256 to, uint256 tokenId, bytes memory data) external;
+    function safeMint_(
+        address _msgSender,
+        uint256 to,
+        uint256 tokenId,
+        bytes memory data
+    ) external;
 
-    function mint_(address _msgSender, uint256 to, uint256 tokenId) external;
+    function mint_(
+        address _msgSender,
+        uint256 to,
+        uint256 tokenId
+    ) external;
 }
 
 abstract contract Asset721Shell is IERC721Event, ShellContract {
@@ -209,7 +216,7 @@ abstract contract Asset721Shell is IERC721Event, ShellContract {
         address indexed sender,
         uint256 nonce
     );
-    
+
     function emitTransfer(
         address from,
         address to,
@@ -217,7 +224,7 @@ abstract contract Asset721Shell is IERC721Event, ShellContract {
     ) public onlyCore {
         emit Transfer(from, to, tokenId);
     }
-    
+
     function emitApproval(
         address owner,
         address approved,
@@ -225,7 +232,7 @@ abstract contract Asset721Shell is IERC721Event, ShellContract {
     ) public onlyCore {
         emit Approval(owner, approved, tokenId);
     }
-    
+
     function emitApprovalForAll(
         address owner,
         address operator,

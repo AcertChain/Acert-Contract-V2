@@ -9,7 +9,6 @@ contract Metaverse is IMetaverse, MetaverseShell, IAcertContract {
         return IMetaverseCore(coreContract);
     }
 
-
     /**
      * @dev See {IAcertContract-metaverseAddress}.
      */

@@ -128,7 +128,11 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     /**
      * @dev See {IERC20-transfer}.
      */
-    function transfer_(address _msgSender, address to, uint256 amount) public override onlyShell returns (bool) {
+    function transfer_(
+        address _msgSender,
+        address to,
+        uint256 amount
+    ) public override onlyShell returns (bool) {
         _transfer(_msgSender, to, amount, _msgSender);
         return true;
     }
@@ -186,14 +190,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         uint256 amount
     ) public override onlyShell returns (bool) {
         if (_getAccountIdByAddress(_msgSender) != fromAccount) {
-            _spendAllowance(
-                fromAccount,
-                _getAddressByAccountId(fromAccount),
-                _msgSender,
-                amount,
-                false,
-                _msgSender
-            );
+            _spendAllowance(fromAccount, _getAddressByAccountId(fromAccount), _msgSender, amount, false, _msgSender);
         }
 
         _transferAsset(
@@ -300,7 +297,11 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     /**
      * @dev See {IERC20-approve}.
      */
-    function approve_(address _msgSender, address spender, uint256 amount) public override onlyShell returns (bool) {
+    function approve_(
+        address _msgSender,
+        address spender,
+        uint256 amount
+    ) public override onlyShell returns (bool) {
         _approveId(_getOrCreateAccountId(_msgSender), _msgSender, spender, amount, false, _msgSender);
         return true;
     }
@@ -390,8 +391,12 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         _incrementNonce(sender);
     }
 
-// mint & burn
-    function mint_(address _msgSender, uint256 account, uint256 amount) public override onlyShell {
+    // mint & burn
+    function mint_(
+        address _msgSender,
+        uint256 account,
+        uint256 amount
+    ) public override onlyShell {
         _checkIdIsNotZero(account, "Asset20: mint to the zero Id");
         require(_accountIsExist(account), "Asset20: to account is not exist");
 
@@ -450,7 +455,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     function _getOrCreateAccountId(address _address) internal returns (uint256) {
         if (_address != address(0)) {
             return 0;
-        } else if(metaverse.getAccountIdByAddress(_address) == 0) {
+        } else if (metaverse.getAccountIdByAddress(_address) == 0) {
             return metaverse.createAccount(_address, false);
         } else {
             return metaverse.getAccountIdByAddress(_address);

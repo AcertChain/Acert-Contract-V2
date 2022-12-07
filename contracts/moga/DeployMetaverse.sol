@@ -9,22 +9,17 @@ import "../metaverse/MetaverseCore.sol";
 import "../metaverse/MetaverseStorage.sol";
 
 contract DeployMetaverse is Ownable {
-
     Acert public acert;
-    
+
     constructor(address _acert) {
         acert = Acert(_acert);
     }
-    
+
     function transferOwnership(address _contract, address _owner) public onlyOwner {
         Ownable(_contract).transferOwnership(_owner);
     }
 
-    function createMetaverse(
-        address _metaCore,
-        string memory _remark
-    ) public onlyOwner {
-
+    function createMetaverse(address _metaCore, string memory _remark) public onlyOwner {
         MetaverseStorage metaStorage = new MetaverseStorage();
         MetaverseCore metaCore = MetaverseCore(_metaCore);
         Metaverse metaverse = new Metaverse();

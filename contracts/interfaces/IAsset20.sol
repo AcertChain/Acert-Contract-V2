@@ -6,7 +6,6 @@ import "./ShellCore.sol";
 import "./IAsset.sol";
 
 interface IAsset20Metadata is IAsset {
-
     function balanceOf(uint256 account) external view returns (uint256);
 
     function allowance(uint256 account, address spender) external view returns (uint256);
@@ -50,7 +49,7 @@ interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
         address to,
         uint256 amount
     ) external returns (bool);
-    
+
     function transferFrom_(
         address _msgSender,
         address from,
@@ -75,7 +74,11 @@ interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
         bytes memory signature
     ) external returns (bool);
 
-    function approve_(address _msgSender, address spender, uint256 amount) external returns (bool);
+    function approve_(
+        address _msgSender,
+        address spender,
+        uint256 amount
+    ) external returns (bool);
 
     function approve_(
         address _msgSender,
@@ -93,8 +96,12 @@ interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
         uint256 deadline,
         bytes memory signature
     ) external returns (bool);
-    
-    function mint_(address _msgSender, uint256 account, uint256 amount) external;
+
+    function mint_(
+        address _msgSender,
+        uint256 account,
+        uint256 amount
+    ) external;
 }
 
 abstract contract Asset20Shell is IERC20Event, ShellContract {
@@ -115,7 +122,7 @@ abstract contract Asset20Shell is IERC20Event, ShellContract {
         address indexed sender,
         uint256 nonce
     );
-    
+
     function emitTransfer(
         address from,
         address to,
@@ -123,7 +130,7 @@ abstract contract Asset20Shell is IERC20Event, ShellContract {
     ) public onlyCore {
         emit Transfer(from, to, value);
     }
-    
+
     function emitApproval(
         address owner,
         address spender,

@@ -50,4 +50,3 @@ contract Asset20Storage is IAcertContract, Ownable {
         allowancesById[_id][_spender] = _allowance;
     }
 }
-

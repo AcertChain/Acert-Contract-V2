@@ -7,7 +7,6 @@ import "../interfaces/IAcertContract.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 contract Asset721 is IAsset721, Asset721Shell, IAcertContract, ERC165 {
-
     function core() internal view returns (IAsset721Core) {
         return IAsset721Core(coreContract);
     }

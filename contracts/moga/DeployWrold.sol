@@ -11,21 +11,17 @@ import "../world/WorldCore.sol";
 import "../world/WorldStorage.sol";
 
 contract DeployWorld is Ownable {
-
     Acert public acert;
-    
+
     constructor(address _acert) {
         acert = Acert(_acert);
     }
-    
+
     function transferOwnership(address _contract, address _owner) public onlyOwner {
         Ownable(_contract).transferOwnership(_owner);
     }
 
-    function createWorld(
-        address _metaverse,
-        string memory _worldName
-    ) public onlyOwner {
+    function createWorld(address _metaverse, string memory _worldName) public onlyOwner {
         Metaverse metaverse = Metaverse(_metaverse);
         string memory version = metaverse.version();
 

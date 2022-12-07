@@ -232,7 +232,7 @@ contract MetaverseShell is ShellContract {
         bool isBWO,
         address sender_,
         uint256 nonce_
-    ) public  onlyCore {
+    ) public onlyCore {
         emit TrustAdmin(accountId_, isTrustAdmin_, isBWO, sender_, nonce_);
     }
 
@@ -272,5 +272,4 @@ contract MetaverseShell is ShellContract {
     function emitSetAdmin(address admin) external onlyCore {
         emit SetAdmin(admin);
     }
-
 }

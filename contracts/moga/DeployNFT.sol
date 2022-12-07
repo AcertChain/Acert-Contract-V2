@@ -13,13 +13,12 @@ import "../token/Asset721Storage.sol";
 import "../token/NFTMetadata.sol";
 
 contract DeployNFT is Ownable {
-
     Acert public acert;
-    
+
     constructor(address _acert) {
         acert = Acert(_acert);
     }
-    
+
     function transferOwnership(address _contract, address _owner) public onlyOwner {
         Ownable(_contract).transferOwnership(_owner);
     }
@@ -34,7 +33,14 @@ contract DeployNFT is Ownable {
         string memory version = world.version();
 
         Asset721Storage assetStorage = new Asset721Storage();
-        Asset721Core assetCore = new Asset721Core(_tokenName, _symbol, version, _tokenURI, _world, address(assetStorage));
+        Asset721Core assetCore = new Asset721Core(
+            _tokenName,
+            _symbol,
+            version,
+            _tokenURI,
+            _world,
+            address(assetStorage)
+        );
         Asset721 asset = new Asset721();
         NFTMetadata metadata = new NFTMetadata(address(assetStorage));
 

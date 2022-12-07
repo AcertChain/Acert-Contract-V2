@@ -94,7 +94,7 @@ contract WorldStorage is IAcertContract, Ownable {
         return safeContracts.values();
     }
 
-    function setTrustContractByAccountId (
+    function setTrustContractByAccountId(
         uint256 _accountId,
         address _address,
         bool _isTrust

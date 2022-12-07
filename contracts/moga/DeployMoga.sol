@@ -21,22 +21,17 @@ import "../token/Asset721Storage.sol";
 import "../token/NFTMetadata.sol";
 
 contract DeployMoga is Ownable {
-
     Acert public acert;
-    
+
     constructor(address _acert) {
         acert = Acert(_acert);
     }
-    
+
     function transferOwnership(address _contract, address _owner) public onlyOwner {
         Ownable(_contract).transferOwnership(_owner);
     }
 
-    function createMetaverse(
-        address _metaCore,
-        string memory _remark
-    ) public onlyOwner {
-
+    function createMetaverse(address _metaCore, string memory _remark) public onlyOwner {
         MetaverseStorage metaStorage = new MetaverseStorage();
         MetaverseCore metaCore = MetaverseCore(_metaCore);
         Metaverse metaverse = new Metaverse();
@@ -52,10 +47,7 @@ contract DeployMoga is Ownable {
         acert.remark(address(metaStorage), _remark, "");
     }
 
-    function createWorld(
-        address _metaverse,
-        string memory _worldName
-    ) public onlyOwner {
+    function createWorld(address _metaverse, string memory _worldName) public onlyOwner {
         Metaverse metaverse = Metaverse(_metaverse);
         string memory version = metaverse.version();
 
@@ -111,7 +103,14 @@ contract DeployMoga is Ownable {
         string memory version = world.version();
 
         Asset721Storage assetStorage = new Asset721Storage();
-        Asset721Core assetCore = new Asset721Core(_tokenName, _symbol, version, _tokenURI, _world, address(assetStorage));
+        Asset721Core assetCore = new Asset721Core(
+            _tokenName,
+            _symbol,
+            version,
+            _tokenURI,
+            _world,
+            address(assetStorage)
+        );
         Asset721 asset = new Asset721();
         NFTMetadata metadata = new NFTMetadata(address(assetStorage));
 

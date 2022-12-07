@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
-//    using Address for address;
+    //    using Address for address;
     using Strings for uint256;
 
     string private assetName;
@@ -189,7 +189,11 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
      * @dev See {IERC721-approve}.
      * @dev See {IAsset721-approve}.
      */
-    function approve_(address _msgSender, address spender, uint256 tokenId) public override onlyShell {
+    function approve_(
+        address _msgSender,
+        address spender,
+        uint256 tokenId
+    ) public override onlyShell {
         uint256 ownerId = ownerAccountOf(tokenId);
         require(
             _getAccountIdByAddress(_msgSender) == ownerId || isApprovedForAll(ownerId, _msgSender),
@@ -274,7 +278,11 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     /**
      * @dev See {IERC721-setApprovalForAll}.
      */
-    function setApprovalForAll_(address _msgSender, address operator, bool approved) public override onlyShell {
+    function setApprovalForAll_(
+        address _msgSender,
+        address operator,
+        bool approved
+    ) public override onlyShell {
         uint256 accountId = _getOrCreateAccountId(_msgSender);
         _checkIdIsNotZero(accountId, "Asset721: approveForAll query for nonexistent account");
         _setApprovalForAll(accountId, operator, approved, false, _msgSender);
@@ -522,7 +530,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         uint256 tokenId,
         bytes memory data
     ) public override onlyShell {
-        safeTransferFrom_(_msgSender,_getOrCreateAccountId(from), _getOrCreateAccountId(to), tokenId, data);
+        safeTransferFrom_(_msgSender, _getOrCreateAccountId(from), _getOrCreateAccountId(to), tokenId, data);
     }
 
     function safeTransferFrom_(
@@ -647,7 +655,11 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         );
     }
 
-    function mint_(address _msgSender, uint256 to, uint256 tokenId) public override onlyShell {
+    function mint_(
+        address _msgSender,
+        uint256 to,
+        uint256 tokenId
+    ) public override onlyShell {
         _checkIdIsNotZero(to, "Asset721: transfer to the zero id");
         require(!_exists(tokenId), "Asset721: token already minted");
         _beforeTokenTransfer(0, to, tokenId);
@@ -770,7 +782,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     function _getOrCreateAccountId(address _address) internal returns (uint256) {
         if (_address != address(0)) {
             return 0;
-        } else if(metaverse.getAccountIdByAddress(_address) == 0) {
+        } else if (metaverse.getAccountIdByAddress(_address) == 0) {
             return metaverse.createAccount(_address, false);
         } else {
             return metaverse.getAccountIdByAddress(_address);
