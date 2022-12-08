@@ -10,7 +10,7 @@
     "deploy": "npx hardhat --network test run scripts/deploy.js",
     "size": "npx hardhat size-contracts",
     "docgen": "npx hardhat docgen",
-    "fmt": "./node_modules/.bin/prettier --write contracts/**/*.sol",
+    "fmt": "./node_modules/.bin/prettier --write contracts/**/*.sol --write test/*.js",
     "abi":"npx hardhat export-abi",
     "clean-abi":"npx hardhat clear-abi"
     

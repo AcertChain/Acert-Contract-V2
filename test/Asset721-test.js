@@ -3,17 +3,11 @@ const {
   shouldBehaveLikeERC721Metadata,
 } = require('./ERC721.behavior');
 
-const {
-  shouldBehaveLikeAsset721,
-} = require('./Asset721.behavior');
+const { shouldBehaveLikeAsset721 } = require('./Asset721.behavior');
 
-const {
-  shouldBehaveLikeAsset721BWO,
-} = require('./Asset721BWO.behavior');
+const { shouldBehaveLikeAsset721BWO } = require('./Asset721BWO.behavior');
 
-const {
-  shouldBehaveLikeAsset721Proxy,
-} = require('./Asset721BWO.proxy');
+const { shouldBehaveLikeAsset721Proxy } = require('./Asset721BWO.proxy');
 
 const Asset721 = artifacts.require('MogaNFT');
 const Asset721Storage = artifacts.require('Asset721Storage');
@@ -27,20 +21,36 @@ contract('Asset721', function (accounts) {
   const symbol = 'NFT';
   const version = '1.0.0';
 
-
   const [op] = accounts;
 
   beforeEach(async function () {
     this.MetaverseStorage = await MetaverseStorage.new();
-    this.Metaverse = await Metaverse.new("metaverse", "1.0", 0, this.MetaverseStorage.address);
+    this.Metaverse = await Metaverse.new(
+      'metaverse',
+      '1.0',
+      0,
+      this.MetaverseStorage.address,
+    );
     await this.MetaverseStorage.updateMetaverse(this.Metaverse.address);
 
     this.WorldStorage = await WorldStorage.new();
-    this.world = await World.new(this.Metaverse.address, this.WorldStorage.address, "world", "1.0");
+    this.world = await World.new(
+      this.Metaverse.address,
+      this.WorldStorage.address,
+      'world',
+      '1.0',
+    );
     await this.WorldStorage.updateWorld(this.world.address);
 
     this.tokenStorage = await Asset721Storage.new();
-    this.token = await Asset721.new(name, symbol, version, "testURI", this.world.address, this.tokenStorage.address);
+    this.token = await Asset721.new(
+      name,
+      symbol,
+      version,
+      'testURI',
+      this.world.address,
+      this.tokenStorage.address,
+    );
     await this.tokenStorage.updateAsset(this.token.address);
 
     this.chainId = await this.token.getChainId();

@@ -1,30 +1,51 @@
-const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
+const {
+  BN,
+  constants,
+  expectEvent,
+  expectRevert,
+} = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 const { ZERO_ADDRESS, MAX_UINT256 } = constants;
 
-function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recipient, anotherAccount) {
+function shouldBehaveLikeERC20(
+  errorPrefix,
+  initialSupply,
+  initialHolder,
+  recipient,
+  anotherAccount,
+) {
   describe('total supply', function () {
     it('returns the total amount of tokens', async function () {
-      expect(await this.token.totalSupply()).to.be.bignumber.equal(initialSupply.mul(new BN(2)));
+      expect(await this.token.totalSupply()).to.be.bignumber.equal(
+        initialSupply.mul(new BN(2)),
+      );
     });
   });
 
   describe('balanceOf', function () {
     describe('when the requested account has no tokens', function () {
       it('returns zero', async function () {
-        expect(await this.token.methods['balanceOf(address)'](anotherAccount)).to.be.bignumber.equal('0');
+        expect(
+          await this.token.methods['balanceOf(address)'](anotherAccount),
+        ).to.be.bignumber.equal('0');
       });
     });
 
     describe('when the requested account has some tokens', function () {
       it('returns the total amount of tokens', async function () {
-        expect(await this.token.methods['balanceOf(address)'](initialHolder)).to.be.bignumber.equal(initialSupply);
+        expect(
+          await this.token.methods['balanceOf(address)'](initialHolder),
+        ).to.be.bignumber.equal(initialSupply);
       });
     });
   });
 
   describe('transfer', function () {
-    shouldBehaveLikeERC20Transfer(errorPrefix, initialHolder, recipient, initialSupply,
+    shouldBehaveLikeERC20Transfer(
+      errorPrefix,
+      initialHolder,
+      recipient,
+      initialSupply,
       function (from, to, value) {
         return this.token.transfer(to, value, { from });
       },
@@ -42,29 +63,54 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
 
         describe('when the spender has enough allowance', function () {
           beforeEach(async function () {
-            await this.token.methods['approve(address,uint256)'](spender, initialSupply, { from: initialHolder });
+            await this.token.methods['approve(address,uint256)'](
+              spender,
+              initialSupply,
+              { from: initialHolder },
+            );
           });
 
           describe('when the token owner has enough balance', function () {
             const amount = initialSupply;
 
             it('transfers the requested amount', async function () {
-              await this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, amount, { from: spender });
+              await this.token.methods['transferFrom(address,address,uint256)'](
+                tokenOwner,
+                to,
+                amount,
+                { from: spender },
+              );
 
-              expect(await this.token.methods['balanceOf(address)'](tokenOwner)).to.be.bignumber.equal('0');
+              expect(
+                await this.token.methods['balanceOf(address)'](tokenOwner),
+              ).to.be.bignumber.equal('0');
 
-              expect(await this.token.methods['balanceOf(address)'](to)).to.be.bignumber.equal(amount);
+              expect(
+                await this.token.methods['balanceOf(address)'](to),
+              ).to.be.bignumber.equal(amount);
             });
 
             it('decreases the spender allowance', async function () {
-              await this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, amount, { from: spender });
+              await this.token.methods['transferFrom(address,address,uint256)'](
+                tokenOwner,
+                to,
+                amount,
+                { from: spender },
+              );
 
-              expect(await this.token.methods['allowance(address,address)'](tokenOwner, spender)).to.be.bignumber.equal('0');
+              expect(
+                await this.token.methods['allowance(address,address)'](
+                  tokenOwner,
+                  spender,
+                ),
+              ).to.be.bignumber.equal('0');
             });
 
             it('emits a transfer event', async function () {
               expectEvent(
-                await this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, amount, { from: spender }),
+                await this.token.methods[
+                  'transferFrom(address,address,uint256)'
+                ](tokenOwner, to, amount, { from: spender }),
                 'Transfer',
                 { from: tokenOwner, to: to, value: amount },
               );
@@ -72,9 +118,18 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
 
             it('emits an approval event', async function () {
               expectEvent(
-                await this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, amount, { from: spender }),
+                await this.token.methods[
+                  'transferFrom(address,address,uint256)'
+                ](tokenOwner, to, amount, { from: spender }),
                 'Approval',
-                { owner: tokenOwner, spender: spender, value: await this.token.methods['allowance(address,address)'](tokenOwner, spender) },
+                {
+                  owner: tokenOwner,
+                  spender: spender,
+                  value: await this.token.methods['allowance(address,address)'](
+                    tokenOwner,
+                    spender,
+                  ),
+                },
               );
             });
           });
@@ -88,7 +143,12 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
 
             it('reverts', async function () {
               await expectRevert(
-                this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, amount, { from: spender }),
+                this.token.methods['transferFrom(address,address,uint256)'](
+                  tokenOwner,
+                  to,
+                  amount,
+                  { from: spender },
+                ),
                 `${errorPrefix}: transfer amount exceeds balance`,
               );
             });
@@ -99,7 +159,11 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
           const allowance = initialSupply.subn(1);
 
           beforeEach(async function () {
-            await this.token.methods['approve(address,uint256)'](spender, allowance, { from: tokenOwner });
+            await this.token.methods['approve(address,uint256)'](
+              spender,
+              allowance,
+              { from: tokenOwner },
+            );
           });
 
           describe('when the token owner has enough balance', function () {
@@ -107,7 +171,12 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
 
             it('reverts', async function () {
               await expectRevert(
-                this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, amount, { from: spender }),
+                this.token.methods['transferFrom(address,address,uint256)'](
+                  tokenOwner,
+                  to,
+                  amount,
+                  { from: spender },
+                ),
                 `${errorPrefix}: insufficient allowance`,
               );
             });
@@ -122,7 +191,12 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
 
             it('reverts', async function () {
               await expectRevert(
-                this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, amount, { from: spender }),
+                this.token.methods['transferFrom(address,address,uint256)'](
+                  tokenOwner,
+                  to,
+                  amount,
+                  { from: spender },
+                ),
                 `${errorPrefix}: transfer amount exceeds balance`,
               );
             });
@@ -131,18 +205,37 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
 
         describe('when the spender has unlimited allowance', function () {
           beforeEach(async function () {
-            await this.token.methods['approve(address,uint256)'](spender, MAX_UINT256, { from: initialHolder });
+            await this.token.methods['approve(address,uint256)'](
+              spender,
+              MAX_UINT256,
+              { from: initialHolder },
+            );
           });
 
           it('does not decrease the spender allowance', async function () {
-            await this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, 1, { from: spender });
+            await this.token.methods['transferFrom(address,address,uint256)'](
+              tokenOwner,
+              to,
+              1,
+              { from: spender },
+            );
 
-            expect(await this.token.methods['allowance(address,address)'](tokenOwner, spender)).to.be.bignumber.equal(MAX_UINT256);
+            expect(
+              await this.token.methods['allowance(address,address)'](
+                tokenOwner,
+                spender,
+              ),
+            ).to.be.bignumber.equal(MAX_UINT256);
           });
 
           it('does not emit an approval event', async function () {
             expectEvent.notEmitted(
-              await this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, 1, { from: spender }),
+              await this.token.methods['transferFrom(address,address,uint256)'](
+                tokenOwner,
+                to,
+                1,
+                { from: spender },
+              ),
               'Approval',
             );
           });
@@ -154,12 +247,21 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
         const to = ZERO_ADDRESS;
 
         beforeEach(async function () {
-          await this.token.methods['approve(address,uint256)'](spender, amount, { from: tokenOwner });
+          await this.token.methods['approve(address,uint256)'](
+            spender,
+            amount,
+            { from: tokenOwner },
+          );
         });
 
         it('reverts', async function () {
           expectEvent(
-            await this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, amount, { from: spender }),
+            await this.token.methods['transferFrom(address,address,uint256)'](
+              tokenOwner,
+              to,
+              amount,
+              { from: spender },
+            ),
             'Transfer',
             { from: tokenOwner, to: to, value: amount },
           );
@@ -174,7 +276,12 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
 
       it('reverts', async function () {
         await expectRevert(
-          this.token.methods['transferFrom(address,address,uint256)'](tokenOwner, to, amount, { from: spender }),
+          this.token.methods['transferFrom(address,address,uint256)'](
+            tokenOwner,
+            to,
+            amount,
+            { from: spender },
+          ),
           'Asset20: approve from the zero address',
         );
       });
@@ -182,21 +289,34 @@ function shouldBehaveLikeERC20 (errorPrefix, initialSupply, initialHolder, recip
   });
 
   describe('approve', function () {
-    shouldBehaveLikeERC20Approve(errorPrefix, initialHolder, recipient, initialSupply,
+    shouldBehaveLikeERC20Approve(
+      errorPrefix,
+      initialHolder,
+      recipient,
+      initialSupply,
       function (owner, spender, amount) {
-        return this.token.methods['approve(address,uint256)'](spender, amount, { from: owner });
+        return this.token.methods['approve(address,uint256)'](spender, amount, {
+          from: owner,
+        });
       },
     );
   });
 }
 
-function shouldBehaveLikeERC20Transfer (errorPrefix, from, to, balance, transfer) {
+function shouldBehaveLikeERC20Transfer(
+  errorPrefix,
+  from,
+  to,
+  balance,
+  transfer,
+) {
   describe('when the recipient is not the zero address', function () {
     describe('when the sender does not have enough balance', function () {
       const amount = balance.addn(1);
 
       it('reverts', async function () {
-        await expectRevert(transfer.call(this, from, to, amount),
+        await expectRevert(
+          transfer.call(this, from, to, amount),
           `${errorPrefix}: transfer amount exceeds balance`,
         );
       });
@@ -208,17 +328,21 @@ function shouldBehaveLikeERC20Transfer (errorPrefix, from, to, balance, transfer
       it('transfers the requested amount', async function () {
         await transfer.call(this, from, to, amount);
 
-        expect(await this.token.methods['balanceOf(address)'](from)).to.be.bignumber.equal('0');
+        expect(
+          await this.token.methods['balanceOf(address)'](from),
+        ).to.be.bignumber.equal('0');
 
-        expect(await this.token.methods['balanceOf(address)'](to)).to.be.bignumber.equal(amount);
+        expect(
+          await this.token.methods['balanceOf(address)'](to),
+        ).to.be.bignumber.equal(amount);
       });
 
       it('emits a transfer event', async function () {
-        expectEvent(
-          await transfer.call(this, from, to, amount),
-          'Transfer',
-          { from, to, value: amount },
-        );
+        expectEvent(await transfer.call(this, from, to, amount), 'Transfer', {
+          from,
+          to,
+          value: amount,
+        });
       });
     });
 
@@ -228,17 +352,21 @@ function shouldBehaveLikeERC20Transfer (errorPrefix, from, to, balance, transfer
       it('transfers the requested amount', async function () {
         await transfer.call(this, from, to, amount);
 
-        expect(await this.token.methods['balanceOf(address)'](from)).to.be.bignumber.equal(balance);
+        expect(
+          await this.token.methods['balanceOf(address)'](from),
+        ).to.be.bignumber.equal(balance);
 
-        expect(await this.token.methods['balanceOf(address)'](to)).to.be.bignumber.equal('0');
+        expect(
+          await this.token.methods['balanceOf(address)'](to),
+        ).to.be.bignumber.equal('0');
       });
 
       it('emits a transfer event', async function () {
-        expectEvent(
-          await transfer.call(this, from, to, amount),
-          'Transfer',
-          { from, to, value: amount },
-        );
+        expectEvent(await transfer.call(this, from, to, amount), 'Transfer', {
+          from,
+          to,
+          value: amount,
+        });
       });
     });
   });
@@ -248,13 +376,19 @@ function shouldBehaveLikeERC20Transfer (errorPrefix, from, to, balance, transfer
       expectEvent(
         await transfer.call(this, from, ZERO_ADDRESS, balance),
         'Transfer',
-        { from, to:ZERO_ADDRESS, value: balance },
+        { from, to: ZERO_ADDRESS, value: balance },
       );
     });
   });
 }
 
-function shouldBehaveLikeERC20Approve (errorPrefix, owner, spender, supply, approve) {
+function shouldBehaveLikeERC20Approve(
+  errorPrefix,
+  owner,
+  spender,
+  supply,
+  approve,
+) {
   describe('when the spender is not the zero address', function () {
     describe('when the sender has enough balance', function () {
       const amount = supply;
@@ -271,7 +405,12 @@ function shouldBehaveLikeERC20Approve (errorPrefix, owner, spender, supply, appr
         it('approves the requested amount', async function () {
           await approve.call(this, owner, spender, amount);
 
-          expect(await this.token.methods['allowance(address,address)'](owner, spender)).to.be.bignumber.equal(amount);
+          expect(
+            await this.token.methods['allowance(address,address)'](
+              owner,
+              spender,
+            ),
+          ).to.be.bignumber.equal(amount);
         });
       });
 
@@ -283,7 +422,12 @@ function shouldBehaveLikeERC20Approve (errorPrefix, owner, spender, supply, appr
         it('approves the requested amount and replaces the previous one', async function () {
           await approve.call(this, owner, spender, amount);
 
-          expect(await this.token.methods['allowance(address,address)'](owner, spender)).to.be.bignumber.equal(amount);
+          expect(
+            await this.token.methods['allowance(address,address)'](
+              owner,
+              spender,
+            ),
+          ).to.be.bignumber.equal(amount);
         });
       });
     });
@@ -303,7 +447,12 @@ function shouldBehaveLikeERC20Approve (errorPrefix, owner, spender, supply, appr
         it('approves the requested amount', async function () {
           await approve.call(this, owner, spender, amount);
 
-          expect(await this.token.methods['allowance(address,address)'](owner, spender)).to.be.bignumber.equal(amount);
+          expect(
+            await this.token.methods['allowance(address,address)'](
+              owner,
+              spender,
+            ),
+          ).to.be.bignumber.equal(amount);
         });
       });
 
@@ -315,7 +464,12 @@ function shouldBehaveLikeERC20Approve (errorPrefix, owner, spender, supply, appr
         it('approves the requested amount and replaces the previous one', async function () {
           await approve.call(this, owner, spender, amount);
 
-          expect(await this.token.methods['allowance(address,address)'](owner, spender)).to.be.bignumber.equal(amount);
+          expect(
+            await this.token.methods['allowance(address,address)'](
+              owner,
+              spender,
+            ),
+          ).to.be.bignumber.equal(amount);
         });
       });
     });
@@ -323,7 +477,8 @@ function shouldBehaveLikeERC20Approve (errorPrefix, owner, spender, supply, appr
 
   describe('when the spender is the zero address', function () {
     it('reverts', async function () {
-      await expectRevert(approve.call(this, owner, ZERO_ADDRESS, supply),
+      await expectRevert(
+        approve.call(this, owner, ZERO_ADDRESS, supply),
         `${errorPrefix}: approve to the zero address`,
       );
     });

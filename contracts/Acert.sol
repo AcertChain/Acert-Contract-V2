@@ -18,7 +18,11 @@ contract Acert is Ownable {
         emit SetMetaverse(_address, name, _enabled);
     }
 
-    function remark(address _address, string memory _remark, string memory _class) public onlyOwner {
+    function remark(
+        address _address,
+        string memory _remark,
+        string memory _class
+    ) public onlyOwner {
         remarks[_address] = _remark;
         emit RemarkAddress(_address, _remark, _class);
     }
