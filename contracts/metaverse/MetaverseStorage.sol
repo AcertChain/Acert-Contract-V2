@@ -36,7 +36,7 @@ contract MetaverseStorage is IAcertContract, Ownable {
     uint256 public totalAccount;
 
     modifier onlyMetaverse() {
-        require(metaverse == msg.sender);
+        require(metaverse == msg.sender, "MetaverseStorage: caller is not the metaverse");
         _;
     }
 
@@ -48,7 +48,7 @@ contract MetaverseStorage is IAcertContract, Ownable {
     }
 
     function updateMetaverse(address _address) public onlyOwner {
-        require(_address != address(0), "Metaverse: address is zero");
+        require(_address != address(0), "MetaverseStorage: address is zero");
         metaverse = _address;
     }
 

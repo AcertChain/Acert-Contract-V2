@@ -279,7 +279,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         require(_assetIsEnabled(), "Asset20: asset is not enabled");
         require(!_accountIsFreeze(fromAccount), "Asset20: transfer from is frozen");
         if (toAccount == 0) {
-            return burn_(fromAccount, amount, _sender);
+            return burn_(_sender,fromAccount, amount);
         }
         require(_accountIsExist(toAccount), "Asset20: to account is not exist");
 
@@ -394,6 +394,15 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     // mint & burn
     function mint_(
         address _msgSender,
+        address account,
+        uint256 amount
+    ) public override onlyShell {
+        _checkAddrIsNotZero(account, "Asset20: mint to the zero address");
+        mint_(_msgSender, _getOrCreateAccountId(account), amount);
+    }
+
+    function mint_(
+        address _msgSender,
         uint256 account,
         uint256 amount
     ) public override onlyShell {
@@ -408,10 +417,19 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function burn_(
+        address _msgSender,
+        address account,
+        uint256 amount
+    ) public override onlyShell {
+        _checkAddrIsNotZero(account, "Asset20: burn from the zero address");
+        burn_(_msgSender, _getOrCreateAccountId(account), amount);
+    }
+
+    function burn_(
+        address _msgSender,
         uint256 account,
-        uint256 amount,
-        address sender
-    ) internal virtual {
+        uint256 amount
+    ) public override {
         _checkIdIsNotZero(account, "Asset20: burn from the zero Id");
         require(_accountIsExist(account), "Asset20: to account is not exist");
 
@@ -420,8 +438,8 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         _setBalance(account, accountBalance - amount);
         _setTotalSupply(totalSupply() - amount);
         shell().emitTransfer(_getAddressByAccountId(account), address(0), amount);
-        shell().emitAssetTransfer(account, 0, amount, false, sender, getNonce(sender));
-        _incrementNonce(sender);
+        shell().emitAssetTransfer(account, 0, amount, false, _msgSender, getNonce(_msgSender));
+        _incrementNonce(_msgSender);
     }
 
     function _checkIdIsNotZero(uint256 _id, string memory _msg) internal pure {
@@ -453,7 +471,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function _getOrCreateAccountId(address _address) internal returns (uint256) {
-        if (_address != address(0)) {
+        if (_address == address(0)) {
             return 0;
         } else if (metaverse.getAccountIdByAddress(_address) == 0) {
             return metaverse.createAccount(_address, false);

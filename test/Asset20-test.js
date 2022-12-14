@@ -9,12 +9,19 @@ const { artifacts, ethers } = require('hardhat');
 const { ZERO_ADDRESS } = constants;
 const Wallet = require('ethereumjs-wallet').default;
 
-const Asset20 = artifacts.require('MogaToken');
-const Asset20Storage = artifacts.require('Asset20Storage');
-const World = artifacts.require('MonsterGalaxy');
-const WorldStorage = artifacts.require('WorldStorage');
-const Metaverse = artifacts.require('MogaMetaverse');
+const Acert = artifacts.require('Acert');
+
+const Metaverse = artifacts.require('Metaverse');
+const MetaverseCore = artifacts.require('MetaverseCore');
 const MetaverseStorage = artifacts.require('MetaverseStorage');
+
+const World = artifacts.require('World');
+const WorldCore = artifacts.require('WorldCore');
+const WorldStorage = artifacts.require('WorldStorage');
+
+const Asset20 = artifacts.require('MogaToken_V3');
+const Asset20Core = artifacts.require('Asset20Core');
+const Asset20Storage = artifacts.require('Asset20Storage');
 
 const {
   shouldBehaveLikeERC20,
@@ -35,6 +42,8 @@ const { shouldBehaveLikeAsset20ProxyBWO } = require('./Asset20BWO.proxy');
 contract('Asset20', function (accounts) {
   const [initialHolder, recipient, anotherAccount, authAccount] = accounts;
 
+  const remark = 'remark';
+
   const initialHolderId = new BN(1);
   const recipientId = new BN(2);
   const anotherAccountId = new BN(3);
@@ -43,7 +52,7 @@ contract('Asset20', function (accounts) {
 
   const name = 'My Token';
   const symbol = 'MTKN';
-  const version = '1.0.0';
+  const version = '1.0';
   const initialSupply = new BN(100);
 
   const wallet = Wallet.generate();
@@ -55,39 +64,61 @@ contract('Asset20', function (accounts) {
   const BWOReceiptkey = receiptWallet.getPrivateKey();
 
   beforeEach(async function () {
+    // deploy acert
+    this.Acert = await Acert.new();
+
+    // deploy metaverse
+    this.Metaverse = await Metaverse.new();
     this.MetaverseStorage = await MetaverseStorage.new();
-    this.Metaverse = await Metaverse.new(
-      'metaverse',
-      '1.0',
-      0,
-      this.MetaverseStorage.address,
-    );
-    await this.MetaverseStorage.updateMetaverse(this.Metaverse.address);
+    this.MetaverseCore = await MetaverseCore.new('metaverse', version, 0, this.MetaverseStorage.address);
+    await this.MetaverseStorage.updateMetaverse(this.MetaverseCore.address);
+    await this.MetaverseCore.updateShell(this.Metaverse.address);
+    await this.Metaverse.updateCore(this.MetaverseCore.address);
 
+    await this.Acert.setMetaverse(this.Metaverse.address, true);
+    await this.Acert.remark(this.Metaverse.address, remark, '');
+    await this.Acert.remark(this.MetaverseCore.address, remark, '');
+    await this.Acert.remark(this.MetaverseStorage.address, remark, '');
+
+    // deploy world
     this.WorldStorage = await WorldStorage.new();
-    this.world = await World.new(
-      this.Metaverse.address,
-      this.WorldStorage.address,
-      'world',
-      '1.0',
-    );
-    await this.WorldStorage.updateWorld(this.world.address);
+    this.WorldCore = await WorldCore.new('wold', version, this.Metaverse.address, this.WorldStorage.address);
+    this.World = await World.new();
 
+    await this.WorldStorage.updateWorld(this.WorldCore.address);
+    await this.WorldCore.updateShell(this.World.address);
+    await this.World.updateCore(this.WorldCore.address);
+
+    await this.Acert.remark(this.World.address, remark, '');
+    await this.Acert.remark(this.WorldCore.address, remark, '');
+    await this.Acert.remark(this.WorldStorage.address, remark, '');
+
+    // deploy token
     this.tokenStorage = await Asset20Storage.new();
-    this.token = await Asset20.new(
+    this.tokenCore = await Asset20Core.new(
       name,
       symbol,
       version,
-      this.world.address,
+      this.World.address,
       this.tokenStorage.address,
     );
-    await this.tokenStorage.updateAsset(this.token.address);
+    this.token = await Asset20.new();
+
+    await this.tokenStorage.updateAsset(this.tokenCore.address);
+    await this.tokenCore.updateShell(this.token.address);
+    await this.token.updateCore(this.tokenCore.address);
+
+    await this.token.updateMiner(await this.token.owner(), true);
+
+    await this.Acert.remark(this.token.address, remark, '');
+    await this.Acert.remark(this.tokenCore.address, remark, '');
+    await this.Acert.remark(this.tokenStorage.address, remark, '');
 
     // register world
-    await this.Metaverse.registerWorld(this.world.address);
+    await this.MetaverseCore.registerWorld(this.World.address);
 
     // register token
-    await this.world.registerAsset(this.token.address);
+    await this.WorldCore.registerAsset(this.token.address);
 
     this.receipt = await this.token.methods['mint(address,uint256)'](
       initialHolder,
@@ -99,15 +130,13 @@ contract('Asset20', function (accounts) {
     this.chainId = await this.token.getChainId();
 
     // 注册operater
-    await this.world.addOperator(initialHolder);
-    await this.Metaverse.addOperator(initialHolder);
-    await this.Metaverse.getOrCreateAccountId(initialHolder);
-    await this.Metaverse.getOrCreateAccountId(recipient);
-    await this.Metaverse.getOrCreateAccountId(anotherAccount);
+    await this.WorldCore.addOperator(initialHolder);
+    await this.MetaverseCore.addOperator(initialHolder);
+    await this.Metaverse.createAccount(recipient, false);
+    await this.Metaverse.createAccount(anotherAccount, false);
 
-    await this.token.mint(BWOInitialHolder, initialSupply);
-    await this.Metaverse.getOrCreateAccountId(BWOInitialHolder);
-    await this.Metaverse.getOrCreateAccountId(BWOReceipt);
+    await this.token.methods['mint(address,uint256)'](BWOInitialHolder, initialSupply);
+    await this.Metaverse.createAccount(BWOReceipt, false);
   });
 
   it('has a name', async function () {
@@ -123,7 +152,7 @@ contract('Asset20', function (accounts) {
   });
 
   it('has a world', async function () {
-    expect(await this.token.worldAddress()).equal(this.world.address);
+    expect(await this.token.worldAddress()).equal(this.World.address);
   });
 
   it('has a total supply', async function () {
@@ -194,252 +223,6 @@ contract('Asset20', function (accounts) {
     BWOReceiptkey,
   );
 
-  describe('decrease allowance', function () {
-    describe('when the spender is not the zero address', function () {
-      const spender = recipient;
-
-      function shouldDecreaseApproval(amount) {
-        describe('when there was no approved amount before', function () {
-          it('reverts', async function () {
-            await expectRevert(
-              this.token.decreaseAllowance(spender, amount, {
-                from: initialHolder,
-              }),
-              'Asset20: decreased allowance below zero',
-            );
-          });
-        });
-
-        describe('when the spender had an approved amount', function () {
-          const approvedAmount = amount;
-
-          beforeEach(async function () {
-            await this.token.methods['approve(address,uint256)'](
-              spender,
-              approvedAmount,
-              {
-                from: initialHolder,
-              },
-            );
-          });
-
-          it('emits an approval event', async function () {
-            expectEvent(
-              await this.token.decreaseAllowance(spender, approvedAmount, {
-                from: initialHolder,
-              }),
-              'Approval',
-              {
-                owner: initialHolder,
-                spender: spender,
-                value: new BN(0),
-              },
-            );
-          });
-
-          it('decreases the spender allowance subtracting the requested amount', async function () {
-            await this.token.decreaseAllowance(
-              spender,
-              approvedAmount.subn(1),
-              {
-                from: initialHolder,
-              },
-            );
-
-            expect(
-              await this.token.methods['allowance(address,address)'](
-                initialHolder,
-                spender,
-              ),
-            ).to.be.bignumber.equal('1');
-          });
-
-          it('sets the allowance to zero when all allowance is removed', async function () {
-            await this.token.decreaseAllowance(spender, approvedAmount, {
-              from: initialHolder,
-            });
-            expect(
-              await this.token.methods['allowance(address,address)'](
-                initialHolder,
-                spender,
-              ),
-            ).to.be.bignumber.equal('0');
-          });
-
-          it('reverts when more than the full allowance is removed', async function () {
-            await expectRevert(
-              this.token.decreaseAllowance(spender, approvedAmount.addn(1), {
-                from: initialHolder,
-              }),
-              'Asset20: decreased allowance below zero',
-            );
-          });
-        });
-      }
-
-      describe('when the sender has enough balance', function () {
-        const amount = initialSupply;
-
-        shouldDecreaseApproval(amount);
-      });
-
-      describe('when the sender does not have enough balance', function () {
-        const amount = initialSupply.addn(1);
-
-        shouldDecreaseApproval(amount);
-      });
-    });
-
-    describe('when the spender is the zero address', function () {
-      const amount = initialSupply;
-      const spender = ZERO_ADDRESS;
-
-      it('reverts', async function () {
-        await expectRevert(
-          this.token.decreaseAllowance(spender, amount, {
-            from: initialHolder,
-          }),
-          'Asset20: decreased allowance below zero',
-        );
-      });
-    });
-  });
-
-  describe('increase allowance', function () {
-    const amount = initialSupply;
-
-    describe('when the spender is not the zero address', function () {
-      const spender = recipient;
-
-      describe('when the sender has enough balance', function () {
-        it('emits an approval event', async function () {
-          expectEvent(
-            await this.token.increaseAllowance(spender, amount, {
-              from: initialHolder,
-            }),
-            'Approval',
-            {
-              owner: initialHolder,
-              spender: spender,
-              value: amount,
-            },
-          );
-        });
-
-        describe('when there was no approved amount before', function () {
-          it('approves the requested amount', async function () {
-            await this.token.increaseAllowance(spender, amount, {
-              from: initialHolder,
-            });
-
-            expect(
-              await this.token.methods['allowance(address,address)'](
-                initialHolder,
-                spender,
-              ),
-            ).to.be.bignumber.equal(amount);
-          });
-        });
-
-        describe('when the spender had an approved amount', function () {
-          beforeEach(async function () {
-            await this.token.methods['approve(address,uint256)'](
-              spender,
-              new BN(1),
-              {
-                from: initialHolder,
-              },
-            );
-          });
-
-          it('increases the spender allowance adding the requested amount', async function () {
-            await this.token.increaseAllowance(spender, amount, {
-              from: initialHolder,
-            });
-
-            expect(
-              await this.token.methods['allowance(address,address)'](
-                initialHolder,
-                spender,
-              ),
-            ).to.be.bignumber.equal(amount.addn(1));
-          });
-        });
-      });
-
-      describe('when the sender does not have enough balance', function () {
-        const amount = initialSupply.addn(1);
-
-        it('emits an approval event', async function () {
-          expectEvent(
-            await this.token.increaseAllowance(spender, amount, {
-              from: initialHolder,
-            }),
-            'Approval',
-            {
-              owner: initialHolder,
-              spender: spender,
-              value: amount,
-            },
-          );
-        });
-
-        describe('when there was no approved amount before', function () {
-          it('approves the requested amount', async function () {
-            await this.token.increaseAllowance(spender, amount, {
-              from: initialHolder,
-            });
-
-            expect(
-              await this.token.methods['allowance(address,address)'](
-                initialHolder,
-                spender,
-              ),
-            ).to.be.bignumber.equal(amount);
-          });
-        });
-
-        describe('when the spender had an approved amount', function () {
-          beforeEach(async function () {
-            await this.token.methods['approve(address,uint256)'](
-              spender,
-              new BN(1),
-              {
-                from: initialHolder,
-              },
-            );
-          });
-
-          it('increases the spender allowance adding the requested amount', async function () {
-            await this.token.increaseAllowance(spender, amount, {
-              from: initialHolder,
-            });
-
-            expect(
-              await this.token.methods['allowance(address,address)'](
-                initialHolder,
-                spender,
-              ),
-            ).to.be.bignumber.equal(amount.addn(1));
-          });
-        });
-      });
-    });
-
-    describe('when the spender is the zero address', function () {
-      const spender = ZERO_ADDRESS;
-
-      it('reverts', async function () {
-        await expectRevert(
-          this.token.increaseAllowance(spender, amount, {
-            from: initialHolder,
-          }),
-          'Asset20: approve to the zero address',
-        );
-      });
-    });
-  });
-
   describe('_mint', function () {
     const amount = new BN(50);
     it('rejects a null account', async function () {
@@ -486,7 +269,7 @@ contract('Asset20', function (accounts) {
     it('rejects a null account', async function () {
       await expectRevert(
         this.token.methods['burn(address,uint256)'](ZERO_ADDRESS, new BN(1)),
-        'Metaverse: Account does not exist',
+        'Asset20: burn from the zero address',
       );
     });
 
@@ -496,7 +279,6 @@ contract('Asset20', function (accounts) {
           this.token.methods['burn(address,uint256)'](
             initialHolder,
             initialSupply.addn(1),
-            { from: initialHolder },
           ),
           'Asset20: burn amount exceeds balance',
         );
@@ -508,7 +290,6 @@ contract('Asset20', function (accounts) {
             this.receipt = await this.token.methods['burn(address,uint256)'](
               initialHolder,
               amount,
-              { from: initialHolder },
             );
           });
 
@@ -589,7 +370,7 @@ contract('Asset20', function (accounts) {
     it('rejects a null account', async function () {
       await expectRevert(
         this.token.methods['burn(uint256,uint256)'](0, new BN(1)),
-        'Metaverse: Account does not exist',
+        'Asset20: burn from the zero Id',
       );
     });
 
@@ -599,7 +380,6 @@ contract('Asset20', function (accounts) {
           this.token.methods['burn(uint256,uint256)'](
             initialHolderId,
             initialSupply.addn(1),
-            { from: initialHolder },
           ),
           'Asset20: burn amount exceeds balance',
         );
@@ -611,7 +391,6 @@ contract('Asset20', function (accounts) {
             this.receipt = await this.token.methods['burn(uint256,uint256)'](
               initialHolderId,
               amount,
-              { from: initialHolder },
             );
           });
 

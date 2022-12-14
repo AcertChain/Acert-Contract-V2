@@ -27,6 +27,8 @@ interface IMetaverseMetadata {
 
     // world
     function getWorlds() external view returns (address[] memory);
+
+    function getNonce(address account) external view returns (uint256);
 }
 
 interface IMetaverse is IMetaverseMetadata {
@@ -159,6 +161,7 @@ interface IMetaverseCore is IMetaverseMetadata {
         uint256 deadline,
         bytes memory signature
     ) external;
+
 }
 
 contract MetaverseShell is ShellContract {

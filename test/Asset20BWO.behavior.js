@@ -10,7 +10,7 @@ const { MAX_UINT256 } = constants;
 const ethSigUtil = require('eth-sig-util');
 const { web3 } = require('hardhat');
 
-const deadline = new BN(parseInt(new Date().getTime() / 1000) + 3600);
+const deadline = new BN(parseInt(new Date().getTime() / 1000) + 36000);
 
 const EIP712Domain = [
   {
@@ -80,7 +80,7 @@ function shouldBehaveLikeAsset20BWO(
       function (spender, from, to, value, nonce, key) {
         const signature = signTransferData(
           this.chainId,
-          this.token.address,
+          this.tokenCore.address,
           this.tokenName,
           key,
           this.tokenVersion,
@@ -122,7 +122,7 @@ function shouldBehaveLikeAsset20BWO(
           const nonce = await this.token.getNonce(tokenOwnerAddr);
           const signature = signApproveData(
             this.chainId,
-            this.token.address,
+            this.tokenCore.address,
             this.tokenName,
             BWOKey,
             this.tokenVersion,
@@ -152,7 +152,7 @@ function shouldBehaveLikeAsset20BWO(
 
           const signature = signTransferData(
             this.chainId,
-            this.token.address,
+            this.tokenCore.address,
             this.tokenName,
             BWOKey,
             this.tokenVersion,
@@ -195,7 +195,7 @@ function shouldBehaveLikeAsset20BWO(
 
           const signature = signTransferData(
             this.chainId,
-            this.token.address,
+            this.tokenCore.address,
             this.tokenName,
             BWOKey,
             this.tokenVersion,
@@ -235,7 +235,7 @@ function shouldBehaveLikeAsset20BWO(
 
         const signature = signTransferData(
           this.chainId,
-          this.token.address,
+          this.tokenCore.address,
           this.tokenName,
           receiptKey,
           this.tokenVersion,
@@ -277,7 +277,7 @@ function shouldBehaveLikeAsset20BWO(
       function (owner, ownerAddr, spenderAddr, amount, nonce, key) {
         const signature = signApproveData(
           this.chainId,
-          this.token.address,
+          this.tokenCore.address,
           this.tokenName,
           key,
           this.tokenVersion,

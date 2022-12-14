@@ -4,17 +4,17 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Mineable is Ownable {
-    event UpdateMiner(address indexed _miner);
+    event UpdateMiner(address indexed _miner, bool _vaild);
 
-    address public miner;
+    mapping(address => bool) miners;
 
     modifier onlyMiner() {
-        require(miner == _msgSender(), "Mineable: caller is not the miner");
+        require(miners[msg.sender], "Mineable: caller is not the miner");
         _;
     }
 
-    function updateMiner(address _miner) public onlyOwner {
-        miner = _miner;
-        emit UpdateMiner(_miner);
+    function updateMiner(address _miner, bool _vaild) public onlyOwner {
+        miners[_miner] = _vaild;
+        emit UpdateMiner(_miner, _vaild);
     }
 }

@@ -12,7 +12,7 @@ const { web3, ethers } = require('hardhat');
 
 const Wallet = require('ethereumjs-wallet').default;
 
-const deadline = new BN(parseInt(new Date().getTime() / 1000) + 3600);
+const deadline = new BN(parseInt(new Date().getTime() / 1000) + 36000);
 
 const EIP712Domain = [
   {
@@ -49,7 +49,7 @@ function shouldBehaveLikeAsset20ProxyBWO(
         name: 'metaverse',
         version: '1.0',
         chainId: this.chainId.toString(),
-        verifyingContract: this.Metaverse.address,
+        verifyingContract: this.MetaverseCore.address,
       };
 
       this.signAuthTypes = {
@@ -283,7 +283,7 @@ function shouldBehaveLikeAsset20ProxyBWO(
         name: this.tokenName,
         version: this.tokenVersion,
         chainId: this.chainId.toString(),
-        verifyingContract: this.token.address,
+        verifyingContract: this.tokenCore.address,
       };
 
       const BWOType = {
@@ -366,7 +366,7 @@ function shouldBehaveLikeAsset20ProxyBWO(
         name: this.tokenName,
         version: this.tokenVersion,
         chainId: this.chainId.toString(),
-        verifyingContract: this.token.address,
+        verifyingContract: this.tokenCore.address,
       };
 
       const BWOType = {

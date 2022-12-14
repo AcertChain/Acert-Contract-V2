@@ -544,11 +544,18 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         return metaStorage.getWorlds();
     }
 
+    /**
+     * @dev See {IMetaverse-getNonce}.
+     */
+    function getNonce(address _address) public view override returns (uint256) {
+        return metaStorage.nonces(_address);
+    }
+
     // Owner functions
     function registerWorld(address _world) public onlyOwner {
         checkAddressIsNotZero(_world);
         require(metaStorage.worldContains(_world) == false, "Metaverse: world is exist");
-        require(IAcertContract(_world).metaverseAddress() == address(this), "Metaverse: metaverse is not match");
+        require(IAcertContract(_world).metaverseAddress() == IAcertContract(shellContract).metaverseAddress(), "Metaverse: metaverse is not match");
         metaStorage.addWorld(_world);
         shell().emitRegisterWorld(_world);
     }
@@ -589,9 +596,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         return (metaStorage.isOperator(_address) || owner() == _address);
     }
 
-    function getNonce(address _address) public view returns (uint256) {
-        return metaStorage.nonces(_address);
-    }
+
 
     function _recoverSig(
         uint256 deadline,

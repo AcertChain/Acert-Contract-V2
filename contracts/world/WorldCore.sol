@@ -34,7 +34,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
      * @dev See {IAcertContract-metaverseAddress}.
      */
     function metaverseAddress() public view override returns (address) {
-        return IAcertContract(shellContract).metaverseAddress();
+        return address(metaverse);
     }
 
     //world
@@ -62,13 +62,10 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     /**
      * @dev See {IWorld-isTrustContract}.
      */
-    function isTrustContract(address _contract, uint256 _id)
-        public
-        view
-        virtual
-        override
-        returns (bool _isTrustContract)
-    {
+    function isTrustContract(
+        address _contract,
+        uint256 _id
+    ) public view virtual override returns (bool _isTrustContract) {
         return worldStorage.isTrustContractByAccountId(_id, _contract);
     }
 
@@ -152,11 +149,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     }
 
     //account
-    function trustWorld_(
-        address _msgSender,
-        uint256 _id,
-        bool _isTrustWorld
-    ) public override onlyShell {
+    function trustWorld_(address _msgSender, uint256 _id, bool _isTrustWorld) public override onlyShell {
         metaverse.checkSender(_id, _msgSender);
         _trustWorld(_id, _isTrustWorld, false, _msgSender);
     }
@@ -203,12 +196,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         return true;
     }
 
-    function _trustWorld(
-        uint256 _id,
-        bool _isTrustWorld,
-        bool _isBWO,
-        address _sender
-    ) internal {
+    function _trustWorld(uint256 _id, bool _isTrustWorld, bool _isBWO, address _sender) internal {
         worldStorage.setTrustWorld(_id, _isTrustWorld);
         shell().emitTrustWorld(_id, _isTrustWorld, _isBWO, _sender, getNonce(_sender));
         worldStorage.IncrementNonce(_sender);
@@ -244,6 +232,17 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         return worldStorage.isSafeContract(_address);
     }
 
+    function addOperator(address _operator) public onlyOwner {
+        checkAddressIsNotZero(_operator);
+        worldStorage.setOperator(_operator, true);
+        shell().emitAddOperator(_operator);
+    }
+
+    function removeOperator(address _operator) public onlyOwner {
+        worldStorage.setOperator(_operator, false);
+        shell().emitRemoveOperator(_operator);
+    }
+
     /**
      * @dev See {IWorld-checkBWO}.
      */
@@ -252,11 +251,15 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         return true;
     }
 
+    function getNonce(address _address) public view override returns (uint256) {
+        return worldStorage.nonces(_address);
+    }
+
     // Owner functions
     function registerAsset(address _address) public onlyOwner {
         require(_address != address(0), "World: zero address");
         require(worldStorage.assetContains(_address) == false, "World: asset is exist");
-        require(IAsset(_address).worldAddress() == address(this), "World: world address is not match");
+        require(IAsset(_address).worldAddress() == address(shellContract), "World: world address is not match");
         worldStorage.addAsset(_address);
         shell().emitRegisterAsset(_address);
     }
@@ -283,16 +286,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     }
 
     // utils
-    function getNonce(address _address) public view returns (uint256) {
-        return worldStorage.nonces(_address);
-    }
-
-    function _recoverSig(
-        uint256 deadline,
-        address signer,
-        bytes32 digest,
-        bytes memory signature
-    ) internal view {
+    function _recoverSig(uint256 deadline, address signer, bytes32 digest, bytes memory signature) internal view {
         require(deadline == 0 || block.timestamp < deadline, "World: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "World: recoverSig failed");
     }

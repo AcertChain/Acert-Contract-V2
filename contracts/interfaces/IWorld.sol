@@ -27,6 +27,8 @@ interface IWorldMetadata {
     function isSafeContract(address _address) external view returns (bool);
 
     function checkBWO(address _address) external view returns (bool);
+
+    function getNonce(address account) external view returns (uint256);
 }
 
 interface IWorld is IWorldMetadata {
@@ -88,6 +90,7 @@ interface IWorldCore is IWorldMetadata {
         uint256 deadline,
         bytes memory signature
     ) external;
+
 }
 
 contract WorldShell is ShellContract {

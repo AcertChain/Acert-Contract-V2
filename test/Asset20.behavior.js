@@ -396,8 +396,8 @@ function shouldBehaveLikeAsset20(
 
   describe('isTrust safe conract and trust world', function () {
     beforeEach('set safe contract and trust world', async function () {
-      await this.world.addSafeContract(recipient, '');
-      await this.world.trustWorld(initialHolderId, true, {
+      await this.WorldCore.addSafeContract(recipient);
+      await this.World.trustWorld(initialHolderId, true, {
         from: initialHolder,
       });
     });
@@ -414,8 +414,8 @@ function shouldBehaveLikeAsset20(
 
   describe('isTrust trust contract', function () {
     beforeEach('set safe contract and trust world', async function () {
-      await this.world.addSafeContract(recipient, '');
-      await this.world.trustContract(initialHolderId, recipient, true, {
+      await this.WorldCore.addSafeContract(recipient);
+      await this.World.trustContract(initialHolderId, recipient, true, {
         from: initialHolder,
       });
     });

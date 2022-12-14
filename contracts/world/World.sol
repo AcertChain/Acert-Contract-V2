@@ -13,10 +13,16 @@ contract World is IWorld, WorldShell, IAcertContract {
      * @dev See {IAcertContract-metaverseAddress}.
      */
     function metaverseAddress() public view override returns (address) {
-        return address(this);
+        return IAcertContract(coreContract).metaverseAddress();
     }
 
     //IWorld
+
+
+    function getNonce(address account) public view override returns (uint256) {
+        return core().getNonce(account);
+    }
+
 
     /**
      * @dev See {IWorld-name}.

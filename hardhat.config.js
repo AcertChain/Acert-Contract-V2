@@ -35,7 +35,6 @@ module.exports = {
   abiExporter: {
     path: './data/abi',
     runOnCompile: true,
-    flat: true,
     clear: true,
     spacing: 2,
     format: "json",

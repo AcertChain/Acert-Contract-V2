@@ -102,6 +102,25 @@ interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
         uint256 account,
         uint256 amount
     ) external;
+
+    function mint_(
+        address _msgSender,
+        address account,
+        uint256 amount
+    ) external;
+
+    function burn_(
+        address _msgSender,
+        uint256 account,
+        uint256 amount
+    ) external;
+
+    function burn_(
+        address _msgSender,
+        address account,
+        uint256 amount
+    ) external;
+
 }
 
 abstract contract Asset20Shell is IERC20Event, ShellContract {
