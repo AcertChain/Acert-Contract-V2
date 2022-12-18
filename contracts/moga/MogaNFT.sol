@@ -10,8 +10,16 @@ contract MogaNFT_V3 is Asset721, Mineable {
         _mint(to, tokenId);
     }
 
+    function mint(address to, uint256 tokenId) public onlyMiner {
+        _mint(to, tokenId);
+    }
+
+    function burn(uint256 tokenId) public {
+        _burn(tokenId);
+    }
+
     function safeMint(
-        uint256 to,
+        address to,
         uint256 tokenId,
         bytes memory _data
     ) public onlyMiner {

@@ -18,11 +18,9 @@ contract World is IWorld, WorldShell, IAcertContract {
 
     //IWorld
 
-
     function getNonce(address account) public view override returns (uint256) {
         return core().getNonce(account);
     }
-
 
     /**
      * @dev See {IWorld-name}.

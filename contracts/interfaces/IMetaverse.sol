@@ -161,7 +161,6 @@ interface IMetaverseCore is IMetaverseMetadata {
         uint256 deadline,
         bytes memory signature
     ) external;
-
 }
 
 contract MetaverseShell is ShellContract {

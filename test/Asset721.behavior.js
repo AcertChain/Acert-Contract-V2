@@ -7,8 +7,6 @@ const {
 const { expect } = require('chai');
 const { ZERO_ADDRESS } = constants;
 
-const { shouldSupportInterfaces } = require('./SupportsInterface.behavior');
-
 const ERC721ReceiverMock = artifacts.require('ERC721ReceiverMock');
 
 const Error = [
@@ -50,16 +48,14 @@ function shouldBehaveLikeAsset721(
   operator,
   other,
 ) {
-  shouldSupportInterfaces(['ERC165', 'ERC721']);
-
   context('with minted tokens', function () {
     beforeEach(async function () {
       // create account
-      await this.Metaverse.getOrCreateAccountId(owner);
-      await this.Metaverse.getOrCreateAccountId(approved);
-      await this.Metaverse.getOrCreateAccountId(anotherApproved);
-      await this.Metaverse.getOrCreateAccountId(operator);
-      await this.Metaverse.getOrCreateAccountId(other);
+      await this.Metaverse.createAccount(owner, false);
+      await this.Metaverse.createAccount(approved, false);
+      await this.Metaverse.createAccount(anotherApproved, false);
+      await this.Metaverse.createAccount(operator, false);
+      await this.Metaverse.createAccount(other, false);
 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
@@ -458,7 +454,7 @@ function shouldBehaveLikeAsset721(
                 Error.None,
               );
               this.toWhom = this.receiver.address;
-              await this.Metaverse.getOrCreateAccountId(this.receiver.address);
+              await this.Metaverse.createAccount(this.receiver.address,false);
               this.receiverId = new BN(
                 await this.Metaverse.getAccountIdByAddress(
                   this.receiver.address,
@@ -552,7 +548,7 @@ function shouldBehaveLikeAsset721(
               '0x42',
               Error.None,
             );
-            await this.Metaverse.getOrCreateAccountId(invalidReceiver.address);
+            await this.Metaverse.createAccount(invalidReceiver.address,false);
             const invalidReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
                 invalidReceiver.address,
@@ -575,8 +571,8 @@ function shouldBehaveLikeAsset721(
               RECEIVER_MAGIC_VALUE,
               Error.RevertWithMessage,
             );
-            await this.Metaverse.getOrCreateAccountId(
-              revertingReceiver.address,
+            await this.Metaverse.createAccount(
+              revertingReceiver.address,false
             );
             const revertingReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
@@ -601,8 +597,8 @@ function shouldBehaveLikeAsset721(
               RECEIVER_MAGIC_VALUE,
               Error.RevertWithoutMessage,
             );
-            await this.Metaverse.getOrCreateAccountId(
-              revertingReceiver.address,
+            await this.Metaverse.createAccount(
+              revertingReceiver.address,false
             );
             const revertingReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
@@ -626,8 +622,8 @@ function shouldBehaveLikeAsset721(
               RECEIVER_MAGIC_VALUE,
               Error.Panic,
             );
-            await this.Metaverse.getOrCreateAccountId(
-              revertingReceiver.address,
+            await this.Metaverse.createAccount(
+              revertingReceiver.address,false
             );
             const revertingReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
@@ -648,7 +644,7 @@ function shouldBehaveLikeAsset721(
         describe('to a contract that does not implement the required function', function () {
           it('reverts', async function () {
             const nonReceiver = this.token;
-            await this.Metaverse.getOrCreateAccountId(nonReceiver.address);
+            await this.Metaverse.createAccount(nonReceiver.address,false);
             const nonReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(nonReceiver.address),
             );
@@ -1248,17 +1244,17 @@ function shouldBehaveLikeAsset721(
   describe('isTrust safe conract and trust world', function () {
     beforeEach('set safe contract and trust world', async function () {
       // create account
-      await this.Metaverse.getOrCreateAccountId(owner);
-      await this.Metaverse.getOrCreateAccountId(approved);
-      await this.Metaverse.getOrCreateAccountId(anotherApproved);
-      await this.Metaverse.getOrCreateAccountId(operator);
-      await this.Metaverse.getOrCreateAccountId(other);
+      await this.Metaverse.createAccount(owner, false);
+      await this.Metaverse.createAccount(approved, false);
+      await this.Metaverse.createAccount(anotherApproved, false);
+      await this.Metaverse.createAccount(operator, false);
+      await this.Metaverse.createAccount(other, false);
 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
-      await this.world.addSafeContract(anotherApproved, '');
-      await this.world.trustWorld(ownerId, true, {
+      await this.WorldCore.addSafeContract(anotherApproved);
+      await this.World.trustWorld(ownerId, true, {
         from: owner,
       });
     });
@@ -1275,17 +1271,17 @@ function shouldBehaveLikeAsset721(
   describe('isTrust trust contract', function () {
     beforeEach('trust contract', async function () {
       // create account
-      await this.Metaverse.getOrCreateAccountId(owner);
-      await this.Metaverse.getOrCreateAccountId(approved);
-      await this.Metaverse.getOrCreateAccountId(anotherApproved);
-      await this.Metaverse.getOrCreateAccountId(operator);
-      await this.Metaverse.getOrCreateAccountId(other);
+      await this.Metaverse.createAccount(owner, false);
+      await this.Metaverse.createAccount(approved, false);
+      await this.Metaverse.createAccount(anotherApproved, false);
+      await this.Metaverse.createAccount(operator, false);
+      await this.Metaverse.createAccount(other, false);
 
       await this.token.mint(owner, firstTokenId);
       await this.token.mint(owner, secondTokenId);
 
-      await this.world.addSafeContract(anotherApproved, '');
-      await this.world.trustContract(ownerId, anotherApproved, true, {
+      await this.WorldCore.addSafeContract(anotherApproved);
+      await this.World.trustContract(ownerId, anotherApproved, true, {
         from: owner,
       });
     });
@@ -1411,7 +1407,7 @@ function shouldBehaveLikeAsset721IsTrust(
         RECEIVER_MAGIC_VALUE,
         Error.None,
       );
-      await this.Metaverse.getOrCreateAccountId(this.receiver.address);
+      await this.Metaverse.createAccount(this.receiver.address,false);
       this.receiverId = new BN(
         await this.Metaverse.getAccountIdByAddress(this.receiver.address),
       );

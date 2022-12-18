@@ -70,7 +70,12 @@ contract('Asset20', function (accounts) {
     // deploy metaverse
     this.Metaverse = await Metaverse.new();
     this.MetaverseStorage = await MetaverseStorage.new();
-    this.MetaverseCore = await MetaverseCore.new('metaverse', version, 0, this.MetaverseStorage.address);
+    this.MetaverseCore = await MetaverseCore.new(
+      'metaverse',
+      version,
+      0,
+      this.MetaverseStorage.address,
+    );
     await this.MetaverseStorage.updateMetaverse(this.MetaverseCore.address);
     await this.MetaverseCore.updateShell(this.Metaverse.address);
     await this.Metaverse.updateCore(this.MetaverseCore.address);
@@ -82,7 +87,12 @@ contract('Asset20', function (accounts) {
 
     // deploy world
     this.WorldStorage = await WorldStorage.new();
-    this.WorldCore = await WorldCore.new('wold', version, this.Metaverse.address, this.WorldStorage.address);
+    this.WorldCore = await WorldCore.new(
+      'wold',
+      version,
+      this.Metaverse.address,
+      this.WorldStorage.address,
+    );
     this.World = await World.new();
 
     await this.WorldStorage.updateWorld(this.WorldCore.address);
@@ -135,7 +145,10 @@ contract('Asset20', function (accounts) {
     await this.Metaverse.createAccount(recipient, false);
     await this.Metaverse.createAccount(anotherAccount, false);
 
-    await this.token.methods['mint(address,uint256)'](BWOInitialHolder, initialSupply);
+    await this.token.methods['mint(address,uint256)'](
+      BWOInitialHolder,
+      initialSupply,
+    );
     await this.Metaverse.createAccount(BWOReceipt, false);
   });
 

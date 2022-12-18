@@ -644,15 +644,24 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
 
     function safeMint_(
         address _msgSender,
-        uint256 to,
+        address to,
         uint256 tokenId,
         bytes memory data
     ) public override onlyShell {
         mint_(_msgSender, to, tokenId);
         require(
-            _checkOnERC721Received(_msgSender, address(0), _getAddressByAccountId(to), tokenId, data),
+            _checkOnERC721Received(_msgSender, address(0), to, tokenId, data),
             "Asset721: transfer to non ERC721Receiver implementer"
         );
+    }
+
+    function mint_(
+        address _msgSender,
+        address to,
+        uint256 tokenId
+    ) public override onlyShell {
+        _checkAddrIsNotZero(to, "Asset721: mint to the zero address");
+        mint_(_msgSender, _getOrCreateAccountId(to), tokenId);
     }
 
     function mint_(
@@ -671,6 +680,11 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         shell().emitAssetTransfer(0, to, tokenId, false, _msgSender, getNonce(_msgSender));
 
         _incrementNonce(_msgSender);
+    }
+
+    function burn_(address _msgSender, uint256 tokenId) public override onlyShell {
+        _checkSender(_getAccountIdByAddress(ownerOf(tokenId)), _msgSender);
+        _burn(tokenId, _msgSender);
     }
 
     /**
@@ -780,7 +794,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function _getOrCreateAccountId(address _address) internal returns (uint256) {
-        if (_address != address(0)) {
+        if (_address == address(0)) {
             return 0;
         } else if (metaverse.getAccountIdByAddress(_address) == 0) {
             return metaverse.createAccount(_address, false);

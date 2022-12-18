@@ -90,7 +90,6 @@ interface IWorldCore is IWorldMetadata {
         uint256 deadline,
         bytes memory signature
     ) external;
-
 }
 
 contract WorldShell is ShellContract {

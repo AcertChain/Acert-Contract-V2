@@ -177,9 +177,15 @@ interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
 
     function safeMint_(
         address _msgSender,
-        uint256 to,
+        address to,
         uint256 tokenId,
         bytes memory data
+    ) external;
+
+    function mint_(
+        address _msgSender,
+        address to,
+        uint256 tokenId
     ) external;
 
     function mint_(
@@ -187,6 +193,8 @@ interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
         uint256 to,
         uint256 tokenId
     ) external;
+
+    function burn_(address _msgSender, uint256 tokenId) external;
 }
 
 abstract contract Asset721Shell is IERC721Event, ShellContract {

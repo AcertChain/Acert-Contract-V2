@@ -4,9 +4,8 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IAsset721.sol";
 import "../interfaces/IAcertContract.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-contract Asset721 is IAsset721, Asset721Shell, IAcertContract, ERC165 {
+contract Asset721 is IAsset721, Asset721Shell, IAcertContract {
     function core() internal view returns (IAsset721Core) {
         return IAsset721Core(coreContract);
     }
@@ -37,16 +36,6 @@ contract Asset721 is IAsset721, Asset721Shell, IAcertContract, ERC165 {
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         return core().tokenURI(tokenId);
-    }
-
-    /**
-     * @dev See {IERC165-supportsInterface}.
-     */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
-        return
-            interfaceId == type(IERC721Metadata).interfaceId ||
-            interfaceId == type(IERC721).interfaceId ||
-            super.supportsInterface(interfaceId);
     }
 
     /**
@@ -281,7 +270,7 @@ contract Asset721 is IAsset721, Asset721Shell, IAcertContract, ERC165 {
     }
 
     function _safeMint(
-        uint256 to,
+        address to,
         uint256 tokenId,
         bytes memory data
     ) internal {
@@ -290,5 +279,13 @@ contract Asset721 is IAsset721, Asset721Shell, IAcertContract, ERC165 {
 
     function _mint(uint256 to, uint256 tokenId) internal {
         return core().mint_(_msgSender(), to, tokenId);
+    }
+
+    function _mint(address to, uint256 tokenId) internal {
+        return core().mint_(_msgSender(), to, tokenId);
+    }
+
+    function _burn(uint256 tokenId) internal {
+        return core().burn_(_msgSender(), tokenId);
     }
 }

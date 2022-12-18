@@ -120,7 +120,6 @@ interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
         address account,
         uint256 amount
     ) external;
-
 }
 
 abstract contract Asset20Shell is IERC20Event, ShellContract {

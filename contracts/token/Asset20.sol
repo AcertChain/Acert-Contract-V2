@@ -179,7 +179,7 @@ contract Asset20 is IAsset20, Asset20Shell, IAcertContract {
     function _mint(address account, uint256 amount) internal {
         return core().mint_(_msgSender(), account, amount);
     }
-   
+
     function _burn(uint256 accountId, uint256 amount) internal {
         return core().burn_(_msgSender(), accountId, amount);
     }

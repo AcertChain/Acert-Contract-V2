@@ -203,12 +203,11 @@ contract Metaverse is IMetaverse, MetaverseShell, IAcertContract {
         return core().getWorlds();
     }
 
-      // world
+    // world
     /**
      * @dev See {IMetaverse-getNonce}.
      */
-   function getNonce(address account) public view override returns (uint256) {
+    function getNonce(address account) public view override returns (uint256) {
         return core().getNonce(account);
     }
-
 }

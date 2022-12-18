@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
-import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 interface IERC721Event {
     /**
@@ -74,7 +73,7 @@ interface IERC721Metadata {
 /**
  * @dev Required interface of an ERC721 compliant contract.
  */
-interface IERC721 is IERC721Metadata, IERC721Event, IERC165 {
+interface IERC721 is IERC721Metadata, IERC721Event {
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`.
      *

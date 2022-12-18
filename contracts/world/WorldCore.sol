@@ -62,10 +62,13 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     /**
      * @dev See {IWorld-isTrustContract}.
      */
-    function isTrustContract(
-        address _contract,
-        uint256 _id
-    ) public view virtual override returns (bool _isTrustContract) {
+    function isTrustContract(address _contract, uint256 _id)
+        public
+        view
+        virtual
+        override
+        returns (bool _isTrustContract)
+    {
         return worldStorage.isTrustContractByAccountId(_id, _contract);
     }
 
@@ -149,7 +152,11 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     }
 
     //account
-    function trustWorld_(address _msgSender, uint256 _id, bool _isTrustWorld) public override onlyShell {
+    function trustWorld_(
+        address _msgSender,
+        uint256 _id,
+        bool _isTrustWorld
+    ) public override onlyShell {
         metaverse.checkSender(_id, _msgSender);
         _trustWorld(_id, _isTrustWorld, false, _msgSender);
     }
@@ -196,7 +203,12 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         return true;
     }
 
-    function _trustWorld(uint256 _id, bool _isTrustWorld, bool _isBWO, address _sender) internal {
+    function _trustWorld(
+        uint256 _id,
+        bool _isTrustWorld,
+        bool _isBWO,
+        address _sender
+    ) internal {
         worldStorage.setTrustWorld(_id, _isTrustWorld);
         shell().emitTrustWorld(_id, _isTrustWorld, _isBWO, _sender, getNonce(_sender));
         worldStorage.IncrementNonce(_sender);
@@ -286,7 +298,12 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     }
 
     // utils
-    function _recoverSig(uint256 deadline, address signer, bytes32 digest, bytes memory signature) internal view {
+    function _recoverSig(
+        uint256 deadline,
+        address signer,
+        bytes32 digest,
+        bytes memory signature
+    ) internal view {
         require(deadline == 0 || block.timestamp < deadline, "World: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "World: recoverSig failed");
     }

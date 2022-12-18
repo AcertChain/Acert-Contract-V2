@@ -7,8 +7,6 @@ const {
 const { expect } = require('chai');
 const { ZERO_ADDRESS } = constants;
 
-const { shouldSupportInterfaces } = require('./SupportsInterface.behavior');
-
 const ERC721ReceiverMock = artifacts.require('ERC721ReceiverMock');
 
 const Error = [
@@ -44,8 +42,6 @@ function shouldBehaveLikeERC721(
   operator,
   other,
 ) {
-  shouldSupportInterfaces(['ERC165', 'ERC721']);
-
   context('with minted tokens', function () {
     beforeEach(async function () {
       await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
@@ -1139,8 +1135,6 @@ function shouldBehaveLikeERC721(
 }
 
 function shouldBehaveLikeERC721Metadata(errorPrefix, name, symbol, owner) {
-  shouldSupportInterfaces(['ERC721Metadata']);
-
   describe('metadata', function () {
     it('has a name', async function () {
       expect(await this.token.name()).to.be.equal(name);

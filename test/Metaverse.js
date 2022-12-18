@@ -35,33 +35,56 @@ const EIP712Domain = [
 
 const { ZERO_ADDRESS } = constants;
 
-const World = artifacts.require('MonsterGalaxy');
-const WorldStorage = artifacts.require('WorldStorage');
-const Metaverse = artifacts.require('MogaMetaverse');
+const Acert = artifacts.require('Acert');
+
+const Metaverse = artifacts.require('Metaverse');
+const MetaverseCore = artifacts.require('MetaverseCore');
 const MetaverseStorage = artifacts.require('MetaverseStorage');
+
+const World = artifacts.require('World');
+const WorldCore = artifacts.require('WorldCore');
+const WorldStorage = artifacts.require('WorldStorage');
 
 contract('Metaverse', function (accounts) {
   beforeEach(async function () {
-    this.tokenName = 'metaverse';
-    this.tokenVersion = '1.0';
+    // deploy acert
+    this.Acert = await Acert.new();
+
+    // deploy metaverse
+    this.Metaverse = await Metaverse.new();
     this.MetaverseStorage = await MetaverseStorage.new();
-    this.Metaverse = await Metaverse.new(
-      this.tokenName,
-      this.tokenVersion,
+    this.MetaverseCore = await MetaverseCore.new(
+      'metaverse',
+      version,
       0,
       this.MetaverseStorage.address,
     );
-    this.chainId = await this.Metaverse.getChainId();
-    await this.MetaverseStorage.updateMetaverse(this.Metaverse.address);
+    await this.MetaverseStorage.updateMetaverse(this.MetaverseCore.address);
+    await this.MetaverseCore.updateShell(this.Metaverse.address);
+    await this.Metaverse.updateCore(this.MetaverseCore.address);
 
+    await this.Acert.setMetaverse(this.Metaverse.address, true);
+    await this.Acert.remark(this.Metaverse.address, remark, '');
+    await this.Acert.remark(this.MetaverseCore.address, remark, '');
+    await this.Acert.remark(this.MetaverseStorage.address, remark, '');
+
+    // deploy world
     this.WorldStorage = await WorldStorage.new();
-    this.world = await World.new(
+    this.WorldCore = await WorldCore.new(
+      'wold',
+      version,
       this.Metaverse.address,
       this.WorldStorage.address,
-      'world',
-      '1.0',
     );
-    await this.WorldStorage.updateWorld(this.world.address);
+    this.World = await World.new();
+
+    await this.WorldStorage.updateWorld(this.WorldCore.address);
+    await this.WorldCore.updateShell(this.World.address);
+    await this.World.updateCore(this.WorldCore.address);
+
+    await this.Acert.remark(this.World.address, remark, '');
+    await this.Acert.remark(this.WorldCore.address, remark, '');
+    await this.Acert.remark(this.WorldStorage.address, remark, '');
   });
 
   context('测试Metaverse 功能', function () {
@@ -75,10 +98,10 @@ contract('Metaverse', function (accounts) {
 
       it('return event ', async function () {
         expectEvent(
-          await this.Metaverse.registerWorld(this.world.address),
+          await this.Metaverse.registerWorld(this.World.address),
           'RegisterWorld',
           {
-            world: this.world.address,
+            world: this.World.address,
             name: 'world',
           },
         );
@@ -153,18 +176,18 @@ contract('Metaverse', function (accounts) {
 
     describe('containsWorld, getWorlds, getWorldCount, getWorldInfo', function () {
       beforeEach(async function () {
-        await this.Metaverse.registerWorld(this.world.address);
+        await this.Metaverse.registerWorld(this.World.address);
       });
 
       it('containsWorld', async function () {
         expect(
-          await this.Metaverse.containsWorld(this.world.address),
+          await this.Metaverse.containsWorld(this.World.address),
         ).to.be.equal(true);
       });
 
       it('getWorlds', async function () {
         expect(await this.Metaverse.getWorlds()).to.have.ordered.members([
-          this.world.address,
+          this.World.address,
         ]);
       });
       it('getWorldCount', async function () {
@@ -175,8 +198,8 @@ contract('Metaverse', function (accounts) {
 
       it('getWorldInfo', async function () {
         expect(
-          await this.Metaverse.getWorldInfo(this.world.address),
-        ).have.ordered.members([this.world.address, 'world', true]);
+          await this.Metaverse.getWorldInfo(this.World.address),
+        ).have.ordered.members([this.World.address, 'world', true]);
       });
     });
   });

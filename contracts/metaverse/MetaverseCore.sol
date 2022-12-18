@@ -555,7 +555,10 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     function registerWorld(address _world) public onlyOwner {
         checkAddressIsNotZero(_world);
         require(metaStorage.worldContains(_world) == false, "Metaverse: world is exist");
-        require(IAcertContract(_world).metaverseAddress() == IAcertContract(shellContract).metaverseAddress(), "Metaverse: metaverse is not match");
+        require(
+            IAcertContract(_world).metaverseAddress() == IAcertContract(shellContract).metaverseAddress(),
+            "Metaverse: metaverse is not match"
+        );
         metaStorage.addWorld(_world);
         shell().emitRegisterWorld(_world);
     }
@@ -595,8 +598,6 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     function checkBWO(address _address) public view returns (bool) {
         return (metaStorage.isOperator(_address) || owner() == _address);
     }
-
-
 
     function _recoverSig(
         uint256 deadline,

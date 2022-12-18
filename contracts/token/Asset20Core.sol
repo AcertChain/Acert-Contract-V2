@@ -279,7 +279,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         require(_assetIsEnabled(), "Asset20: asset is not enabled");
         require(!_accountIsFreeze(fromAccount), "Asset20: transfer from is frozen");
         if (toAccount == 0) {
-            return burn_(_sender,fromAccount, amount);
+            return burn_(_sender, fromAccount, amount);
         }
         require(_accountIsExist(toAccount), "Asset20: to account is not exist");
 

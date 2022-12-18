@@ -28,8 +28,8 @@ function shouldBehaveLikeAsset721Proxy(
     beforeEach(async function () {
       // create account
 
-      await this.Metaverse.getOrCreateAccountId(owner);
-      await this.Metaverse.getOrCreateAccountId(approved);
+      await this.Metaverse.createAccount(owner, false);
+      await this.Metaverse.createAccount(approved, false);
 
       await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
       await this.token.methods['mint(address,uint256)'](owner, secondTokenId);
@@ -37,9 +37,9 @@ function shouldBehaveLikeAsset721Proxy(
 
       this.domain = {
         name: 'metaverse',
-        version: '1.0',
+        version: '1.0.0',
         chainId: this.chainId.toString(),
-        verifyingContract: this.Metaverse.address,
+        verifyingContract: this.MetaverseCore.address,
       };
 
       this.signAuthTypes = {
@@ -240,12 +240,12 @@ function shouldBehaveLikeAsset721Proxy(
         name: this.tokenName,
         version: this.tokenVersion,
         chainId: this.chainId.toString(),
-        verifyingContract: this.token.address,
+        verifyingContract: this.tokenCore.address,
       };
 
       const nonce = await this.token.getNonce(authAccount);
       const BWOType = {
-        BWO: [
+        approveBWO: [
           {
             name: 'spender',
             type: 'address',
@@ -311,13 +311,13 @@ function shouldBehaveLikeAsset721Proxy(
         name: this.tokenName,
         version: this.tokenVersion,
         chainId: this.chainId.toString(),
-        verifyingContract: this.token.address,
+        verifyingContract: this.tokenCore.address,
       };
 
       const nonce = await this.token.getNonce(authAccount);
 
       const BWOType = {
-        BWO: [
+        setApprovalForAllBWO: [
           {
             name: 'from',
             type: 'uint256',
@@ -407,13 +407,13 @@ function shouldBehaveLikeAsset721Proxy(
         name: this.tokenName,
         version: this.tokenVersion,
         chainId: this.chainId.toString(),
-        verifyingContract: this.token.address,
+        verifyingContract: this.tokenCore.address,
       };
 
       const nonce = await this.token.getNonce(authAccount);
 
       const BWOType = {
-        BWO: [
+        transferFromBWO: [
           {
             name: 'from',
             type: 'uint256',
@@ -494,13 +494,13 @@ function shouldBehaveLikeAsset721Proxy(
         name: this.tokenName,
         version: this.tokenVersion,
         chainId: this.chainId.toString(),
-        verifyingContract: this.token.address,
+        verifyingContract: this.tokenCore.address,
       };
 
       const nonce = await this.token.getNonce(authAccount);
 
       const BWOType = {
-        BWO: [
+        safeTransferFromBWO: [
           {
             name: 'from',
             type: 'uint256',

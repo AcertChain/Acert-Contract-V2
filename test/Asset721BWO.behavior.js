@@ -11,8 +11,6 @@ const Wallet = require('ethereumjs-wallet').default;
 const ethSigUtil = require('eth-sig-util');
 const { web3 } = require('hardhat');
 
-const { shouldSupportInterfaces } = require('./SupportsInterface.behavior');
-
 const ERC721ReceiverMock = artifacts.require('ERC721ReceiverMock');
 
 const Error = [
@@ -80,17 +78,15 @@ const EIP712Domain = [
 ];
 
 function shouldBehaveLikeAsset721BWO(brunOwner) {
-  shouldSupportInterfaces(['ERC165', 'ERC721']);
-
   context('with minted tokens', function () {
     beforeEach(async function () {
       // create account
 
-      await this.Metaverse.getOrCreateAccountId(owner);
-      await this.Metaverse.getOrCreateAccountId(approved);
-      await this.Metaverse.getOrCreateAccountId(anotherApproved);
-      await this.Metaverse.getOrCreateAccountId(operator);
-      await this.Metaverse.getOrCreateAccountId(other);
+      await this.Metaverse.createAccount(owner, false);
+      await this.Metaverse.createAccount(approved, false);
+      await this.Metaverse.createAccount(anotherApproved, false);
+      await this.Metaverse.createAccount(operator, false);
+      await this.Metaverse.createAccount(other, false);
 
       await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
       await this.token.methods['mint(address,uint256)'](owner, secondTokenId);
@@ -161,7 +157,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
         const nonce = await this.token.getNonce(owner);
         const signature = signApprove(
           this.chainId,
-          this.token.address,
+          this.tokenCore.address,
           this.tokenName,
           ownerW.getPrivateKey(),
           this.tokenVersion,
@@ -187,7 +183,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
 
         const signatureAll = signApprovedAllData(
           this.chainId,
-          this.token.address,
+          this.tokenCore.address,
           this.tokenName,
           ownerW.getPrivateKey(),
           this.tokenVersion,
@@ -266,9 +262,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             this.nonce = nonce;
             let signature;
             if (data == null) {
-              signature = signTrasferData(
+              signature = signTransferData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -280,9 +276,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 nonce,
               );
             } else {
-              signature = signSafeTrasferData(
+              signature = signSafeTransferData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -320,9 +316,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             const nonce = await this.token.getNonce(owner);
             let signature;
             if (data == null) {
-              signature = signTrasferData(
+              signature = signTransferData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -334,9 +330,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 nonce,
               );
             } else {
-              signature = signSafeTrasferData(
+              signature = signSafeTransferData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -408,9 +404,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               let signature;
               if (data == null) {
-                signature = signTrasferData(
+                signature = signTransferData(
                   this.chainId,
-                  this.token.address,
+                  this.tokenCore.address,
                   this.tokenName,
                   ownerW.getPrivateKey(),
                   this.tokenVersion,
@@ -422,9 +418,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                   nonce,
                 );
               } else {
-                signature = signSafeTrasferData(
+                signature = signSafeTransferData(
                   this.chainId,
-                  this.token.address,
+                  this.tokenCore.address,
                   this.tokenName,
                   ownerW.getPrivateKey(),
                   this.tokenVersion,
@@ -463,9 +459,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(other);
               let signature;
               if (data == null) {
-                signature = signTrasferData(
+                signature = signTransferData(
                   this.chainId,
-                  this.token.address,
+                  this.tokenCore.address,
                   this.tokenName,
                   otherW.getPrivateKey(),
                   this.tokenVersion,
@@ -477,9 +473,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                   nonce,
                 );
               } else {
-                signature = signSafeTrasferData(
+                signature = signSafeTransferData(
                   this.chainId,
-                  this.token.address,
+                  this.tokenCore.address,
                   this.tokenName,
                   otherW.getPrivateKey(),
                   this.tokenVersion,
@@ -515,9 +511,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             const nonce = await this.token.getNonce(owner);
             let signature;
             if (data == null) {
-              signature = signTrasferData(
+              signature = signTransferData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -529,9 +525,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 nonce,
               );
             } else {
-              signature = signSafeTrasferData(
+              signature = signSafeTransferData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -569,9 +565,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               let signature;
               if (data == null) {
-                signature = signTrasferData(
+                signature = signTransferData(
                   this.chainId,
-                  this.token.address,
+                  this.tokenCore.address,
                   this.tokenName,
                   ownerW.getPrivateKey(),
                   this.tokenVersion,
@@ -583,9 +579,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                   nonce,
                 );
               } else {
-                signature = signSafeTrasferData(
+                signature = signSafeTransferData(
                   this.chainId,
-                  this.token.address,
+                  this.tokenCore.address,
                   this.tokenName,
                   ownerW.getPrivateKey(),
                   this.tokenVersion,
@@ -672,7 +668,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 Error.None,
               );
               this.toWhom = this.receiver.address;
-              await this.Metaverse.getOrCreateAccountId(this.receiver.address);
+              await this.Metaverse.createAccount(this.receiver.address,false);
               this.receiverId = new BN(
                 await this.Metaverse.getAccountIdByAddress(
                   this.receiver.address,
@@ -685,9 +681,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             it('calls onERC721Received', async function () {
               const nonce = await this.token.getNonce(owner);
 
-              const signature = signSafeTrasferData(
+              const signature = signSafeTransferData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -728,9 +724,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             describe('with an invalid token id', function () {
               it('reverts', async function () {
                 const nonce = await this.token.getNonce(owner);
-                const signature = signSafeTrasferData(
+                const signature = signSafeTransferData(
                   this.chainId,
-                  this.token.address,
+                  this.tokenCore.address,
                   this.tokenName,
                   ownerW.getPrivateKey(),
                   this.tokenVersion,
@@ -772,16 +768,16 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               '0x42',
               Error.None,
             );
-            await this.Metaverse.getOrCreateAccountId(invalidReceiver.address);
+            await this.Metaverse.createAccount(invalidReceiver.address,false);
             const invalidReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
                 invalidReceiver.address,
               ),
             );
             const nonce = await this.token.getNonce(owner);
-            const signature = signSafeTrasferData(
+            const signature = signSafeTransferData(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -818,8 +814,8 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               RECEIVER_MAGIC_VALUE,
               Error.RevertWithMessage,
             );
-            await this.Metaverse.getOrCreateAccountId(
-              revertingReceiver.address,
+            await this.Metaverse.createAccount(
+              revertingReceiver.address,false
             );
             const revertingReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
@@ -828,9 +824,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             );
 
             const nonce = await this.token.getNonce(owner);
-            const signature = signSafeTrasferData(
+            const signature = signSafeTransferData(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -867,8 +863,8 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               RECEIVER_MAGIC_VALUE,
               Error.RevertWithoutMessage,
             );
-            await this.Metaverse.getOrCreateAccountId(
-              revertingReceiver.address,
+            await this.Metaverse.createAccount(
+              revertingReceiver.address,false
             );
             const revertingReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
@@ -876,9 +872,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               ),
             );
             const nonce = await this.token.getNonce(owner);
-            const signature = signSafeTrasferData(
+            const signature = signSafeTransferData(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -915,8 +911,8 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               RECEIVER_MAGIC_VALUE,
               Error.Panic,
             );
-            await this.Metaverse.getOrCreateAccountId(
-              revertingReceiver.address,
+            await this.Metaverse.createAccount(
+              revertingReceiver.address,false
             );
             const revertingReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
@@ -925,9 +921,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             );
 
             const nonce = await this.token.getNonce(owner);
-            const signature = signSafeTrasferData(
+            const signature = signSafeTransferData(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -960,14 +956,14 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
         describe('to a contract that does not implement the required function', function () {
           it('reverts', async function () {
             const nonReceiver = this.token;
-            await this.Metaverse.getOrCreateAccountId(nonReceiver.address);
+            await this.Metaverse.createAccount(nonReceiver.address,false);
             const nonReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(nonReceiver.address),
             );
             const nonce = await this.token.getNonce(owner);
-            const signature = signSafeTrasferData(
+            const signature = signSafeTransferData(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -1163,7 +1159,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             nonce = await this.token.getNonce(owner);
             const signature = signApprove(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -1195,7 +1191,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             nonce = await this.token.getNonce(owner);
             const signature = signApprove(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -1220,7 +1216,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             const nonce2 = await this.token.getNonce(owner);
             const signature2 = signApprove(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -1254,7 +1250,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             nonce = await this.token.getNonce(owner);
             const signature = signApprove(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -1286,7 +1282,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             nonce = await this.token.getNonce(owner);
             const signature = signApprove(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -1310,7 +1306,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             const nonce2 = await this.token.getNonce(owner);
             const signature2 = signApprove(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -1345,7 +1341,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               const signature = signApprove(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -1368,7 +1364,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               nonce2 = await this.token.getNonce(owner);
               const signature2 = signApprove(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -1403,7 +1399,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             const nonce = await this.token.getNonce(owner);
             const signature = signApprove(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -1433,9 +1429,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
       context('when the sender does not own the given token ID', function () {
         it('reverts', async function () {
           const nonce = await this.token.getNonce(other);
-          const signature = signData(
+          const signature = signApproveData(
             this.chainId,
-            this.token.address,
+            this.tokenCore.address,
             this.tokenName,
             otherW.getPrivateKey(),
             this.tokenVersion,
@@ -1464,9 +1460,9 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
       context('when the given token ID does not exist', function () {
         it('reverts', async function () {
           const nonce = await this.token.getNonce(operator);
-          const signature = signData(
+          const signature = signApproveData(
             this.chainId,
-            this.token.address,
+            this.tokenCore.address,
             this.tokenName,
             operatorW.getPrivateKey(),
             this.tokenVersion,
@@ -1505,7 +1501,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 const nonce = await this.token.getNonce(owner);
                 const signature = signApprovedAllData(
                   this.chainId,
-                  this.token.address,
+                  this.tokenCore.address,
                   this.tokenName,
                   ownerW.getPrivateKey(),
                   this.tokenVersion,
@@ -1540,7 +1536,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 const nonce = await this.token.getNonce(owner);
                 const signature = signApprovedAllData(
                   this.chainId,
-                  this.token.address,
+                  this.tokenCore.address,
                   this.tokenName,
                   ownerW.getPrivateKey(),
                   this.tokenVersion,
@@ -1581,7 +1577,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               const signature = signApprovedAllData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -1610,7 +1606,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               const signature = signApprovedAllData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -1645,7 +1641,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               const signature = signApprovedAllData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -1682,7 +1678,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               const signature = signApprovedAllData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -1719,7 +1715,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               const signature = signApprovedAllData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -1747,7 +1743,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               const signature = signApprovedAllData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -1783,7 +1779,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               const nonce = await this.token.getNonce(owner);
               const signature = signApprovedAllData(
                 this.chainId,
-                this.token.address,
+                this.tokenCore.address,
                 this.tokenName,
                 ownerW.getPrivateKey(),
                 this.tokenVersion,
@@ -1824,7 +1820,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
           const nonce = await this.token.getNonce(owner);
           const signature = signApprovedAllData(
             this.chainId,
-            this.token.address,
+            this.tokenCore.address,
             this.tokenName,
             ownerW.getPrivateKey(),
             this.tokenVersion,
@@ -1875,7 +1871,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             const nonce = await this.token.getNonce(owner);
             const signature = signApprove(
               this.chainId,
-              this.token.address,
+              this.tokenCore.address,
               this.tokenName,
               ownerW.getPrivateKey(),
               this.tokenVersion,
@@ -2018,7 +2014,7 @@ function signApprove(
   const data = {
     types: {
       EIP712Domain,
-      BWO: [
+      approveBWO: [
         {
           name: 'spender',
           type: 'address',
@@ -2047,7 +2043,7 @@ function signApprove(
       chainId,
       verifyingContract,
     },
-    primaryType: 'BWO',
+    primaryType: 'approveBWO',
     message: {
       spender,
       tokenId,
@@ -2064,7 +2060,7 @@ function signApprove(
   return signature;
 }
 
-function signData(
+function signApproveData(
   chainId,
   verifyingContract,
   name,
@@ -2079,7 +2075,7 @@ function signData(
   const data = {
     types: {
       EIP712Domain,
-      BWO: [
+      approveBWO: [
         {
           name: 'to',
           type: 'address',
@@ -2108,7 +2104,7 @@ function signData(
       chainId,
       verifyingContract,
     },
-    primaryType: 'BWO',
+    primaryType: 'approveBWO',
     message: {
       to,
       tokenId,
@@ -2141,7 +2137,7 @@ function signApprovedAllData(
   const data = {
     types: {
       EIP712Domain,
-      BWO: [
+      setApprovalForAllBWO: [
         {
           name: 'from',
           type: 'uint256',
@@ -2174,7 +2170,7 @@ function signApprovedAllData(
       chainId,
       verifyingContract,
     },
-    primaryType: 'BWO',
+    primaryType: 'setApprovalForAllBWO',
     message: {
       from,
       to,
@@ -2192,7 +2188,7 @@ function signApprovedAllData(
   return signature;
 }
 
-function signTrasferData(
+function signTransferData(
   chainId,
   verifyingContract,
   name,
@@ -2208,7 +2204,7 @@ function signTrasferData(
   const data = {
     types: {
       EIP712Domain,
-      BWO: [
+      transferFromBWO: [
         {
           name: 'from',
           type: 'uint256',
@@ -2241,7 +2237,7 @@ function signTrasferData(
       chainId,
       verifyingContract,
     },
-    primaryType: 'BWO',
+    primaryType: 'transferFromBWO',
     message: {
       from,
       to,
@@ -2259,7 +2255,7 @@ function signTrasferData(
   return signature;
 }
 
-function signSafeTrasferData(
+function signSafeTransferData(
   chainId,
   verifyingContract,
   name,
@@ -2278,7 +2274,7 @@ function signSafeTrasferData(
     data = {
       types: {
         EIP712Domain,
-        BWO: [
+        safeTransferFromBWO: [
           {
             name: 'from',
             type: 'uint256',
@@ -2311,7 +2307,7 @@ function signSafeTrasferData(
         chainId,
         verifyingContract,
       },
-      primaryType: 'BWO',
+      primaryType: 'safeTransferFromBWO',
       message: {
         from,
         to,
@@ -2325,7 +2321,7 @@ function signSafeTrasferData(
     data = {
       types: {
         EIP712Domain,
-        BWO: [
+        safeTransferFromBWO: [
           {
             name: 'from',
             type: 'uint256',
@@ -2362,7 +2358,7 @@ function signSafeTrasferData(
         chainId,
         verifyingContract,
       },
-      primaryType: 'BWO',
+      primaryType: 'safeTransferFromBWO',
       message: {
         from,
         to,
