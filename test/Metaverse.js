@@ -45,6 +45,9 @@ const World = artifacts.require('World');
 const WorldCore = artifacts.require('WorldCore');
 const WorldStorage = artifacts.require('WorldStorage');
 
+const version = '1.0.0';
+const remark = 'remark';
+
 contract('Metaverse', function (accounts) {
   beforeEach(async function () {
     // deploy acert
@@ -85,34 +88,34 @@ contract('Metaverse', function (accounts) {
     await this.Acert.remark(this.World.address, remark, '');
     await this.Acert.remark(this.WorldCore.address, remark, '');
     await this.Acert.remark(this.WorldStorage.address, remark, '');
+
+    this.chainId = await this.MetaverseCore.getChainId();
+
   });
 
   context('测试Metaverse 功能', function () {
     describe('registerWorld ', function () {
       it('zero address should return revert', async function () {
         await expectRevert(
-          this.Metaverse.registerWorld(ZERO_ADDRESS),
+          this.MetaverseCore.registerWorld(ZERO_ADDRESS),
           'Metaverse: address is zero',
         );
       });
 
-      it('return event ', async function () {
-        expectEvent(
-          await this.Metaverse.registerWorld(this.World.address),
-          'RegisterWorld',
-          {
-            world: this.World.address,
-            name: 'world',
-          },
-        );
+      it('registerWorld ', async function () {
+        await this.MetaverseCore.registerWorld(this.World.address)
+
+        const worlds = await this.MetaverseCore.getWorlds();
+        expect(worlds.length).to.be.equal(1);
+        expect(worlds[0]).to.be.equal(this.World.address);
       });
     });
 
     describe('disableWorld ', function () {
       it('zero address should return revert', async function () {
         await expectRevert(
-          this.Metaverse.disableWorld(ZERO_ADDRESS),
-          'Metaverse: address is zero',
+          this.MetaverseCore.disableWorld(ZERO_ADDRESS),
+          'Metaverse: world is not exist',
         );
       });
     });
@@ -120,87 +123,72 @@ contract('Metaverse', function (accounts) {
     describe('setAdmin', function () {
       it('zero address should return revert', async function () {
         await expectRevert(
-          this.Metaverse.setAdmin(ZERO_ADDRESS),
+          this.MetaverseCore.setAdmin(ZERO_ADDRESS),
           'Metaverse: address is zero',
         );
       });
 
-      it('return event ', async function () {
+      it('SetAdmin', async function () {
         const [admin] = accounts;
-        expectEvent(await this.Metaverse.setAdmin(admin), 'SetAdmin', {
-          admin,
-        });
+        await this.MetaverseCore.setAdmin(admin)
+
+        expect(await this.MetaverseCore.getAdmin()).to.be.equal(admin);
+       
       });
     });
 
     describe('addOperator', function () {
       it('zero address should return revert', async function () {
         await expectRevert(
-          this.Metaverse.addOperator(ZERO_ADDRESS),
+          this.MetaverseCore.addOperator(ZERO_ADDRESS),
           'Metaverse: address is zero',
         );
       });
 
-      it('return event ', async function () {
+      it('addOperator', async function () {
         const [operator] = accounts;
-        expectEvent(await this.Metaverse.addOperator(operator), 'AddOperator', {
-          operator,
-        });
+        await this.MetaverseCore.addOperator(operator)
+
+        expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(true);
+
       });
     });
 
     describe('removeOperator', function () {
       it('return event ', async function () {
         const [operator] = accounts;
-        await this.Metaverse.addOperator(operator);
-        expectEvent(
-          await this.Metaverse.removeOperator(operator),
-          'RemoveOperator',
-          {
-            operator,
-          },
-        );
+        await this.MetaverseCore.addOperator(operator);
+
+        expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(true);
+
+        await this.MetaverseCore.removeOperator(operator)
+
+        expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(false);
+
       });
     });
 
-    describe('isOperator,isBWO', function () {
+    describe('isBWO', function () {
       it('check', async function () {
         const [operator] = accounts;
-        expect(await this.Metaverse.isOperator(operator)).to.be.equal(false);
-        expect(await this.Metaverse.checkBWO(operator)).to.be.equal(false);
-        await this.Metaverse.addOperator(operator);
-        expect(await this.Metaverse.isOperator(operator)).to.be.equal(true);
-        expect(await this.Metaverse.checkBWO(operator)).to.be.equal(true);
+        expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(false);
+        await this.MetaverseCore.addOperator(operator);
+        expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(true);
       });
     });
 
     describe('containsWorld, getWorlds, getWorldCount, getWorldInfo', function () {
       beforeEach(async function () {
-        await this.Metaverse.registerWorld(this.World.address);
+        await this.MetaverseCore.registerWorld(this.World.address);
       });
 
-      it('containsWorld', async function () {
-        expect(
-          await this.Metaverse.containsWorld(this.World.address),
-        ).to.be.equal(true);
-      });
 
       it('getWorlds', async function () {
         expect(await this.Metaverse.getWorlds()).to.have.ordered.members([
           this.World.address,
         ]);
       });
-      it('getWorldCount', async function () {
-        expect(await this.Metaverse.getWorldCount()).to.be.bignumber.equal(
-          new BN(1),
-        );
-      });
 
-      it('getWorldInfo', async function () {
-        expect(
-          await this.Metaverse.getWorldInfo(this.World.address),
-        ).have.ordered.members([this.World.address, 'world', true]);
-      });
     });
   });
 
@@ -210,7 +198,7 @@ contract('Metaverse', function (accounts) {
         it('carete account event ', async function () {
           const [account] = accounts;
           expectEvent(
-            await this.Metaverse.getOrCreateAccountId(account),
+            await this.Metaverse.createAccount(account,false),
             'CreateAccount',
             {
               accountId: new BN(
@@ -227,7 +215,7 @@ contract('Metaverse', function (accounts) {
       context('get account id by address', function () {
         it('equal 101', async function () {
           const [account] = accounts;
-          await this.Metaverse.getOrCreateAccountId(account);
+          await this.Metaverse.createAccount(account,false);
           expect(
             await this.Metaverse.getAccountIdByAddress(account),
           ).to.bignumber.equal(new BN(1));
@@ -243,7 +231,7 @@ contract('Metaverse', function (accounts) {
         });
         it('account id is exist', async function () {
           const [account] = accounts;
-          await this.Metaverse.getOrCreateAccountId(account);
+          await this.Metaverse.createAccount(account,false);
           expect(
             await this.Metaverse.getAddressByAccountId(new BN(1)),
           ).to.equal(account);
@@ -256,7 +244,7 @@ contract('Metaverse', function (accounts) {
         it('zero address', async function () {
           const [account] = accounts;
           await expectRevert(
-            this.Metaverse.createAccount(ZERO_ADDRESS, {
+            this.Metaverse.createAccount(ZERO_ADDRESS,false, {
               from: account,
             }),
             'Metaverse: address is zero',
@@ -264,9 +252,9 @@ contract('Metaverse', function (accounts) {
         });
         it('is address exist', async function () {
           const [account] = accounts;
-          await this.Metaverse.createAccount(account, true);
+          await this.Metaverse.createAccount(account, true,{from: account});
           await expectRevert(
-            this.Metaverse.createAccount(account, true),
+            this.Metaverse.createAccount(account, true,{from: account}),
             'Metaverse: new address has been used',
           );
         });
@@ -276,16 +264,20 @@ contract('Metaverse', function (accounts) {
     describe('createAccount with start id', function () {
       context('create account ', function () {
         it('id expect 11', async function () {
+          this.newMetaverse = await Metaverse.new();
           this.newMetaverseStorage = await MetaverseStorage.new();
-          this.newMetaverse = await Metaverse.new(
-            this.tokenName,
-            this.tokenVersion,
+          this.newMetaverseCore = await MetaverseCore.new(
+            'metaverse',
+            version,
             10,
             this.newMetaverseStorage.address,
           );
-          this.newMetaverseStorage.updateMetaverse(this.newMetaverse.address);
+          await this.newMetaverseStorage.updateMetaverse(this.newMetaverseCore.address);
+          await this.newMetaverseCore.updateShell(this.newMetaverse.address);
+          await this.newMetaverse.updateCore(this.newMetaverseCore.address);
+
           const [account] = accounts;
-          await this.newMetaverse.getOrCreateAccountId(account);
+          await this.newMetaverse.createAccount(account,false);
           expect(
             await this.newMetaverse.getAccountIdByAddress(account),
           ).to.bignumber.equal(new BN(11));
@@ -296,96 +288,76 @@ contract('Metaverse', function (accounts) {
     describe('freezeAccount', function () {
       it('return event', async function () {
         const [account] = accounts;
-        await this.Metaverse.getOrCreateAccountId(account);
+        await this.Metaverse.createAccount(account,false);
         const accountId = new BN(
           await this.Metaverse.getAccountIdByAddress(account),
         );
 
-        expectEvent(
-          await this.Metaverse.freezeAccount(accountId, {
-            from: account,
-          }),
-          'FreezeAccount',
-          {
-            accountId: accountId,
-            isBWO: false,
-          },
-        );
-
-        expect(await this.Metaverse.isFreeze(accountId)).to.be.equal(true);
+        await this.Metaverse.freezeAccount(accountId, {
+          from: account,
+        })
+        
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(true);
       });
 
       it('is BWO', async function () {
         const accountW = Wallet.generate();
         const account = accountW.getChecksumAddressString();
-        await this.Metaverse.getOrCreateAccountId(account);
+        await this.Metaverse.createAccount(account,false);
         const accountId = new BN(
           await this.Metaverse.getAccountIdByAddress(account),
         );
         const [operator] = accounts;
-        await this.Metaverse.addOperator(operator);
+        await this.MetaverseCore.addOperator(operator);
 
         const nonce = await this.Metaverse.getNonce(account);
         const signature = signFreezeAccountData(
           this.chainId,
-          this.Metaverse.address,
-          this.tokenName,
+          this.MetaverseCore.address,
+          "metaverse",
           accountW.getPrivateKey(),
-          this.tokenVersion,
+          version,
           accountId,
           account,
           nonce,
           deadline,
         );
 
-        expectEvent(
-          await this.Metaverse.freezeAccountBWO(
-            accountId,
-            account,
-            deadline,
-            signature,
-            {
-              from: operator,
-            },
-          ),
-          'FreezeAccount',
+        await this.Metaverse.freezeAccountBWO(
+          accountId,
+          account,
+          deadline,
+          signature,
           {
-            accountId: accountId,
-            isBWO: true,
+            from: operator,
           },
-        );
+        )
 
-        expect(await this.Metaverse.isFreeze(accountId)).to.be.equal(true);
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(true);
       });
     });
 
     describe('unfreezeAccount', function () {
       it('return event', async function () {
         const [account, admin, newAccount] = accounts;
-        await this.Metaverse.setAdmin(admin);
+        await this.MetaverseCore.setAdmin(admin);
 
-        await this.Metaverse.getOrCreateAccountId(account);
+        await this.Metaverse.createAccount(account,false);
         const accountId = new BN(
           await this.Metaverse.getAccountIdByAddress(account),
         );
-        expect(await this.Metaverse.isFreeze(accountId)).to.be.equal(false);
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(false);
 
         await this.Metaverse.freezeAccount(accountId, {
           from: account,
         });
-        expect(await this.Metaverse.isFreeze(accountId)).to.be.equal(true);
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(true);
 
-        expectEvent(
-          await this.Metaverse.unfreezeAccount(accountId, newAccount, {
-            from: admin,
-          }),
-          'UnFreezeAccount',
-          {
-            accountId: accountId,
-          },
-        );
+        await this.MetaverseCore.unfreezeAccount(accountId, newAccount, {
+          from: admin,
+        })
 
-        expect(await this.Metaverse.isFreeze(accountId)).to.be.equal(false);
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(false);
       });
     });
 
@@ -393,15 +365,15 @@ contract('Metaverse', function (accounts) {
       it('add and remove', async function () {
         const [owner, authAccount] = accounts;
 
-        await this.Metaverse.getOrCreateAccountId(owner);
+        await this.Metaverse.createAccount(owner,false);
 
         const ownerId = await this.Metaverse.getAccountIdByAddress(owner);
 
         this.domain = {
           name: 'metaverse',
-          version: '1.0',
+          version: '1.0.0',
           chainId: this.chainId.toString(),
-          verifyingContract: this.Metaverse.address,
+          verifyingContract: this.MetaverseCore.address,
         };
 
         this.signAuthTypes = {
@@ -485,7 +457,7 @@ function signFreezeAccountData(
   const data = {
     types: {
       EIP712Domain,
-      BWO: [
+      freezeAccountBWO: [
         {
           name: 'id',
           type: 'uint256',
@@ -510,7 +482,7 @@ function signFreezeAccountData(
       chainId,
       verifyingContract,
     },
-    primaryType: 'BWO',
+    primaryType: 'freezeAccountBWO',
     message: {
       id,
       sender,

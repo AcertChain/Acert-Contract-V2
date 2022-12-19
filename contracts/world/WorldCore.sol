@@ -259,8 +259,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
      * @dev See {IWorld-checkBWO}.
      */
     function checkBWO(address _address) public view override returns (bool) {
-        require(worldStorage.isOperator(_address) || owner() == _address, "World: address is not BWO");
-        return true;
+        return (worldStorage.isOperator(_address) || owner() == _address);
     }
 
     function getNonce(address _address) public view override returns (uint256) {
@@ -269,7 +268,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
 
     // Owner functions
     function registerAsset(address _address) public onlyOwner {
-        require(_address != address(0), "World: zero address");
+        checkAddressIsNotZero(_address);
         require(worldStorage.assetContains(_address) == false, "World: asset is exist");
         require(IAsset(_address).worldAddress() == address(shellContract), "World: world address is not match");
         worldStorage.addAsset(_address);
@@ -287,7 +286,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     }
 
     function addSafeContract(address _address) public onlyOwner {
-        require(_address != address(0), "World: zero address");
+        checkAddressIsNotZero(_address);
         worldStorage.addSafeContract(_address);
         shell().emitAddSafeContract(_address);
     }
@@ -309,7 +308,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     }
 
     function checkAddressIsNotZero(address _address) internal pure {
-        require(_address != address(0), "Metaverse: address is zero");
+        require(_address != address(0), "World: address is zero");
     }
 
     function getChainId() public view returns (uint256) {
