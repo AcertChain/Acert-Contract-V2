@@ -3,32 +3,23 @@
 pragma solidity ^0.8.0;
 
 import "../token/Asset20.sol";
+import "../interfaces/Mineable.sol";
 
-contract MogaToken is Asset20 {
-    constructor(
-        string memory name,
-        string memory symbol,
-        string memory version,
-        address world,
-        address storage_
-    ) Asset20(name, symbol, version, world, storage_) {}
-
-    function mint(address account, uint256 amount) public onlyOwner {
-        _mint(account, amount);
-    }
-
-    function burn(address account, uint256 amount) public {
-        _checkSender(_getAccountIdByAddress(account), _msgSender());
-        _burn(account, amount, _msgSender());
-    }
-
-    function mint(uint256 accountId, uint256 amount) public onlyOwner {
+contract MogaToken_V3 is Asset20, Mineable {
+    function mint(uint256 accountId, uint256 amount) public onlyMiner {
         _mint(accountId, amount);
     }
 
-    function burn(uint256 accountId, uint256 amount) public {
-        _checkSender(accountId, _msgSender());
-        _burn(accountId, amount, _msgSender());
+    function mint(address account, uint256 amount) public onlyMiner {
+        _mint(account, amount);
+    }
+
+    function burn(uint256 accountId, uint256 amount) public onlyMiner {
+        _burn(accountId, amount);
+    }
+
+    function burn(address account, uint256 amount) public onlyMiner {
+        _burn(account, amount);
     }
 
     function getChainId() external view returns (uint256) {

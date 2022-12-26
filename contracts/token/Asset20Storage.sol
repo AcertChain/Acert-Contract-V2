@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IAcertContract.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Asset20Storage is IAcertContract, Ownable {
     mapping(uint256 => uint256) public balancesById;
@@ -12,8 +12,6 @@ contract Asset20Storage is IAcertContract, Ownable {
 
     uint256 public totalSupply;
     address public asset;
-
-    constructor() {}
 
     modifier onlyAsset() {
         require(asset == msg.sender);

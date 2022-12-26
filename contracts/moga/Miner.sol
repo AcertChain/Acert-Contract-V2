@@ -5,15 +5,13 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract Miner is Ownable{
+contract Miner is Ownable {
     using Address for address;
 
-    mapping (address => bool) public miners;
+    mapping(address => bool) public miners;
 
     event MinerAdded(address indexed account);
     event MinerRemoved(address indexed account);
-
-    constructor() {}
 
     modifier onlyMiner() {
         require(miners[msg.sender], "Minter: caller is not the minter");
@@ -39,5 +37,4 @@ contract Miner is Ownable{
     function call(address to, bytes memory data) public onlyMiner returns (bytes memory) {
         return to.functionCall(data);
     }
-
 }
