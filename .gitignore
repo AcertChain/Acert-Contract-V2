@@ -1,7 +1,5 @@
 .vscode
 node_modules
-
-node_modules
 .env
 coverage
 coverage.json
@@ -10,12 +8,8 @@ typechain
 #Hardhat files
 cache
 artifacts
-
 .DS_Store
-
-WyvernExchange.sol
-
 .envheco
 *.zip
 
-data
+typechain-types

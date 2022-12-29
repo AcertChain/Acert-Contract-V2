@@ -1,0 +1,15 @@
+[
+  {
+    "inputs": [],
+    "name": "getStorageAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "_storage",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
