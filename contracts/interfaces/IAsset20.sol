@@ -11,7 +11,25 @@ interface IAsset20Metadata is IAsset {
     function allowance(uint256 account, address spender) external view returns (uint256);
 }
 
-interface IAsset20 is IAsset20Metadata, IERC20 {
+interface IAsset20 is IERC20Event, IAsset20Metadata, IERC20 {
+    event AssetTransfer(
+        uint256 indexed from,
+        uint256 indexed to,
+        uint256 value,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
+
+    event AssetApproval(
+        uint256 indexed owner,
+        address indexed spender,
+        uint256 value,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
+
     function transferFrom(
         uint256 from,
         uint256 to,
@@ -122,60 +140,3 @@ interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
     ) external;
 }
 
-abstract contract Asset20Shell is IERC20Event, ShellContract {
-    event AssetTransfer(
-        uint256 indexed from,
-        uint256 indexed to,
-        uint256 value,
-        bool isBWO,
-        address indexed sender,
-        uint256 nonce
-    );
-
-    event AssetApproval(
-        uint256 indexed owner,
-        address indexed spender,
-        uint256 value,
-        bool isBWO,
-        address indexed sender,
-        uint256 nonce
-    );
-
-    function emitTransfer(
-        address from,
-        address to,
-        uint256 value
-    ) public onlyCore {
-        emit Transfer(from, to, value);
-    }
-
-    function emitApproval(
-        address owner,
-        address spender,
-        uint256 value
-    ) public onlyCore {
-        emit Approval(owner, spender, value);
-    }
-
-    function emitAssetTransfer(
-        uint256 from,
-        uint256 to,
-        uint256 value,
-        bool isBWO,
-        address sender,
-        uint256 nonce
-    ) public onlyCore {
-        emit AssetTransfer(from, to, value, isBWO, sender, nonce);
-    }
-
-    function emitAssetApproval(
-        uint256 owner,
-        address spender,
-        uint256 value,
-        bool isBWO,
-        address sender,
-        uint256 nonce
-    ) public onlyCore {
-        emit AssetApproval(owner, spender, value, isBWO, sender, nonce);
-    }
-}

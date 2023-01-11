@@ -6,6 +6,7 @@ import "../interfaces/IAsset721.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
 import "../interfaces/IAcertContract.sol";
+import "./Asset721.sol";
 import "./Asset721Storage.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -44,8 +45,8 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         metaverse = IMetaverse(IAcertContract(world_).metaverseAddress());
     }
 
-    function shell() public view returns (Asset721Shell) {
-        return Asset721Shell(shellContract);
+    function shell() public view returns (Asset721) {
+        return Asset721(shellContract);
     }
 
     /**

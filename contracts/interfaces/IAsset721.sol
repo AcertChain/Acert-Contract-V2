@@ -6,6 +6,7 @@ import "./ShellCore.sol";
 import "./IAsset.sol";
 
 interface IAsset721Metadata is IAsset {
+
     function balanceOf(uint256 account) external view returns (uint256 balance);
 
     function ownerAccountOf(uint256 tokenId) external view returns (uint256 account);
@@ -21,7 +22,32 @@ interface IAsset721Metadata is IAsset {
     function getNFTMetadataContract() external view returns (address);
 }
 
-interface IAsset721 is IAsset721Metadata, IERC721 {
+interface IAsset721 is IERC721Event, IAsset721Metadata, IERC721 {
+    event AssetTransfer(
+        uint256 indexed from,
+        uint256 to,
+        uint256 indexed tokenId,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
+    event AssetApproval(
+        uint256 indexed ownerId,
+        address spender,
+        uint256 indexed tokenId,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
+    event AssetApprovalForAll(
+        uint256 indexed from,
+        address indexed to,
+        bool approved,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
+
     function transferFrom(
         uint256 from,
         uint256 to,
@@ -77,6 +103,7 @@ interface IAsset721 is IAsset721Metadata, IERC721 {
         bytes memory signature
     ) external;
 }
+
 
 interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
     function transferFrom_(
@@ -175,110 +202,7 @@ interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
         bytes memory signature
     ) external;
 
-    function safeMint_(
-        address _msgSender,
-        address to,
-        uint256 tokenId,
-        bytes memory data
-    ) external;
+    function safeMint_(address _msgSender, uint256 to, uint256 tokenId, bytes memory data) external;
 
-    function mint_(
-        address _msgSender,
-        address to,
-        uint256 tokenId
-    ) external;
-
-    function mint_(
-        address _msgSender,
-        uint256 to,
-        uint256 tokenId
-    ) external;
-
-    function burn_(address _msgSender, uint256 tokenId) external;
-}
-
-abstract contract Asset721Shell is IERC721Event, ShellContract {
-    event AssetTransfer(
-        uint256 indexed from,
-        uint256 to,
-        uint256 indexed tokenId,
-        bool isBWO,
-        address indexed sender,
-        uint256 nonce
-    );
-
-    event AssetApproval(
-        uint256 indexed ownerId,
-        address spender,
-        uint256 indexed tokenId,
-        bool isBWO,
-        address indexed sender,
-        uint256 nonce
-    );
-
-    event AssetApprovalForAll(
-        uint256 indexed from,
-        address indexed to,
-        bool approved,
-        bool isBWO,
-        address indexed sender,
-        uint256 nonce
-    );
-
-    function emitTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public onlyCore {
-        emit Transfer(from, to, tokenId);
-    }
-
-    function emitApproval(
-        address owner,
-        address approved,
-        uint256 tokenId
-    ) public onlyCore {
-        emit Approval(owner, approved, tokenId);
-    }
-
-    function emitApprovalForAll(
-        address owner,
-        address operator,
-        bool approved
-    ) public onlyCore {
-        emit ApprovalForAll(owner, operator, approved);
-    }
-
-    function emitAssetTransfer(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId,
-        bool isBWO,
-        address sender,
-        uint256 nonce
-    ) public onlyCore {
-        emit AssetTransfer(from, to, tokenId, isBWO, sender, nonce);
-    }
-
-    function emitAssetApproval(
-        uint256 ownerId,
-        address spender,
-        uint256 tokenId,
-        bool isBWO,
-        address sender,
-        uint256 nonce
-    ) public onlyCore {
-        emit AssetApproval(ownerId, spender, tokenId, isBWO, sender, nonce);
-    }
-
-    function emitAssetApprovalForAll(
-        uint256 from,
-        address to,
-        bool approved,
-        bool isBWO,
-        address sender,
-        uint256 nonce
-    ) public onlyCore {
-        emit AssetApprovalForAll(from, to, approved, isBWO, sender, nonce);
-    }
+    function mint_(address _msgSender, uint256 to, uint256 tokenId) external;
 }

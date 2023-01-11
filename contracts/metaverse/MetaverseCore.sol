@@ -5,6 +5,7 @@ import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
 import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
+import "./Metaverse.sol";
 import "./MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
@@ -31,8 +32,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         metaStorage = MetaverseStorage(metaStorage_);
     }
 
-    function shell() public view returns (MetaverseShell) {
-        return MetaverseShell(shellContract);
+    function shell() public view returns (Metaverse) {
+        return Metaverse(shellContract);
     }
 
     /**

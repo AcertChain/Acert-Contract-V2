@@ -6,6 +6,7 @@ import "../interfaces/IAsset20.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
 import "../interfaces/IAcertContract.sol";
+import "./Asset20.sol";
 import "./Asset20Storage.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -32,8 +33,8 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         metaverse = IMetaverse(IAcertContract(_world).metaverseAddress());
     }
 
-    function shell() public view returns (Asset20Shell) {
-        return Asset20Shell(shellContract);
+    function shell() public view returns (Asset20) {
+        return Asset20(shellContract);
     }
 
     function updateWorld(address _address) public onlyOwner {

@@ -27,11 +27,41 @@ interface IMetaverseMetadata {
 
     // world
     function getWorlds() external view returns (address[] memory);
-
-    function getNonce(address account) external view returns (uint256);
 }
 
 interface IMetaverse is IMetaverseMetadata {
+    event SetAdmin(address indexed admin);
+    event AddOperator(address indexed operator);
+    event RemoveOperator(address indexed operator);
+    event RegisterWorld(address indexed world);
+    event EnableWorld(address indexed world);
+    event DisableWorld(address indexed world);
+    event CreateAccount(
+        uint256 indexed accountId,
+        address indexed authAddress,
+        bool isTrustAdmin,
+        bool isBWO_,
+        address indexed sender_,
+        uint256 nonce_
+    );
+    event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed sender, uint256 nonce);
+    event FreezeAccount(uint256 indexed accountId, bool isBWO, address indexed sender, uint256 nonce);
+    event UnFreezeAccount(uint256 indexed accountId, address indexed newAuthAddress);
+    event AddAuthAddress(
+        uint256 indexed accountId,
+        address indexed authAddress,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
+    event RemoveAuthAddress(
+        uint256 indexed accountId,
+        address indexed authAddress,
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
+    );
+
     function createAccount(address _address, bool _isTrustAdmin) external returns (uint256 id);
 
     function createAccountBWO(
@@ -163,115 +193,3 @@ interface IMetaverseCore is IMetaverseMetadata {
     ) external;
 }
 
-contract MetaverseShell is ShellContract {
-    event SetAdmin(address indexed admin);
-    event AddOperator(address indexed operator);
-    event RemoveOperator(address indexed operator);
-    event RegisterWorld(address indexed world);
-    event EnableWorld(address indexed world);
-    event DisableWorld(address indexed world);
-    event CreateAccount(
-        uint256 indexed accountId,
-        address indexed authAddress,
-        bool isTrustAdmin,
-        bool isBWO_,
-        address indexed sender_,
-        uint256 nonce_
-    );
-    event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed sender, uint256 nonce);
-    event FreezeAccount(uint256 indexed accountId, bool isBWO, address indexed sender, uint256 nonce);
-    event UnFreezeAccount(uint256 indexed accountId, address indexed newAuthAddress);
-    event AddAuthAddress(
-        uint256 indexed accountId,
-        address indexed authAddress,
-        bool isBWO,
-        address indexed sender,
-        uint256 nonce
-    );
-    event RemoveAuthAddress(
-        uint256 indexed accountId,
-        address indexed authAddress,
-        bool isBWO,
-        address indexed sender,
-        uint256 nonce
-    );
-
-    //IMetaverseShell
-    function emitAddOperator(address operator_) public onlyCore {
-        emit AddOperator(operator_);
-    }
-
-    function emitRemoveOperator(address operator_) public onlyCore {
-        emit RemoveOperator(operator_);
-    }
-
-    function emitRegisterWorld(address world_) public onlyCore {
-        emit RegisterWorld(world_);
-    }
-
-    function emitEnableWorld(address world_) public onlyCore {
-        emit EnableWorld(world_);
-    }
-
-    function emitDisableWorld(address world_) public onlyCore {
-        emit DisableWorld(world_);
-    }
-
-    function emitCreateAccount(
-        uint256 accountId_,
-        address authAddress_,
-        bool isTrustAdmin_,
-        bool isBWO,
-        address sender_,
-        uint256 nonce_
-    ) public onlyCore {
-        emit CreateAccount(accountId_, authAddress_, isTrustAdmin_, isBWO, sender_, nonce_);
-    }
-
-    function emitTrustAdmin(
-        uint256 accountId_,
-        bool isTrustAdmin_,
-        bool isBWO,
-        address sender_,
-        uint256 nonce_
-    ) public onlyCore {
-        emit TrustAdmin(accountId_, isTrustAdmin_, isBWO, sender_, nonce_);
-    }
-
-    function emitFreezeAccount(
-        uint256 accountId_,
-        bool isBWO_,
-        address sender_,
-        uint256 nonce_
-    ) public onlyCore {
-        emit FreezeAccount(accountId_, isBWO_, sender_, nonce_);
-    }
-
-    function emitUnFreezeAccount(uint256 accountId_, address newAuthAddress_) public onlyCore {
-        emit UnFreezeAccount(accountId_, newAuthAddress_);
-    }
-
-    function emitAddAuthAddress(
-        uint256 accountId_,
-        address authAddress_,
-        bool isBWO_,
-        address sender_,
-        uint256 nonce_
-    ) public onlyCore {
-        emit AddAuthAddress(accountId_, authAddress_, isBWO_, sender_, nonce_);
-    }
-
-    function emitRemoveAuthAddress(
-        uint256 accountId_,
-        address authAddress_,
-        bool isBWO_,
-        address sender_,
-        uint256 nonce_
-    ) public onlyCore {
-        emit RemoveAuthAddress(accountId_, authAddress_, isBWO_, sender_, nonce_);
-    }
-
-    function emitSetAdmin(address admin) external onlyCore {
-        emit SetAdmin(admin);
-    }
-}

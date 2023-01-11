@@ -2,11 +2,91 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IMetaverse.sol";
+import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
 
-contract Metaverse is IMetaverse, MetaverseShell, IAcertContract {
+contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     function core() internal view returns (IMetaverseCore) {
         return IMetaverseCore(coreContract);
+    }
+
+    //emit event
+    function emitAddOperator(address operator_) public onlyCore {
+        emit AddOperator(operator_);
+    }
+
+    function emitRemoveOperator(address operator_) public onlyCore {
+        emit RemoveOperator(operator_);
+    }
+
+    function emitRegisterWorld(address world_) public onlyCore {
+        emit RegisterWorld(world_);
+    }
+
+    function emitEnableWorld(address world_) public onlyCore {
+        emit EnableWorld(world_);
+    }
+
+    function emitDisableWorld(address world_) public onlyCore {
+        emit DisableWorld(world_);
+    }
+
+    function emitCreateAccount(
+        uint256 accountId_,
+        address authAddress_,
+        bool isTrustAdmin_,
+        bool isBWO,
+        address sender_,
+        uint256 nonce_
+    ) public onlyCore {
+        emit CreateAccount(accountId_, authAddress_, isTrustAdmin_, isBWO, sender_, nonce_);
+    }
+
+    function emitTrustAdmin(
+        uint256 accountId_,
+        bool isTrustAdmin_,
+        bool isBWO,
+        address sender_,
+        uint256 nonce_
+    ) public  onlyCore {
+        emit TrustAdmin(accountId_, isTrustAdmin_, isBWO, sender_, nonce_);
+    }
+
+    function emitFreezeAccount(
+        uint256 accountId_,
+        bool isBWO_,
+        address sender_,
+        uint256 nonce_
+    ) public onlyCore {
+        emit FreezeAccount(accountId_, isBWO_, sender_, nonce_);
+    }
+
+    function emitUnFreezeAccount(uint256 accountId_, address newAuthAddress_) public onlyCore {
+        emit UnFreezeAccount(accountId_, newAuthAddress_);
+    }
+
+    function emitAddAuthAddress(
+        uint256 accountId_,
+        address authAddress_,
+        bool isBWO_,
+        address sender_,
+        uint256 nonce_
+    ) public onlyCore {
+        emit AddAuthAddress(accountId_, authAddress_, isBWO_, sender_, nonce_);
+    }
+
+    function emitRemoveAuthAddress(
+        uint256 accountId_,
+        address authAddress_,
+        bool isBWO_,
+        address sender_,
+        uint256 nonce_
+    ) public onlyCore {
+        emit RemoveAuthAddress(accountId_, authAddress_, isBWO_, sender_, nonce_);
+    }
+
+    function emitSetAdmin(address admin) external onlyCore {
+        emit SetAdmin(admin);
     }
 
     /**
@@ -201,13 +281,5 @@ contract Metaverse is IMetaverse, MetaverseShell, IAcertContract {
      */
     function getWorlds() public view override returns (address[] memory) {
         return core().getWorlds();
-    }
-
-    // world
-    /**
-     * @dev See {IMetaverse-getNonce}.
-     */
-    function getNonce(address account) public view override returns (uint256) {
-        return core().getNonce(account);
     }
 }

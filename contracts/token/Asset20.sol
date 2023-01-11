@@ -5,9 +5,48 @@ import "hardhat/console.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IAcertContract.sol";
 
-contract Asset20 is IAsset20, Asset20Shell, IAcertContract {
+contract Asset20 is IAsset20, ShellContract, IAcertContract {
+
     function core() internal view returns (IAsset20Core) {
         return IAsset20Core(coreContract);
+    }
+    
+    function emitTransfer(
+        address from,
+        address to,
+        uint256 value
+    ) public onlyCore {
+        emit Transfer(from, to, value);
+    }
+    
+    function emitApproval(
+        address owner,
+        address spender,
+        uint256 value
+    ) public onlyCore {
+        emit Approval(owner, spender, value);
+    }
+
+    function emitAssetTransfer(
+        uint256 from,
+        uint256 to,
+        uint256 value,
+        bool isBWO,
+        address sender,
+        uint256 nonce
+    ) public onlyCore {
+        emit AssetTransfer(from, to, value, isBWO, sender, nonce);
+    }
+
+    function emitAssetApproval(
+        uint256 owner,
+        address spender,
+        uint256 value,
+        bool isBWO,
+        address sender,
+        uint256 nonce
+    ) public onlyCore {
+        emit AssetApproval(owner, spender, value, isBWO, sender, nonce);
     }
 
     /**
@@ -171,20 +210,8 @@ contract Asset20 is IAsset20, Asset20Shell, IAcertContract {
         return core().approveBWO_(_msgSender(), ownerId, spender, amount, sender, deadline, signature);
     }
 
-    // mint & burn
-    function _mint(uint256 accountId, uint256 amount) internal {
-        return core().mint_(_msgSender(), accountId, amount);
-    }
-
-    function _mint(address account, uint256 amount) internal {
+// mint & burn
+    function _mint(uint256 account, uint256 amount) internal {
         return core().mint_(_msgSender(), account, amount);
-    }
-
-    function _burn(uint256 accountId, uint256 amount) internal {
-        return core().burn_(_msgSender(), accountId, amount);
-    }
-
-    function _burn(address account, uint256 amount) internal {
-        return core().burn_(_msgSender(), account, amount);
     }
 }

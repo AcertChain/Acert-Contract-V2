@@ -4,10 +4,69 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IAsset721.sol";
 import "../interfaces/IAcertContract.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-contract Asset721 is IAsset721, Asset721Shell, IAcertContract {
+contract Asset721 is IAsset721, ShellContract, IAcertContract, ERC165 {
+
     function core() internal view returns (IAsset721Core) {
         return IAsset721Core(coreContract);
+    }
+    
+    function emitTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public onlyCore {
+        emit Transfer(from, to, tokenId);
+    }
+    
+    function emitApproval(
+        address owner,
+        address approved,
+        uint256 tokenId
+    ) public onlyCore {
+        emit Approval(owner, approved, tokenId);
+    }
+    
+    function emitApprovalForAll(
+        address owner,
+        address operator,
+        bool approved
+    ) public onlyCore {
+        emit ApprovalForAll(owner, operator, approved);
+    }
+
+    function emitAssetTransfer(
+        uint256 from,
+        uint256 to,
+        uint256 tokenId,
+        bool isBWO,
+        address sender,
+        uint256 nonce
+    ) public onlyCore {
+        emit AssetTransfer(from, to, tokenId, isBWO, sender, nonce);
+    }
+
+    function emitAssetApproval(
+        uint256 ownerId,
+        address spender,
+        uint256 tokenId,
+        bool isBWO,
+        address sender,
+        uint256 nonce
+    ) public onlyCore {
+        emit AssetApproval(ownerId, spender, tokenId, isBWO, sender, nonce);
+    }
+
+    function emitAssetApprovalForAll(
+        uint256 from,
+        address to,
+        bool approved,
+        bool isBWO,
+        address sender,
+        uint256 nonce
+    ) public onlyCore {
+        emit AssetApprovalForAll(from, to, approved, isBWO, sender, nonce);
     }
 
     /**
@@ -36,6 +95,16 @@ contract Asset721 is IAsset721, Asset721Shell, IAcertContract {
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         return core().tokenURI(tokenId);
+    }
+
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+        return
+            interfaceId == type(IERC721Metadata).interfaceId ||
+            interfaceId == type(IERC721).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /**
@@ -270,7 +339,7 @@ contract Asset721 is IAsset721, Asset721Shell, IAcertContract {
     }
 
     function _safeMint(
-        address to,
+        uint256 to,
         uint256 tokenId,
         bytes memory data
     ) internal {
@@ -279,13 +348,5 @@ contract Asset721 is IAsset721, Asset721Shell, IAcertContract {
 
     function _mint(uint256 to, uint256 tokenId) internal {
         return core().mint_(_msgSender(), to, tokenId);
-    }
-
-    function _mint(address to, uint256 tokenId) internal {
-        return core().mint_(_msgSender(), to, tokenId);
-    }
-
-    function _burn(uint256 tokenId) internal {
-        return core().burn_(_msgSender(), tokenId);
     }
 }

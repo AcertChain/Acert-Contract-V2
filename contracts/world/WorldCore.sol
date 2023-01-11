@@ -5,6 +5,7 @@ import "../interfaces/IAsset.sol";
 import "../interfaces/IWorld.sol";
 import "../interfaces/IMetaverse.sol";
 import "../interfaces/IAcertContract.sol";
+import "./World.sol";
 import "./WorldStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
@@ -26,8 +27,8 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         worldStorage = WorldStorage(_worldStorage);
     }
 
-    function shell() public view returns (WorldShell) {
-        return WorldShell(shellContract);
+    function shell() public view returns (World) {
+        return World(shellContract);
     }
 
     /**
