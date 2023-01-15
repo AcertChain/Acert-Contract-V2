@@ -100,7 +100,7 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, ERC165 {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return
             interfaceId == type(IERC721Metadata).interfaceId ||
             interfaceId == type(IERC721).interfaceId ||
@@ -348,5 +348,9 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, ERC165 {
 
     function _mint(uint256 to, uint256 tokenId) internal {
         return core().mint_(_msgSender(), to, tokenId);
+    }
+
+    function _burn(uint256 tokenId) internal {
+        return core().burn_(_msgSender(), tokenId);
     }
 }

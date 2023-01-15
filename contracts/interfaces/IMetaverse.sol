@@ -25,6 +25,7 @@ interface IMetaverseMetadata {
 
     function getTotalAccount() external view returns (uint256);
 
+    function getNonce(address _address) external view returns (uint256 _id);
     // world
     function getWorlds() external view returns (address[] memory);
 }

@@ -16,6 +16,8 @@ interface IWorldMetadata {
 
     function isTrust(address _contract, uint256 _id) external view returns (bool _isTrust);
 
+    function getNonce(address _address) external view returns (uint256 _id);
+
     // asset
     function getAssets() external view returns (address[] memory);
 

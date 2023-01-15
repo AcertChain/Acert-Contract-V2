@@ -430,7 +430,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         address _msgSender,
         uint256 account,
         uint256 amount
-    ) public override {
+    ) public override onlyShell {
         _checkIdIsNotZero(account, "Asset20: burn from the zero Id");
         require(_accountIsExist(account), "Asset20: to account is not exist");
 

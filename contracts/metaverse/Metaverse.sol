@@ -275,6 +275,13 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
         return core().getTotalAccount();
     }
 
+    /**
+     * @dev See {IMetaverse-getNonce}.
+     */
+    function getNonce(address _address) public view override returns (uint256) {
+        return core().getNonce(_address);
+    }
+
     // world
     /**
      * @dev See {IMetaverse-getWorlds}.
@@ -282,4 +289,5 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     function getWorlds() public view override returns (address[] memory) {
         return core().getWorlds();
     }
+
 }

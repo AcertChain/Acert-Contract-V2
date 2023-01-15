@@ -88,6 +88,10 @@ contract World is IWorld, ShellContract, IAcertContract {
         return core().isTrust(_contract, _id);
     }
 
+    function getNonce(address _address) public view override returns (uint256) {
+        return core().getNonce(_address);
+    }
+
     // asset
     function getAssets() public view override returns (address[] memory) {
         return core().getAssets();

@@ -645,24 +645,15 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
 
     function safeMint_(
         address _msgSender,
-        address to,
+        uint256 to,
         uint256 tokenId,
         bytes memory data
     ) public override onlyShell {
         mint_(_msgSender, to, tokenId);
         require(
-            _checkOnERC721Received(_msgSender, address(0), to, tokenId, data),
+            _checkOnERC721Received(_msgSender, address(0), _getAddressByAccountId(to), tokenId, data),
             "Asset721: transfer to non ERC721Receiver implementer"
         );
-    }
-
-    function mint_(
-        address _msgSender,
-        address to,
-        uint256 tokenId
-    ) public override onlyShell {
-        _checkAddrIsNotZero(to, "Asset721: mint to the zero address");
-        mint_(_msgSender, _getOrCreateAccountId(to), tokenId);
     }
 
     function mint_(
