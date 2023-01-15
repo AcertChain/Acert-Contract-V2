@@ -381,7 +381,7 @@
     "name": "shell",
     "outputs": [
       {
-        "internalType": "contract WorldShell",
+        "internalType": "contract World",
         "name": "",
         "type": "address"
       }

@@ -341,7 +341,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "account",
+        "name": "_address",
         "type": "address"
       }
     ],
@@ -349,7 +349,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "_id",
         "type": "uint256"
       }
     ],

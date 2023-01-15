@@ -385,29 +385,6 @@
         "type": "address"
       },
       {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "mint_",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_msgSender",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "to",
         "type": "uint256"
@@ -515,9 +492,9 @@
         "type": "address"
       },
       {
-        "internalType": "address",
+        "internalType": "uint256",
         "name": "to",
-        "type": "address"
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -882,7 +859,7 @@
     "name": "shell",
     "outputs": [
       {
-        "internalType": "contract Asset721Shell",
+        "internalType": "contract Asset721",
         "name": "",
         "type": "address"
       }

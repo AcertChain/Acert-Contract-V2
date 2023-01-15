@@ -505,7 +505,7 @@
     "name": "shell",
     "outputs": [
       {
-        "internalType": "contract Asset20Shell",
+        "internalType": "contract Asset20",
         "name": "",
         "type": "address"
       }

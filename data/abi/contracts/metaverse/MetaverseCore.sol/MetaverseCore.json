@@ -917,7 +917,7 @@
     "name": "shell",
     "outputs": [
       {
-        "internalType": "contract MetaverseShell",
+        "internalType": "contract Metaverse",
         "name": "",
         "type": "address"
       }
