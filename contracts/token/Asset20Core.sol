@@ -395,15 +395,6 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     // mint & burn
     function mint_(
         address _msgSender,
-        address account,
-        uint256 amount
-    ) public override onlyShell {
-        _checkAddrIsNotZero(account, "Asset20: mint to the zero address");
-        mint_(_msgSender, _getOrCreateAccountId(account), amount);
-    }
-
-    function mint_(
-        address _msgSender,
         uint256 account,
         uint256 amount
     ) public override onlyShell {
@@ -415,15 +406,6 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         shell().emitTransfer(address(0), _getAddressByAccountId(account), amount);
         shell().emitAssetTransfer(0, account, amount, false, _msgSender, getNonce(_msgSender));
         _incrementNonce(_msgSender);
-    }
-
-    function burn_(
-        address _msgSender,
-        address account,
-        uint256 amount
-    ) public override onlyShell {
-        _checkAddrIsNotZero(account, "Asset20: burn from the zero address");
-        burn_(_msgSender, _getOrCreateAccountId(account), amount);
     }
 
     function burn_(

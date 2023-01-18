@@ -55,6 +55,7 @@ const approvedId = new BN(2);
 const anotherApprovedId = new BN(3);
 const operatorId = new BN(4);
 const otherId = new BN(5);
+const brunOwnerId = new BN(6);
 
 const deadline = new BN(parseInt(new Date().getTime() / 1000) + 36000);
 
@@ -87,9 +88,10 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
       await this.Metaverse.createAccount(anotherApproved, false);
       await this.Metaverse.createAccount(operator, false);
       await this.Metaverse.createAccount(other, false);
+      await this.Metaverse.createAccount(brunOwner, false);
 
-      await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
-      await this.token.methods['mint(address,uint256)'](owner, secondTokenId);
+      await this.token.mint(ownerId, firstTokenId);
+      await this.token.mint(ownerId, secondTokenId);
       this.toWhom = other; // default to other for toWhom in context-dependent tests
       this.toWhomId = otherId;
     });
@@ -1007,11 +1009,19 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             RECEIVER_MAGIC_VALUE,
             Error.None,
           );
-          const receipt = await this.token.safeMint(
+
+          await this.Metaverse.createAccount(this.receiver.address,false);
+
+          const tmpReceiverId = await this.Metaverse.getAccountIdByAddress(
             this.receiver.address,
+          );
+
+          const receipt = await this.token.safeMint(
+            tmpReceiverId,
             tokenId,
             data,
           );
+
 
           await expectEvent.inTransaction(
             receipt.tx,
@@ -1030,8 +1040,15 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
             RECEIVER_MAGIC_VALUE,
             Error.None,
           );
-          const receipt = await this.token.safeMint(
+
+          await this.Metaverse.createAccount(this.receiver.address,false);
+
+          const tmpReceiverId = await this.Metaverse.getAccountIdByAddress(
             this.receiver.address,
+          );
+
+          const receipt = await this.token.safeMint(
+            tmpReceiverId,
             tokenId,
             '0x',
           );
@@ -1054,8 +1071,15 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 '0x42',
                 Error.None,
               );
+
+              await this.Metaverse.createAccount(invalidReceiver.address,false);
+
+              const invalidReceiverId = await this.Metaverse.getAccountIdByAddress(
+                invalidReceiver.address,
+              );
+
               await expectRevert(
-                this.token.safeMint(invalidReceiver.address, tokenId, '0x'),
+                this.token.safeMint(invalidReceiverId, tokenId, '0x'),
                 'Asset721: transfer to non ERC721Receiver implementer',
               );
             });
@@ -1070,8 +1094,15 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 RECEIVER_MAGIC_VALUE,
                 Error.RevertWithMessage,
               );
+
+              await this.Metaverse.createAccount(revertingReceiver.address,false);
+
+              const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(
+                revertingReceiver.address,
+              );
+
               await expectRevert(
-                this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
+                this.token.safeMint(revertingReceiverId, tokenId, '0x'),
                 'ERC721ReceiverMock: reverting',
               );
             });
@@ -1086,8 +1117,15 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 RECEIVER_MAGIC_VALUE,
                 Error.RevertWithoutMessage,
               );
+
+              await this.Metaverse.createAccount(revertingReceiver.address,false);
+
+              const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(
+                revertingReceiver.address,
+              );
+
               await expectRevert(
-                this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
+                this.token.safeMint(revertingReceiverId, tokenId, '0x'),
                 'Asset721: transfer to non ERC721Receiver implementer',
               );
             });
@@ -1100,8 +1138,15 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
               RECEIVER_MAGIC_VALUE,
               Error.Panic,
             );
+            
+            await this.Metaverse.createAccount(revertingReceiver.address,false);
+
+            const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(
+              revertingReceiver.address,
+            );
+
             await expectRevert.unspecified(
-              this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
+              this.token.safeMint(revertingReceiverId, tokenId, '0x'),
             );
           });
         });
@@ -1111,8 +1156,13 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
           function () {
             it('reverts', async function () {
               const nonReceiver = this.token;
+              await this.Metaverse.createAccount(nonReceiver.address,false);
+              const nonReceiverId = await this.Metaverse.getAccountIdByAddress(
+                nonReceiver.address,
+              );
+
               await expectRevert(
-                this.token.safeMint(nonReceiver.address, tokenId, '0x'),
+                this.token.safeMint(nonReceiverId, tokenId, '0x'),
                 'Asset721: transfer to non ERC721Receiver implementer',
               );
             });
@@ -1452,7 +1502,7 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
                 from: this.operator,
               },
             ),
-            'Asset721: approve caller is not owner nor approved for all',
+            'Asset721: approve caller is not owner or approved for all',
           );
         });
       });
@@ -1907,14 +1957,16 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
   describe('_mint(address, uint256)', function () {
     it('reverts with a null destination address', async function () {
       await expectRevert(
-        this.token.mint(ZERO_ADDRESS, firstTokenId),
-        'Asset721: mint to the zero address',
+        this.token.mint(0, firstTokenId),
+        'Asset721: mint to the zero id',
       );
     });
 
     context('with minted token', async function () {
       beforeEach(async function () {
-        ({ logs: this.logs } = await this.token.mint(owner, firstTokenId));
+        await this.Metaverse.createAccount(owner, false);
+
+        ({ logs: this.logs } = await this.token.mint(ownerId, firstTokenId));
       });
 
       it('emits a Transfer event', function () {
@@ -1953,12 +2005,14 @@ function shouldBehaveLikeAsset721BWO(brunOwner) {
 
     context('with minted tokens', function () {
       beforeEach(async function () {
-        await this.token.methods['mint(address,uint256)'](
-          brunOwner,
+        await this.Metaverse.createAccount(owner, false);
+        
+        await this.token.mint(
+          brunOwnerId,
           firstTokenId,
         );
-        await this.token.methods['mint(address,uint256)'](
-          brunOwner,
+        await this.token.mint(
+          brunOwnerId,
           secondTokenId,
         );
       });

@@ -156,7 +156,7 @@ contract('Metaverse', function (accounts) {
 
     describe('removeOperator', function () {
       it('return event ', async function () {
-        const [operator] = accounts;
+        const [,operator] = accounts;
         await this.MetaverseCore.addOperator(operator);
 
         expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(true);
@@ -170,7 +170,7 @@ contract('Metaverse', function (accounts) {
 
     describe('isBWO', function () {
       it('check', async function () {
-        const [operator] = accounts;
+        const [,operator] = accounts;
         expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(false);
         await this.MetaverseCore.addOperator(operator);
         expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(true);

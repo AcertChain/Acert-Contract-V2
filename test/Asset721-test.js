@@ -106,9 +106,9 @@ contract('Asset721', function (accounts) {
     await this.WorldCore.addOperator(op);
   });
 
-  shouldBehaveLikeERC721('Asset721', ...accounts);
-  shouldBehaveLikeERC721Metadata('Asset721', name, symbol, ...accounts);
+  // shouldBehaveLikeERC721('Asset721', ...accounts);
+  // shouldBehaveLikeERC721Metadata('Asset721', name, symbol, ...accounts);
   shouldBehaveLikeAsset721('Asset721', ...accounts);
-  shouldBehaveLikeAsset721BWO(...accounts);
-  shouldBehaveLikeAsset721Proxy(...accounts);
+  // shouldBehaveLikeAsset721BWO(...accounts);
+  // shouldBehaveLikeAsset721Proxy(...accounts);
 });

@@ -57,8 +57,9 @@ function shouldBehaveLikeAsset721(
       await this.Metaverse.createAccount(operator, false);
       await this.Metaverse.createAccount(other, false);
 
-      await this.token.mint(owner, firstTokenId);
-      await this.token.mint(owner, secondTokenId);
+
+      await this.token.mint(ownerId, firstTokenId);
+      await this.token.mint(ownerId, secondTokenId);
       this.toWhom = other; // default to other for toWhom in context-dependent tests
       this.toWhomId = otherId;
     });
@@ -673,11 +674,19 @@ function shouldBehaveLikeAsset721(
             RECEIVER_MAGIC_VALUE,
             Error.None,
           );
-          const receipt = await this.token.safeMint(
+
+          await this.Metaverse.createAccount(this.receiver.address,false);
+          const tmpreceiverId = await this.Metaverse.getAccountIdByAddress(
             this.receiver.address,
+          );
+
+          const receipt = await this.token.safeMint(
+            tmpreceiverId,
             tokenId,
             data,
           );
+
+         
 
           await expectEvent.inTransaction(
             receipt.tx,
@@ -696,8 +705,14 @@ function shouldBehaveLikeAsset721(
             RECEIVER_MAGIC_VALUE,
             Error.None,
           );
-          const receipt = await this.token.safeMint(
+
+          await this.Metaverse.createAccount(this.receiver.address,false);
+          const tmpreceiverId = await this.Metaverse.getAccountIdByAddress(
             this.receiver.address,
+          );
+
+          const receipt = await this.token.safeMint(
+            tmpreceiverId,
             tokenId,
             '0x',
           );
@@ -721,8 +736,16 @@ function shouldBehaveLikeAsset721(
                 '0x42',
                 Error.None,
               );
+
+              await this.Metaverse.createAccount(invalidReceiver.address,false);
+              
+              const invalidReceiverId = await this.Metaverse.getAccountIdByAddress(
+                invalidReceiver.address,
+              );
+
+
               await expectRevert(
-                this.token.safeMint(invalidReceiver.address, tokenId, '0x'),
+                this.token.safeMint(invalidReceiverId, tokenId, '0x'),
                 'Asset721: transfer to non ERC721Receiver implementer',
               );
             });
@@ -737,8 +760,15 @@ function shouldBehaveLikeAsset721(
                 RECEIVER_MAGIC_VALUE,
                 Error.RevertWithMessage,
               );
+
+              await this.Metaverse.createAccount(revertingReceiver.address,false);
+
+              const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(
+                revertingReceiver.address,
+              );
+
               await expectRevert(
-                this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
+                this.token.safeMint(revertingReceiverId, tokenId, '0x'),
                 'ERC721ReceiverMock: reverting',
               );
             });
@@ -753,8 +783,15 @@ function shouldBehaveLikeAsset721(
                 RECEIVER_MAGIC_VALUE,
                 Error.RevertWithoutMessage,
               );
+
+              await this.Metaverse.createAccount(revertingReceiver.address,false);
+
+              const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(
+                revertingReceiver.address,
+              );
+
               await expectRevert(
-                this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
+                this.token.safeMint(revertingReceiverId, tokenId, '0x'),
                 'Asset721: transfer to non ERC721Receiver implementer',
               );
             });
@@ -767,8 +804,15 @@ function shouldBehaveLikeAsset721(
               RECEIVER_MAGIC_VALUE,
               Error.Panic,
             );
+
+            await this.Metaverse.createAccount(revertingReceiver.address,false);
+
+            const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(
+              revertingReceiver.address,
+            );
+
             await expectRevert.unspecified(
-              this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
+              this.token.safeMint(revertingReceiverId, tokenId, '0x'),
             );
           });
         });
@@ -778,8 +822,14 @@ function shouldBehaveLikeAsset721(
           function () {
             it('reverts', async function () {
               const nonReceiver = this.token;
+
+              await this.Metaverse.createAccount(nonReceiver.address,false);
+              const nonReceiverId = await this.Metaverse.getAccountIdByAddress(
+                nonReceiver.address,
+              );
+
               await expectRevert(
-                this.token.safeMint(nonReceiver.address, tokenId, '0x'),
+                this.token.safeMint(nonReceiverId, tokenId, '0x'),
                 'Asset721: transfer to non ERC721Receiver implementer',
               );
             });
@@ -910,7 +960,7 @@ function shouldBehaveLikeAsset721(
             this.token.approve(approved, tokenId, {
               from: other,
             }),
-            'Asset721: approve caller is not owner nor approved for all',
+            'Asset721: approve caller is not owner or approved for all',
           );
         });
       });
@@ -926,7 +976,7 @@ function shouldBehaveLikeAsset721(
               this.token.approve(anotherApproved, tokenId, {
                 from: approved,
               }),
-              'Asset721: approve caller is not owner nor approved for all',
+              'Asset721: approve caller is not owner or approved for all',
             );
           });
         },
@@ -1156,14 +1206,16 @@ function shouldBehaveLikeAsset721(
   describe('_mint(address, uint256)', function () {
     it('reverts with a null destination address', async function () {
       await expectRevert(
-        this.token.mint(ZERO_ADDRESS, firstTokenId),
-        'Asset721: mint to the zero address',
+        this.token.mint(0, firstTokenId),
+        'Asset721: mint to the zero id',
       );
     });
 
     context('with minted token', async function () {
       beforeEach(async function () {
-        ({ logs: this.logs } = await this.token.mint(owner, firstTokenId));
+        await this.Metaverse.createAccount(owner, false);
+
+        ({ logs: this.logs } = await this.token.mint(ownerId, firstTokenId));
       });
 
       it('emits a Transfer event', function () {
@@ -1202,8 +1254,10 @@ function shouldBehaveLikeAsset721(
 
     context('with minted tokens', function () {
       beforeEach(async function () {
-        await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
-        await this.token.methods['mint(address,uint256)'](owner, secondTokenId);
+        await this.Metaverse.createAccount(owner, false);
+
+        await this.token.mint(ownerId, firstTokenId);
+        await this.token.mint(ownerId, secondTokenId);
       });
 
       context('with burnt token', function () {
@@ -1250,8 +1304,8 @@ function shouldBehaveLikeAsset721(
       await this.Metaverse.createAccount(operator, false);
       await this.Metaverse.createAccount(other, false);
 
-      await this.token.mint(owner, firstTokenId);
-      await this.token.mint(owner, secondTokenId);
+      await this.token.mint(ownerId, firstTokenId);
+      await this.token.mint(ownerId, secondTokenId);
 
       await this.WorldCore.addSafeContract(anotherApproved);
       await this.World.trustWorld(ownerId, true, {
@@ -1277,8 +1331,8 @@ function shouldBehaveLikeAsset721(
       await this.Metaverse.createAccount(operator, false);
       await this.Metaverse.createAccount(other, false);
 
-      await this.token.mint(owner, firstTokenId);
-      await this.token.mint(owner, secondTokenId);
+      await this.token.mint(ownerId, firstTokenId);
+      await this.token.mint(ownerId, secondTokenId);
 
       await this.WorldCore.addSafeContract(anotherApproved);
       await this.World.trustContract(ownerId, anotherApproved, true, {

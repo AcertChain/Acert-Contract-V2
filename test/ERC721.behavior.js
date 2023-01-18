@@ -33,6 +33,14 @@ const baseURI = 'https://api.example.com/v1/';
 
 const RECEIVER_MAGIC_VALUE = '0x150b7a02';
 
+
+const ownerId = new BN(1);
+const newApprovedId = new BN(2);
+const approvedId = new BN(3);
+const anotherApprovedId = new BN(4);
+const operatorId = new BN(5);
+const otherId = new BN(6);
+
 function shouldBehaveLikeERC721(
   errorPrefix,
   owner,
@@ -44,8 +52,16 @@ function shouldBehaveLikeERC721(
 ) {
   context('with minted tokens', function () {
     beforeEach(async function () {
-      await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
-      await this.token.methods['mint(address,uint256)'](owner, secondTokenId);
+      // create accounts
+      await this.Metaverse.createAccount(owner, false);
+      await this.Metaverse.createAccount(newApproved, false);
+      await this.Metaverse.createAccount(approved, false);
+      await this.Metaverse.createAccount(anotherApproved, false);
+      await this.Metaverse.createAccount(operator, false);
+      await this.Metaverse.createAccount(other, false);
+
+      await this.token.mint(ownerId, firstTokenId);
+      await this.token.mint(ownerId, secondTokenId);
       this.toWhom = other; // default to other for toWhom in context-dependent tests
     });
 
@@ -564,8 +580,13 @@ function shouldBehaveLikeERC721(
             RECEIVER_MAGIC_VALUE,
             Error.None,
           );
+
+     await this.Metaverse.createAccount(this.receiver.address,false)
+
+          const receiverId = await this.Metaverse.getAccountIdByAddress(this.receiver.address);
+          
           const receipt = await this.token.safeMint(
-            this.receiver.address,
+            receiverId,
             tokenId,
             data,
           );
@@ -587,8 +608,13 @@ function shouldBehaveLikeERC721(
             RECEIVER_MAGIC_VALUE,
             Error.None,
           );
+
+          await this.Metaverse.createAccount(this.receiver.address,false)
+
+          const receiverId = await this.Metaverse.getAccountIdByAddress(this.receiver.address);
+
           const receipt = await this.token.safeMint(
-            this.receiver.address,
+            receiverId,
             tokenId,
             '0x',
           );
@@ -612,8 +638,13 @@ function shouldBehaveLikeERC721(
                 '0x42',
                 Error.None,
               );
+
+              await this.Metaverse.createAccount(invalidReceiver.address,false)
+
+              const invalidReceiverId = await this.Metaverse.getAccountIdByAddress(invalidReceiver.address);
+
               await expectRevert(
-                this.token.safeMint(invalidReceiver.address, tokenId, '0x'),
+                this.token.safeMint(invalidReceiverId, tokenId, '0x'),
                 'Asset721: transfer to non ERC721Receiver implementer',
               );
             });
@@ -628,8 +659,13 @@ function shouldBehaveLikeERC721(
                 RECEIVER_MAGIC_VALUE,
                 Error.RevertWithMessage,
               );
+
+              await this.Metaverse.createAccount(revertingReceiver.address,false)
+
+              const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(revertingReceiver.address);
+
               await expectRevert(
-                this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
+                this.token.safeMint(revertingReceiverId, tokenId, '0x'),
                 'ERC721ReceiverMock: reverting',
               );
             });
@@ -644,8 +680,13 @@ function shouldBehaveLikeERC721(
                 RECEIVER_MAGIC_VALUE,
                 Error.RevertWithoutMessage,
               );
+
+              await this.Metaverse.createAccount(revertingReceiver.address,false)
+
+              const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(revertingReceiver.address);
+
               await expectRevert(
-                this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
+                this.token.safeMint(revertingReceiverId, tokenId, '0x'),
                 'Asset721: transfer to non ERC721Receiver implementer',
               );
             });
@@ -658,8 +699,14 @@ function shouldBehaveLikeERC721(
               RECEIVER_MAGIC_VALUE,
               Error.Panic,
             );
+
+            await this.Metaverse.createAccount(revertingReceiver.address,false)
+
+            const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(revertingReceiver.address);
+
+
             await expectRevert.unspecified(
-              this.token.safeMint(revertingReceiver.address, tokenId, '0x'),
+              this.token.safeMint(revertingReceiverId, tokenId, '0x'),
             );
           });
         });
@@ -669,8 +716,13 @@ function shouldBehaveLikeERC721(
           function () {
             it('reverts', async function () {
               const nonReceiver = this.token;
+
+              await this.Metaverse.createAccount(nonReceiver.address,false)
+
+              const nonReceiverId = await this.Metaverse.getAccountIdByAddress(nonReceiver.address);
+
               await expectRevert(
-                this.token.safeMint(nonReceiver.address, tokenId, '0x'),
+                this.token.safeMint(nonReceiverId, tokenId, '0x'),
                 'Asset721: transfer to non ERC721Receiver implementer',
               );
             });
@@ -802,7 +854,7 @@ function shouldBehaveLikeERC721(
             this.token.approve(approved, tokenId, {
               from: other,
             }),
-            'Asset721: approve caller is not owner nor approved for all',
+            'Asset721: approve caller is not owner or approved for all',
           );
         });
       });
@@ -818,7 +870,7 @@ function shouldBehaveLikeERC721(
               this.token.approve(anotherApproved, tokenId, {
                 from: approved,
               }),
-              'Asset721: approve caller is not owner nor approved for all',
+              'Asset721: approve caller is not owner or approved for all',
             );
           });
         },
@@ -1044,20 +1096,21 @@ function shouldBehaveLikeERC721(
       });
     });
   });
+  
 
-  describe('_mint(address, uint256)', function () {
+  describe('_mint(uint256, uint256)', function () {
     it('reverts with a null destination address', async function () {
       await expectRevert(
-        this.token.methods['mint(address,uint256)'](ZERO_ADDRESS, firstTokenId),
-        'Asset721: mint to the zero address',
+        this.token.mint(0, firstTokenId),
+        'Asset721: mint to the zero id',
       );
     });
 
     context('with minted token', async function () {
       beforeEach(async function () {
-        ({ logs: this.logs } = await this.token.methods[
-          'mint(address,uint256)'
-        ](owner, firstTokenId));
+        await this.Metaverse.createAccount(owner, false);
+
+        ({ logs: this.logs } = await this.token.mint(ownerId, firstTokenId));
       });
 
       it('emits a Transfer event', function () {
@@ -1077,7 +1130,7 @@ function shouldBehaveLikeERC721(
 
       it('reverts when adding a token id that already exists', async function () {
         await expectRevert(
-          this.token.methods['mint(address,uint256)'](owner, firstTokenId),
+          this.token.mint(ownerId, firstTokenId),
           'Asset721: token already minted',
         );
       });
@@ -1094,8 +1147,10 @@ function shouldBehaveLikeERC721(
 
     context('with minted tokens', function () {
       beforeEach(async function () {
-        await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
-        await this.token.methods['mint(address,uint256)'](owner, secondTokenId);
+        await this.Metaverse.createAccount(owner, false);
+        
+        await this.token.mint(ownerId, firstTokenId);
+        await this.token.mint(ownerId, secondTokenId);
       });
 
       context('with burn token', function () {
@@ -1146,7 +1201,11 @@ function shouldBehaveLikeERC721Metadata(errorPrefix, name, symbol, owner) {
 
     describe('token URI', function () {
       beforeEach(async function () {
-        await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
+        await this.Metaverse.createAccount(owner, false);
+  
+      const   tmpOwnerId = await this.Metaverse.getAccountIdByAddress(owner);
+
+        await this.token.mint(tmpOwnerId , firstTokenId);
       });
 
       it('return empty string by default', async function () {

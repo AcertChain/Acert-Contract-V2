@@ -130,8 +130,11 @@ contract('Asset20', function (accounts) {
     // register token
     await this.WorldCore.registerAsset(this.token.address);
 
-    this.receipt = await this.token.methods['mint(address,uint256)'](
-      initialHolder,
+    await this.Metaverse.createAccount(initialHolder, false);
+    
+    // mint token
+    this.receipt = await this.token.mint(
+      initialHolderId,
       initialSupply,
     );
     this.tokenName = name;
@@ -144,9 +147,12 @@ contract('Asset20', function (accounts) {
     await this.MetaverseCore.addOperator(initialHolder);
     await this.Metaverse.createAccount(recipient, false);
     await this.Metaverse.createAccount(anotherAccount, false);
+    await this.Metaverse.createAccount(BWOInitialHolder, false);
 
-    await this.token.methods['mint(address,uint256)'](
-      BWOInitialHolder,
+    const BWOInitialHolderId = await this.Metaverse.getAccountIdByAddress(BWOInitialHolder); 
+
+    await this.token.mint(
+      BWOInitialHolderId,
       initialSupply,
     );
     await this.Metaverse.createAccount(BWOReceipt, false);
@@ -236,119 +242,18 @@ contract('Asset20', function (accounts) {
     BWOReceiptkey,
   );
 
-  describe('_mint', function () {
-    const amount = new BN(50);
-    it('rejects a null account', async function () {
-      await expectRevert(
-        this.token.methods['mint(address,uint256)'](ZERO_ADDRESS, amount),
-        'Asset20: mint to the zero address',
-      );
-    });
-
-    describe('for a non zero account', function () {
-      beforeEach('minting', async function () {
-        this.receipt = await this.token.methods['mint(address,uint256)'](
-          recipient,
-          amount,
-        );
-      });
-
-      it('increments totalSupply', async function () {
-        tSupply = initialSupply.mul(new BN(2));
-        const expectedSupply = tSupply.add(amount);
-        expect(await this.token.totalSupply()).to.be.bignumber.equal(
-          expectedSupply,
-        );
-      });
-
-      it('increments recipient balance', async function () {
-        expect(
-          await this.token.methods['balanceOf(address)'](recipient),
-        ).to.be.bignumber.equal(amount);
-      });
-
-      it('emits Transfer event', async function () {
-        const event = expectEvent(this.receipt, 'Transfer', {
-          from: ZERO_ADDRESS,
-          to: recipient,
-        });
-
-        expect(event.args.value).to.be.bignumber.equal(amount);
-      });
-    });
-  });
-
-  describe('_burn', function () {
-    it('rejects a null account', async function () {
-      await expectRevert(
-        this.token.methods['burn(address,uint256)'](ZERO_ADDRESS, new BN(1)),
-        'Asset20: burn from the zero address',
-      );
-    });
-
-    describe('for a non zero account', function () {
-      it('rejects burning more than balance', async function () {
-        await expectRevert(
-          this.token.methods['burn(address,uint256)'](
-            initialHolder,
-            initialSupply.addn(1),
-          ),
-          'Asset20: burn amount exceeds balance',
-        );
-      });
-
-      const describeBurn = function (description, amount) {
-        describe(description, function () {
-          beforeEach('burning', async function () {
-            this.receipt = await this.token.methods['burn(address,uint256)'](
-              initialHolder,
-              amount,
-            );
-          });
-
-          it('decrements totalSupply', async function () {
-            tSupply = initialSupply.mul(new BN(2));
-            const expectedSupply = tSupply.sub(amount);
-            expect(await this.token.totalSupply()).to.be.bignumber.equal(
-              expectedSupply,
-            );
-          });
-
-          it('decrements initialHolder balance', async function () {
-            const expectedBalance = initialSupply.sub(amount);
-            expect(
-              await this.token.methods['balanceOf(address)'](initialHolder),
-            ).to.be.bignumber.equal(expectedBalance);
-          });
-
-          it('emits Transfer event', async function () {
-            const event = expectEvent(this.receipt, 'Transfer', {
-              from: initialHolder,
-              to: ZERO_ADDRESS,
-            });
-
-            expect(event.args.value).to.be.bignumber.equal(amount);
-          });
-        });
-      };
-
-      describeBurn('for entire balance', initialSupply);
-      describeBurn('for less amount than balance', initialSupply.subn(1));
-    });
-  });
-
   describe('_mintCash', function () {
     const amount = new BN(50);
     it('rejects a null account', async function () {
       await expectRevert(
-        this.token.methods['mint(uint256,uint256)'](0, amount),
+        this.token.mint(0, amount),
         'Asset20: mint to the zero Id',
       );
     });
 
     describe('for a non zero account', function () {
       beforeEach('minting', async function () {
-        this.receipt = await this.token.methods['mint(uint256,uint256)'](
+        this.receipt = await this.token.mint(
           recipientId,
           amount,
         );
@@ -382,7 +287,7 @@ contract('Asset20', function (accounts) {
   describe('_burn', function () {
     it('rejects a null account', async function () {
       await expectRevert(
-        this.token.methods['burn(uint256,uint256)'](0, new BN(1)),
+        this.token.burn(0, new BN(1)),
         'Asset20: burn from the zero Id',
       );
     });
@@ -390,7 +295,7 @@ contract('Asset20', function (accounts) {
     describe('for a non zero account', function () {
       it('rejects burning more than balance', async function () {
         await expectRevert(
-          this.token.methods['burn(uint256,uint256)'](
+          this.token.burn(
             initialHolderId,
             initialSupply.addn(1),
           ),
@@ -401,7 +306,7 @@ contract('Asset20', function (accounts) {
       const describeBurn = function (description, amount) {
         describe(description, function () {
           beforeEach('burning', async function () {
-            this.receipt = await this.token.methods['burn(uint256,uint256)'](
+            this.receipt = await this.token.burn(
               initialHolderId,
               amount,
             );

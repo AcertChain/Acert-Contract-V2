@@ -31,9 +31,9 @@ function shouldBehaveLikeAsset721Proxy(
       await this.Metaverse.createAccount(owner, false);
       await this.Metaverse.createAccount(approved, false);
 
-      await this.token.methods['mint(address,uint256)'](owner, firstTokenId);
-      await this.token.methods['mint(address,uint256)'](owner, secondTokenId);
-      await this.token.methods['mint(address,uint256)'](approved, thirdTokenId);
+      await this.token.mint(ownerId, firstTokenId);
+      await this.token.mint(ownerId, secondTokenId);
+      await this.token.mint(approvedId, thirdTokenId);
 
       this.domain = {
         name: 'metaverse',
@@ -229,7 +229,7 @@ function shouldBehaveLikeAsset721Proxy(
             this.token.approve(anotherApproved, thirdTokenId, {
               from: authAccount,
             }),
-            'Asset721: approve caller is not owner nor approved for all',
+            'Asset721: approve caller is not owner or approved for all',
           );
         });
       });

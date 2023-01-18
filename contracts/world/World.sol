@@ -56,7 +56,7 @@ contract World is IWorld, ShellContract, IAcertContract {
      * @dev See {IAcertContract-metaverseAddress}.
      */
     function metaverseAddress() public view override returns (address) {
-        return address(this);
+        return IAcertContract(coreContract).metaverseAddress();
     }
 
     //IWorld

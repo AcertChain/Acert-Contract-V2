@@ -35,7 +35,7 @@ const EIP712Domain = [
   },
 ];
 
-function shouldBehaveLikeWorld(owner) {
+function shouldBehaveLikeWorld(owner,notOwner) {
   context('World', function () {
     beforeEach(async function () {});
     describe('基础view查询接口', function () {
@@ -52,9 +52,10 @@ function shouldBehaveLikeWorld(owner) {
     describe('Owner', function () {
       context('change owner', function () {
         it('未更新前world 拥有者', async function () {
+
           await expectRevert(
             this.World.transferOwnership(owner, {
-              from: owner,
+              from: notOwner,
             }),
             'Ownable: caller is not the owner',
           );
@@ -94,12 +95,13 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
     describe('removeOperator', function () {
       context('remove address', function () {
         it('remove operator event', async function () {
-          await this.WorldCore.addOperator(operator);
+          await this.WorldCore.addOperator(owner);
           
-        expect(await this.WorldCore.checkBWO(operator)).to.be.equal(true);
+        expect(await this.WorldCore.checkBWO(owner)).to.be.equal(true);
           
-        await this.WorldCore.removeOperator(operator)
-        expect(await this.WorldCore.checkBWO(operator)).to.be.equal(false);
+        await this.WorldCore.removeOperator(owner)
+
+        expect(await this.WorldCore.checkBWO(owner)).to.be.equal(false);
   
         });
       });

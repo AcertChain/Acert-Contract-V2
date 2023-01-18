@@ -198,7 +198,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         uint256 ownerId = ownerAccountOf(tokenId);
         require(
             _getAccountIdByAddress(_msgSender) == ownerId || isApprovedForAll(ownerId, _msgSender),
-            "Asset721: approve caller is not owner nor approved for all"
+            "Asset721: approve caller is not owner or approved for all"
         );
         _approve(spender, tokenId, false, _msgSender);
     }
@@ -226,7 +226,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         uint256 ownerId = ownerAccountOf(tokenId);
         require(
             _getAccountIdByAddress(sender) == ownerId || isApprovedForAll(ownerId, sender),
-            "Asset721: approve caller is not owner nor approved for all"
+            "Asset721: approve caller is not owner or approved for all"
         );
         uint256 nonce = getNonce(sender);
         _recoverSig(
@@ -661,7 +661,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         uint256 to,
         uint256 tokenId
     ) public override onlyShell {
-        _checkIdIsNotZero(to, "Asset721: transfer to the zero id");
+        _checkIdIsNotZero(to, "Asset721: mint to the zero id");
         require(!_exists(tokenId), "Asset721: token already minted");
         _beforeTokenTransfer(0, to, tokenId);
 
