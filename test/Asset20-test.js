@@ -131,12 +131,9 @@ contract('Asset20', function (accounts) {
     await this.WorldCore.registerAsset(this.token.address);
 
     await this.Metaverse.createAccount(initialHolder, false);
-    
+
     // mint token
-    this.receipt = await this.token.mint(
-      initialHolderId,
-      initialSupply,
-    );
+    this.receipt = await this.token.mint(initialHolderId, initialSupply);
     this.tokenName = name;
     this.tokenVersion = version;
     this.BWO = initialHolder;
@@ -149,12 +146,11 @@ contract('Asset20', function (accounts) {
     await this.Metaverse.createAccount(anotherAccount, false);
     await this.Metaverse.createAccount(BWOInitialHolder, false);
 
-    const BWOInitialHolderId = await this.Metaverse.getAccountIdByAddress(BWOInitialHolder); 
-
-    await this.token.mint(
-      BWOInitialHolderId,
-      initialSupply,
+    const BWOInitialHolderId = await this.Metaverse.getAccountIdByAddress(
+      BWOInitialHolder,
     );
+
+    await this.token.mint(BWOInitialHolderId, initialSupply);
     await this.Metaverse.createAccount(BWOReceipt, false);
   });
 
@@ -253,10 +249,7 @@ contract('Asset20', function (accounts) {
 
     describe('for a non zero account', function () {
       beforeEach('minting', async function () {
-        this.receipt = await this.token.mint(
-          recipientId,
-          amount,
-        );
+        this.receipt = await this.token.mint(recipientId, amount);
       });
 
       it('increments totalSupply', async function () {
@@ -295,10 +288,7 @@ contract('Asset20', function (accounts) {
     describe('for a non zero account', function () {
       it('rejects burning more than balance', async function () {
         await expectRevert(
-          this.token.burn(
-            initialHolderId,
-            initialSupply.addn(1),
-          ),
+          this.token.burn(initialHolderId, initialSupply.addn(1)),
           'Asset20: burn amount exceeds balance',
         );
       });
@@ -306,10 +296,7 @@ contract('Asset20', function (accounts) {
       const describeBurn = function (description, amount) {
         describe(description, function () {
           beforeEach('burning', async function () {
-            this.receipt = await this.token.burn(
-              initialHolderId,
-              amount,
-            );
+            this.receipt = await this.token.burn(initialHolderId, amount);
           });
 
           it('decrements totalSupply', async function () {

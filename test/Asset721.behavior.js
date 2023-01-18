@@ -57,7 +57,6 @@ function shouldBehaveLikeAsset721(
       await this.Metaverse.createAccount(operator, false);
       await this.Metaverse.createAccount(other, false);
 
-
       await this.token.mint(ownerId, firstTokenId);
       await this.token.mint(ownerId, secondTokenId);
       this.toWhom = other; // default to other for toWhom in context-dependent tests
@@ -455,7 +454,7 @@ function shouldBehaveLikeAsset721(
                 Error.None,
               );
               this.toWhom = this.receiver.address;
-              await this.Metaverse.createAccount(this.receiver.address,false);
+              await this.Metaverse.createAccount(this.receiver.address, false);
               this.receiverId = new BN(
                 await this.Metaverse.getAccountIdByAddress(
                   this.receiver.address,
@@ -549,7 +548,7 @@ function shouldBehaveLikeAsset721(
               '0x42',
               Error.None,
             );
-            await this.Metaverse.createAccount(invalidReceiver.address,false);
+            await this.Metaverse.createAccount(invalidReceiver.address, false);
             const invalidReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
                 invalidReceiver.address,
@@ -573,7 +572,8 @@ function shouldBehaveLikeAsset721(
               Error.RevertWithMessage,
             );
             await this.Metaverse.createAccount(
-              revertingReceiver.address,false
+              revertingReceiver.address,
+              false,
             );
             const revertingReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
@@ -599,7 +599,8 @@ function shouldBehaveLikeAsset721(
               Error.RevertWithoutMessage,
             );
             await this.Metaverse.createAccount(
-              revertingReceiver.address,false
+              revertingReceiver.address,
+              false,
             );
             const revertingReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
@@ -624,7 +625,8 @@ function shouldBehaveLikeAsset721(
               Error.Panic,
             );
             await this.Metaverse.createAccount(
-              revertingReceiver.address,false
+              revertingReceiver.address,
+              false,
             );
             const revertingReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(
@@ -645,7 +647,7 @@ function shouldBehaveLikeAsset721(
         describe('to a contract that does not implement the required function', function () {
           it('reverts', async function () {
             const nonReceiver = this.token;
-            await this.Metaverse.createAccount(nonReceiver.address,false);
+            await this.Metaverse.createAccount(nonReceiver.address, false);
             const nonReceiverId = new BN(
               await this.Metaverse.getAccountIdByAddress(nonReceiver.address),
             );
@@ -675,7 +677,7 @@ function shouldBehaveLikeAsset721(
             Error.None,
           );
 
-          await this.Metaverse.createAccount(this.receiver.address,false);
+          await this.Metaverse.createAccount(this.receiver.address, false);
           const tmpreceiverId = await this.Metaverse.getAccountIdByAddress(
             this.receiver.address,
           );
@@ -685,8 +687,6 @@ function shouldBehaveLikeAsset721(
             tokenId,
             data,
           );
-
-         
 
           await expectEvent.inTransaction(
             receipt.tx,
@@ -706,7 +706,7 @@ function shouldBehaveLikeAsset721(
             Error.None,
           );
 
-          await this.Metaverse.createAccount(this.receiver.address,false);
+          await this.Metaverse.createAccount(this.receiver.address, false);
           const tmpreceiverId = await this.Metaverse.getAccountIdByAddress(
             this.receiver.address,
           );
@@ -737,12 +737,15 @@ function shouldBehaveLikeAsset721(
                 Error.None,
               );
 
-              await this.Metaverse.createAccount(invalidReceiver.address,false);
-              
-              const invalidReceiverId = await this.Metaverse.getAccountIdByAddress(
+              await this.Metaverse.createAccount(
                 invalidReceiver.address,
+                false,
               );
 
+              const invalidReceiverId =
+                await this.Metaverse.getAccountIdByAddress(
+                  invalidReceiver.address,
+                );
 
               await expectRevert(
                 this.token.safeMint(invalidReceiverId, tokenId, '0x'),
@@ -761,11 +764,15 @@ function shouldBehaveLikeAsset721(
                 Error.RevertWithMessage,
               );
 
-              await this.Metaverse.createAccount(revertingReceiver.address,false);
-
-              const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(
+              await this.Metaverse.createAccount(
                 revertingReceiver.address,
+                false,
               );
+
+              const revertingReceiverId =
+                await this.Metaverse.getAccountIdByAddress(
+                  revertingReceiver.address,
+                );
 
               await expectRevert(
                 this.token.safeMint(revertingReceiverId, tokenId, '0x'),
@@ -784,11 +791,15 @@ function shouldBehaveLikeAsset721(
                 Error.RevertWithoutMessage,
               );
 
-              await this.Metaverse.createAccount(revertingReceiver.address,false);
-
-              const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(
+              await this.Metaverse.createAccount(
                 revertingReceiver.address,
+                false,
               );
+
+              const revertingReceiverId =
+                await this.Metaverse.getAccountIdByAddress(
+                  revertingReceiver.address,
+                );
 
               await expectRevert(
                 this.token.safeMint(revertingReceiverId, tokenId, '0x'),
@@ -805,11 +816,15 @@ function shouldBehaveLikeAsset721(
               Error.Panic,
             );
 
-            await this.Metaverse.createAccount(revertingReceiver.address,false);
-
-            const revertingReceiverId = await this.Metaverse.getAccountIdByAddress(
+            await this.Metaverse.createAccount(
               revertingReceiver.address,
+              false,
             );
+
+            const revertingReceiverId =
+              await this.Metaverse.getAccountIdByAddress(
+                revertingReceiver.address,
+              );
 
             await expectRevert.unspecified(
               this.token.safeMint(revertingReceiverId, tokenId, '0x'),
@@ -823,7 +838,7 @@ function shouldBehaveLikeAsset721(
             it('reverts', async function () {
               const nonReceiver = this.token;
 
-              await this.Metaverse.createAccount(nonReceiver.address,false);
+              await this.Metaverse.createAccount(nonReceiver.address, false);
               const nonReceiverId = await this.Metaverse.getAccountIdByAddress(
                 nonReceiver.address,
               );
@@ -1461,7 +1476,7 @@ function shouldBehaveLikeAsset721IsTrust(
         RECEIVER_MAGIC_VALUE,
         Error.None,
       );
-      await this.Metaverse.createAccount(this.receiver.address,false);
+      await this.Metaverse.createAccount(this.receiver.address, false);
       this.receiverId = new BN(
         await this.Metaverse.getAccountIdByAddress(this.receiver.address),
       );

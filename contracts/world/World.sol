@@ -5,7 +5,6 @@ import "../interfaces/IWorld.sol";
 import "../interfaces/IAcertContract.sol";
 
 contract World is IWorld, ShellContract, IAcertContract {
-    
     function core() internal view returns (IWorldCore) {
         return IWorldCore(coreContract);
     }
@@ -14,24 +13,31 @@ contract World is IWorld, ShellContract, IAcertContract {
     function emitAddOperator(address operator_) public onlyCore {
         emit AddOperator(operator_);
     }
+
     function emitRemoveOperator(address operator_) public onlyCore {
         emit AddOperator(operator_);
     }
+
     function emitRegisterAsset(address _asset) public onlyCore {
         emit RegisterAsset(_asset);
     }
+
     function emitEnableAsset(address _asset) public onlyCore {
         emit EnableAsset(_asset);
     }
+
     function emitDisableAsset(address _asset) public onlyCore {
         emit DisableAsset(_asset);
     }
+
     function emitAddSafeContract(address _contract) public onlyCore {
         emit AddSafeContract(_contract);
     }
+
     function emitRemoveSafeContract(address _contract) public onlyCore {
         emit RemoveSafeContract(_contract);
     }
+
     function emitTrustWorld(
         uint256 _accountId,
         bool _isTrustWorld,
@@ -41,6 +47,7 @@ contract World is IWorld, ShellContract, IAcertContract {
     ) public onlyCore {
         emit TrustWorld(_accountId, _isTrustWorld, isBWO, sender, nonce);
     }
+
     function emitTrustContract(
         uint256 _accountId,
         address _safeContract,
@@ -49,9 +56,9 @@ contract World is IWorld, ShellContract, IAcertContract {
         address sender,
         uint256 nonce
     ) public onlyCore {
-        emit TrustContract(_accountId, _safeContract,_isTrustContract, isBWO, sender, nonce);
+        emit TrustContract(_accountId, _safeContract, _isTrustContract, isBWO, sender, nonce);
     }
-    
+
     /**
      * @dev See {IAcertContract-metaverseAddress}.
      */
@@ -114,19 +121,36 @@ contract World is IWorld, ShellContract, IAcertContract {
         return core().checkBWO(_address);
     }
 
-    function trustContract(uint256 _id, address _contract, bool _isTrustContract) public override {
+    function trustContract(
+        uint256 _id,
+        address _contract,
+        bool _isTrustContract
+    ) public override {
         return core().trustContract_(_msgSender(), _id, _contract, _isTrustContract);
     }
-    
-    function trustContractBWO(uint256 _id, address _contract, bool _isTrustContract, address sender, uint256 deadline, bytes memory signature) public override {
+
+    function trustContractBWO(
+        uint256 _id,
+        address _contract,
+        bool _isTrustContract,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public override {
         return core().trustContractBWO_(_msgSender(), _id, _contract, _isTrustContract, sender, deadline, signature);
     }
-    
+
     function trustWorld(uint256 _id, bool _isTrustWorld) public override {
         return core().trustWorld_(_msgSender(), _id, _isTrustWorld);
     }
 
-    function trustWorldBWO(uint256 _id, bool _isTrustWorld, address sender, uint256 deadline, bytes memory signature) public override {
+    function trustWorldBWO(
+        uint256 _id,
+        bool _isTrustWorld,
+        address sender,
+        uint256 deadline,
+        bytes memory signature
+    ) public override {
         return core().trustWorldBWO_(_msgSender(), _id, _isTrustWorld, sender, deadline, signature);
     }
 }

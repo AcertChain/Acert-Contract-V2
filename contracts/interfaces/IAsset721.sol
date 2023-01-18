@@ -6,7 +6,6 @@ import "./ShellCore.sol";
 import "./IAsset.sol";
 
 interface IAsset721Metadata is IAsset {
-
     function balanceOf(uint256 account) external view returns (uint256 balance);
 
     function ownerAccountOf(uint256 tokenId) external view returns (uint256 account);
@@ -103,7 +102,6 @@ interface IAsset721 is IERC721Event, IAsset721Metadata, IERC721 {
         bytes memory signature
     ) external;
 }
-
 
 interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
     function transferFrom_(
@@ -202,9 +200,18 @@ interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
         bytes memory signature
     ) external;
 
-    function safeMint_(address _msgSender, uint256 to, uint256 tokenId, bytes memory data) external;
+    function safeMint_(
+        address _msgSender,
+        uint256 to,
+        uint256 tokenId,
+        bytes memory data
+    ) external;
 
-    function mint_(address _msgSender, uint256 to, uint256 tokenId) external;
+    function mint_(
+        address _msgSender,
+        uint256 to,
+        uint256 tokenId
+    ) external;
 
     function burn_(address _msgSender, uint256 tokenId) external;
 }

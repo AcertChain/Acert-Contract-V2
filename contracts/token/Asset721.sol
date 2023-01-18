@@ -7,11 +7,10 @@ import "../interfaces/IAcertContract.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 contract Asset721 is IAsset721, ShellContract, IAcertContract, ERC165 {
-
     function core() internal view returns (IAsset721Core) {
         return IAsset721Core(coreContract);
     }
-    
+
     function emitTransfer(
         address from,
         address to,
@@ -19,7 +18,7 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, ERC165 {
     ) public onlyCore {
         emit Transfer(from, to, tokenId);
     }
-    
+
     function emitApproval(
         address owner,
         address approved,
@@ -27,7 +26,7 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, ERC165 {
     ) public onlyCore {
         emit Approval(owner, approved, tokenId);
     }
-    
+
     function emitApprovalForAll(
         address owner,
         address operator,

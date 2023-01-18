@@ -6,11 +6,10 @@ import "../interfaces/IAsset20.sol";
 import "../interfaces/IAcertContract.sol";
 
 contract Asset20 is IAsset20, ShellContract, IAcertContract {
-
     function core() internal view returns (IAsset20Core) {
         return IAsset20Core(coreContract);
     }
-    
+
     function emitTransfer(
         address from,
         address to,
@@ -18,7 +17,7 @@ contract Asset20 is IAsset20, ShellContract, IAcertContract {
     ) public onlyCore {
         emit Transfer(from, to, value);
     }
-    
+
     function emitApproval(
         address owner,
         address spender,
@@ -210,7 +209,7 @@ contract Asset20 is IAsset20, ShellContract, IAcertContract {
         return core().approveBWO_(_msgSender(), ownerId, spender, amount, sender, deadline, signature);
     }
 
-// mint & burn
+    // mint & burn
     function _mint(uint256 account, uint256 amount) internal {
         return core().mint_(_msgSender(), account, amount);
     }

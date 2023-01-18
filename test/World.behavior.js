@@ -35,13 +35,13 @@ const EIP712Domain = [
   },
 ];
 
-function shouldBehaveLikeWorld(owner,notOwner) {
+function shouldBehaveLikeWorld(owner, notOwner) {
   context('World', function () {
     beforeEach(async function () {});
     describe('基础view查询接口', function () {
       context('getTotalAccount', function () {
         it('应该等于avatarMaxId+1', async function () {
-          await this.Metaverse.createAccount(owner,false);
+          await this.Metaverse.createAccount(owner, false);
           expect(await this.Metaverse.getTotalAccount()).to.be.bignumber.equal(
             new BN(1),
           );
@@ -52,7 +52,6 @@ function shouldBehaveLikeWorld(owner,notOwner) {
     describe('Owner', function () {
       context('change owner', function () {
         it('未更新前world 拥有者', async function () {
-
           await expectRevert(
             this.World.transferOwnership(owner, {
               from: notOwner,
@@ -61,7 +60,7 @@ function shouldBehaveLikeWorld(owner,notOwner) {
           );
         });
         it('更新为owner', async function () {
-          await this.World.transferOwnership(owner)
+          await this.World.transferOwnership(owner);
           expect(await this.World.owner()).to.equal(owner);
         });
       });
@@ -84,10 +83,9 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
 
       context('add address', function () {
         it('add operator event', async function () {
-         await this.WorldCore.addOperator(operator)
+          await this.WorldCore.addOperator(operator);
 
-        expect(await this.WorldCore.checkBWO(operator)).to.be.equal(true);
-
+          expect(await this.WorldCore.checkBWO(operator)).to.be.equal(true);
         });
       });
     });
@@ -96,13 +94,12 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
       context('remove address', function () {
         it('remove operator event', async function () {
           await this.WorldCore.addOperator(owner);
-          
-        expect(await this.WorldCore.checkBWO(owner)).to.be.equal(true);
-          
-        await this.WorldCore.removeOperator(owner)
 
-        expect(await this.WorldCore.checkBWO(owner)).to.be.equal(false);
-  
+          expect(await this.WorldCore.checkBWO(owner)).to.be.equal(true);
+
+          await this.WorldCore.removeOperator(owner);
+
+          expect(await this.WorldCore.checkBWO(owner)).to.be.equal(false);
         });
       });
     });
@@ -112,8 +109,7 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
         it('true', async function () {
           await this.WorldCore.addOperator(operator);
 
-        expect(await this.WorldCore.checkBWO(operator)).to.be.equal(true);
-
+          expect(await this.WorldCore.checkBWO(operator)).to.be.equal(true);
         });
       });
     });
@@ -125,9 +121,9 @@ function shouldBehaveLikeWorldOperator(operator, owner) {
           expect(await this.WorldCore.checkBWO(operator)).to.equal(true);
         });
         it('is world', async function () {
-          expect(await this.WorldCore.checkBWO(await this.World.owner())).to.equal(
-            true,
-          );
+          expect(
+            await this.WorldCore.checkBWO(await this.World.owner()),
+          ).to.equal(true);
         });
         it('is not owner', async function () {
           expect(await this.WorldCore.checkBWO(owner)).to.equal(false);
@@ -149,11 +145,11 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
           );
         });
         it('event AddSafeContract', async function () {
+          await this.WorldCore.addSafeContract(contract);
 
-          await this.WorldCore.addSafeContract(contract)
-
-          expect(await this.WorldCore.isSafeContract(contract)).to.be.equal(true);
-         
+          expect(await this.WorldCore.isSafeContract(contract)).to.be.equal(
+            true,
+          );
         });
       });
     });
@@ -163,12 +159,15 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         it('event RemoveSafeContract', async function () {
           await this.WorldCore.addSafeContract(contract);
 
-          expect(await this.WorldCore.isSafeContract(contract)).to.be.equal(true);
+          expect(await this.WorldCore.isSafeContract(contract)).to.be.equal(
+            true,
+          );
 
-          await this.WorldCore.removeSafeContract(contract)
+          await this.WorldCore.removeSafeContract(contract);
 
-          expect(await this.WorldCore.isSafeContract(contract)).to.be.equal(false);
-       
+          expect(await this.WorldCore.isSafeContract(contract)).to.be.equal(
+            false,
+          );
         });
       });
     });
@@ -180,7 +179,9 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
           expect(await this.WorldCore.isSafeContract(contract)).to.equal(true);
         });
         it('is safe by zero address', async function () {
-          expect(await this.WorldCore.isSafeContract(ZERO_ADDRESS)).to.equal(false);
+          expect(await this.WorldCore.isSafeContract(ZERO_ADDRESS)).to.equal(
+            false,
+          );
         });
       });
     });
@@ -188,7 +189,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
     describe('isTrustWorld', function () {
       context('is trust World', function () {
         it('account is not trust World', async function () {
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
 
           const accountId = new BN(
             await this.Metaverse.getAccountIdByAddress(account),
@@ -198,7 +199,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         });
 
         it('account is trust World', async function () {
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           const accountId = new BN(
             await this.Metaverse.getAccountIdByAddress(account),
           );
@@ -215,13 +216,13 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         it('account is trust World BWO', async function () {
           const accountW = Wallet.generate();
           const account = accountW.getChecksumAddressString();
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           const accountId = new BN(
             await this.Metaverse.getAccountIdByAddress(account),
           );
           await this.WorldCore.addOperator(operator);
 
-          await this.Metaverse.createAccount(operator,false);
+          await this.Metaverse.createAccount(operator, false);
 
           const operatorId = new BN(
             await this.Metaverse.getAccountIdByAddress(operator),
@@ -283,14 +284,14 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
     describe('isTrust', function () {
       context('is Trust', function () {
         it('conrtact is not safe contract ', async function () {
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           const accountId = new BN(
             await this.Metaverse.getAccountIdByAddress(account),
           );
           expect(await this.World.isTrust(contract, accountId)).to.equal(false);
         });
         it('conrtact is safe contract and user not trust world', async function () {
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           const accountId = new BN(
             await this.Metaverse.getAccountIdByAddress(account),
           );
@@ -299,7 +300,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
           expect(await this.World.isTrust(contract, accountId)).to.equal(false);
         });
         it('conrtact is safe contract and user trust world', async function () {
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           const accountId = new BN(
             await this.Metaverse.getAccountIdByAddress(account),
           );
@@ -310,7 +311,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
           expect(await this.World.isTrust(contract, accountId)).to.equal(true);
         });
         it('conrtact is safe contract and user not trust world not trust contract ', async function () {
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           const accountId = new BN(
             await this.Metaverse.getAccountIdByAddress(account),
           );
@@ -319,7 +320,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
           expect(await this.World.isTrust(contract, accountId)).to.equal(false);
         });
         it('conrtact is safe contract and user not trust world  trust contract ', async function () {
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           const accountId = new BN(
             await this.Metaverse.getAccountIdByAddress(account),
           );
@@ -358,7 +359,7 @@ function shouldBehaveLikeWorldTrust(contract, account, operator) {
         it('conrtact is safe contract and user not trust world  trust contract  BWO', async function () {
           const accountW = Wallet.generate();
           const account = accountW.getChecksumAddressString();
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           const accountId = new BN(
             await this.Metaverse.getAccountIdByAddress(account),
           );
@@ -473,7 +474,7 @@ function shouldBehaveLikeWorldAsset() {
 
       context('RegisterAsset event', function () {
         it('revert', async function () {
-            await this.WorldCore.registerAsset(this.asset20.address);
+          await this.WorldCore.registerAsset(this.asset20.address);
         });
       });
     });
@@ -481,10 +482,11 @@ function shouldBehaveLikeWorldAsset() {
     describe('disableAsset', function () {
       it('call disable asset', async function () {
         await this.WorldCore.registerAsset(this.asset20.address);
-          await this.WorldCore.disableAsset(this.asset20.address);
-          
-          expect(await this.WorldCore.isEnabledAsset(this.asset20.address)).to.equal(false);
-       
+        await this.WorldCore.disableAsset(this.asset20.address);
+
+        expect(
+          await this.WorldCore.isEnabledAsset(this.asset20.address),
+        ).to.equal(false);
       });
 
       it('disable asset', async function () {
@@ -501,9 +503,9 @@ function shouldBehaveLikeWorldAsset() {
         it('get asset', async function () {
           await this.WorldCore.registerAsset(this.asset20.address);
 
-          expect(await this.World.getAssets()).to.deep.equal(
-            [this.asset20.address],
-          );
+          expect(await this.World.getAssets()).to.deep.equal([
+            this.asset20.address,
+          ]);
         });
       });
     });

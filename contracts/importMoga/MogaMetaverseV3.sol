@@ -9,7 +9,7 @@ contract MogaMetaverseV3 is Metaverse {
         require(addrs.length > 0, "Metaverse: length is zero");
 
         for (uint256 i = 0; i < addrs.length; i++) {
-            core().createAccount_(addrs[i],addrs[i], isTrustAdmins[i]);
+            core().createAccount_(addrs[i], addrs[i], isTrustAdmins[i]);
         }
     }
 }

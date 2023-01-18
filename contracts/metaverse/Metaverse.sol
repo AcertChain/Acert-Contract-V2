@@ -48,7 +48,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
         bool isBWO,
         address sender_,
         uint256 nonce_
-    ) public  onlyCore {
+    ) public onlyCore {
         emit TrustAdmin(accountId_, isTrustAdmin_, isBWO, sender_, nonce_);
     }
 
@@ -289,5 +289,4 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     function getWorlds() public view override returns (address[] memory) {
         return core().getWorlds();
     }
-
 }

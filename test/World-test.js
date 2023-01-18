@@ -21,7 +21,6 @@ const Asset20 = artifacts.require('MogaToken_V3');
 const Asset20Core = artifacts.require('Asset20Core');
 const Asset20Storage = artifacts.require('Asset20Storage');
 
-
 contract('World', function (accounts) {
   const itemName = 'Non Fungible Token';
   const itemSymbol = 'NFT';
@@ -33,7 +32,6 @@ contract('World', function (accounts) {
 
   const remark = 'remark';
   const version = '1.0.0';
-
 
   beforeEach(async function () {
     // deploy metaverse
@@ -48,7 +46,6 @@ contract('World', function (accounts) {
     await this.MetaverseStorage.updateMetaverse(this.MetaverseCore.address);
     await this.MetaverseCore.updateShell(this.Metaverse.address);
     await this.Metaverse.updateCore(this.MetaverseCore.address);
-
 
     // deploy world
     this.worldName = 'world';
@@ -66,7 +63,6 @@ contract('World', function (accounts) {
     await this.WorldStorage.updateWorld(this.WorldCore.address);
     await this.WorldCore.updateShell(this.World.address);
     await this.World.updateCore(this.WorldCore.address);
-
 
     this.newWorldName = 'newWorld';
 
@@ -101,7 +97,6 @@ contract('World', function (accounts) {
     await this.asset20.updateCore(this.asset20tokenCore.address);
 
     await this.asset20.updateMiner(await this.asset20.owner(), true);
-
 
     this.tokenStorage = await Asset721Storage.new();
     this.asset721tokenCore = await Asset721Core.new(

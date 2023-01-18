@@ -90,7 +90,6 @@ contract('Metaverse', function (accounts) {
     await this.Acert.remark(this.WorldStorage.address, remark, '');
 
     this.chainId = await this.MetaverseCore.getChainId();
-
   });
 
   context('测试Metaverse 功能', function () {
@@ -103,7 +102,7 @@ contract('Metaverse', function (accounts) {
       });
 
       it('registerWorld ', async function () {
-        await this.MetaverseCore.registerWorld(this.World.address)
+        await this.MetaverseCore.registerWorld(this.World.address);
 
         const worlds = await this.MetaverseCore.getWorlds();
         expect(worlds.length).to.be.equal(1);
@@ -130,10 +129,9 @@ contract('Metaverse', function (accounts) {
 
       it('SetAdmin', async function () {
         const [admin] = accounts;
-        await this.MetaverseCore.setAdmin(admin)
+        await this.MetaverseCore.setAdmin(admin);
 
         expect(await this.MetaverseCore.getAdmin()).to.be.equal(admin);
-       
       });
     });
 
@@ -147,30 +145,28 @@ contract('Metaverse', function (accounts) {
 
       it('addOperator', async function () {
         const [operator] = accounts;
-        await this.MetaverseCore.addOperator(operator)
+        await this.MetaverseCore.addOperator(operator);
 
         expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(true);
-
       });
     });
 
     describe('removeOperator', function () {
       it('return event ', async function () {
-        const [,operator] = accounts;
+        const [, operator] = accounts;
         await this.MetaverseCore.addOperator(operator);
 
         expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(true);
 
-        await this.MetaverseCore.removeOperator(operator)
+        await this.MetaverseCore.removeOperator(operator);
 
         expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(false);
-
       });
     });
 
     describe('isBWO', function () {
       it('check', async function () {
-        const [,operator] = accounts;
+        const [, operator] = accounts;
         expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(false);
         await this.MetaverseCore.addOperator(operator);
         expect(await this.MetaverseCore.checkBWO(operator)).to.be.equal(true);
@@ -182,13 +178,11 @@ contract('Metaverse', function (accounts) {
         await this.MetaverseCore.registerWorld(this.World.address);
       });
 
-
       it('getWorlds', async function () {
         expect(await this.Metaverse.getWorlds()).to.have.ordered.members([
           this.World.address,
         ]);
       });
-
     });
   });
 
@@ -198,7 +192,7 @@ contract('Metaverse', function (accounts) {
         it('carete account event ', async function () {
           const [account] = accounts;
           expectEvent(
-            await this.Metaverse.createAccount(account,false),
+            await this.Metaverse.createAccount(account, false),
             'CreateAccount',
             {
               accountId: new BN(
@@ -215,7 +209,7 @@ contract('Metaverse', function (accounts) {
       context('get account id by address', function () {
         it('equal 101', async function () {
           const [account] = accounts;
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           expect(
             await this.Metaverse.getAccountIdByAddress(account),
           ).to.bignumber.equal(new BN(1));
@@ -231,7 +225,7 @@ contract('Metaverse', function (accounts) {
         });
         it('account id is exist', async function () {
           const [account] = accounts;
-          await this.Metaverse.createAccount(account,false);
+          await this.Metaverse.createAccount(account, false);
           expect(
             await this.Metaverse.getAddressByAccountId(new BN(1)),
           ).to.equal(account);
@@ -244,7 +238,7 @@ contract('Metaverse', function (accounts) {
         it('zero address', async function () {
           const [account] = accounts;
           await expectRevert(
-            this.Metaverse.createAccount(ZERO_ADDRESS,false, {
+            this.Metaverse.createAccount(ZERO_ADDRESS, false, {
               from: account,
             }),
             'Metaverse: address is zero',
@@ -252,9 +246,9 @@ contract('Metaverse', function (accounts) {
         });
         it('is address exist', async function () {
           const [account] = accounts;
-          await this.Metaverse.createAccount(account, true,{from: account});
+          await this.Metaverse.createAccount(account, true, { from: account });
           await expectRevert(
-            this.Metaverse.createAccount(account, true,{from: account}),
+            this.Metaverse.createAccount(account, true, { from: account }),
             'Metaverse: new address has been used',
           );
         });
@@ -272,12 +266,14 @@ contract('Metaverse', function (accounts) {
             10,
             this.newMetaverseStorage.address,
           );
-          await this.newMetaverseStorage.updateMetaverse(this.newMetaverseCore.address);
+          await this.newMetaverseStorage.updateMetaverse(
+            this.newMetaverseCore.address,
+          );
           await this.newMetaverseCore.updateShell(this.newMetaverse.address);
           await this.newMetaverse.updateCore(this.newMetaverseCore.address);
 
           const [account] = accounts;
-          await this.newMetaverse.createAccount(account,false);
+          await this.newMetaverse.createAccount(account, false);
           expect(
             await this.newMetaverse.getAccountIdByAddress(account),
           ).to.bignumber.equal(new BN(11));
@@ -288,22 +284,24 @@ contract('Metaverse', function (accounts) {
     describe('freezeAccount', function () {
       it('return event', async function () {
         const [account] = accounts;
-        await this.Metaverse.createAccount(account,false);
+        await this.Metaverse.createAccount(account, false);
         const accountId = new BN(
           await this.Metaverse.getAccountIdByAddress(account),
         );
 
         await this.Metaverse.freezeAccount(accountId, {
           from: account,
-        })
-        
-        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(true);
+        });
+
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(
+          true,
+        );
       });
 
       it('is BWO', async function () {
         const accountW = Wallet.generate();
         const account = accountW.getChecksumAddressString();
-        await this.Metaverse.createAccount(account,false);
+        await this.Metaverse.createAccount(account, false);
         const accountId = new BN(
           await this.Metaverse.getAccountIdByAddress(account),
         );
@@ -314,7 +312,7 @@ contract('Metaverse', function (accounts) {
         const signature = signFreezeAccountData(
           this.chainId,
           this.MetaverseCore.address,
-          "metaverse",
+          'metaverse',
           accountW.getPrivateKey(),
           version,
           accountId,
@@ -331,9 +329,11 @@ contract('Metaverse', function (accounts) {
           {
             from: operator,
           },
-        )
+        );
 
-        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(true);
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(
+          true,
+        );
       });
     });
 
@@ -342,22 +342,28 @@ contract('Metaverse', function (accounts) {
         const [account, admin, newAccount] = accounts;
         await this.MetaverseCore.setAdmin(admin);
 
-        await this.Metaverse.createAccount(account,false);
+        await this.Metaverse.createAccount(account, false);
         const accountId = new BN(
           await this.Metaverse.getAccountIdByAddress(account),
         );
-        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(false);
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(
+          false,
+        );
 
         await this.Metaverse.freezeAccount(accountId, {
           from: account,
         });
-        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(true);
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(
+          true,
+        );
 
         await this.MetaverseCore.unfreezeAccount(accountId, newAccount, {
           from: admin,
-        })
+        });
 
-        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(false);
+        expect(await this.Metaverse.accountIsFreeze(accountId)).to.be.equal(
+          false,
+        );
       });
     });
 
@@ -365,7 +371,7 @@ contract('Metaverse', function (accounts) {
       it('add and remove', async function () {
         const [owner, authAccount] = accounts;
 
-        await this.Metaverse.createAccount(owner,false);
+        await this.Metaverse.createAccount(owner, false);
 
         const ownerId = await this.Metaverse.getAccountIdByAddress(owner);
 

@@ -29,7 +29,6 @@ interface IWorldMetadata {
     function isSafeContract(address _address) external view returns (bool);
 
     function checkBWO(address _address) external view returns (bool);
-
 }
 
 interface IWorld is IWorldMetadata {
@@ -40,13 +39,7 @@ interface IWorld is IWorldMetadata {
     event DisableAsset(address indexed asset);
     event AddSafeContract(address indexed safeContract);
     event RemoveSafeContract(address indexed safeContract);
-    event TrustWorld(
-        uint256 indexed accountId,
-        bool isTrustWorld,
-        bool isBWO,
-        address indexed sender,
-        uint256 nonce
-    );
+    event TrustWorld(uint256 indexed accountId, bool isTrustWorld, bool isBWO, address indexed sender, uint256 nonce);
     event TrustContract(
         uint256 indexed accountId,
         address indexed safeContract,
@@ -61,7 +54,7 @@ interface IWorld is IWorldMetadata {
         address _contract,
         bool _isTrustContract
     ) external;
-    
+
     function trustContractBWO(
         uint256 _id,
         address _contract,
@@ -70,16 +63,16 @@ interface IWorld is IWorldMetadata {
         uint256 deadline,
         bytes memory signature
     ) external;
-    
+
     function trustWorld(uint256 _id, bool _isTrustWorld) external;
 
     function trustWorldBWO(
-        uint256 _id, bool _isTrustWorld,
+        uint256 _id,
+        bool _isTrustWorld,
         address sender,
         uint256 deadline,
         bytes memory signature
     ) external;
-    
 }
 
 interface IWorldCore is IWorldMetadata {
@@ -89,7 +82,7 @@ interface IWorldCore is IWorldMetadata {
         address _contract,
         bool _isTrustContract
     ) external;
-    
+
     function trustContractBWO_(
         address _msgSender,
         uint256 _id,
@@ -99,8 +92,12 @@ interface IWorldCore is IWorldMetadata {
         uint256 deadline,
         bytes memory signature
     ) external;
-    
-    function trustWorld_(address _msgSender, uint256 _id, bool _isTrustWorld) external;
+
+    function trustWorld_(
+        address _msgSender,
+        uint256 _id,
+        bool _isTrustWorld
+    ) external;
 
     function trustWorldBWO_(
         address _msgSender,
@@ -110,6 +107,4 @@ interface IWorldCore is IWorldMetadata {
         uint256 deadline,
         bytes memory signature
     ) external;
-    
 }
-

@@ -127,4 +127,3 @@ interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
         uint256 amount
     ) external;
 }
-
