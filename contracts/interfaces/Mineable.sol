@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Mineable is Ownable {
     event UpdateMiner(address indexed _miner, bool _vaild);
 
-    mapping(address => bool) miners;
+    mapping(address => bool) public miners;
 
     modifier onlyMiner() {
         require(miners[msg.sender], "Mineable: caller is not the miner");
