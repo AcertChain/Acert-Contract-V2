@@ -73,19 +73,19 @@
       {
         "indexed": false,
         "internalType": "bool",
-        "name": "isBWO_",
+        "name": "isBWO",
         "type": "bool"
       },
       {
         "indexed": true,
         "internalType": "address",
-        "name": "sender_",
+        "name": "sender",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "nonce_",
+        "name": "nonce",
         "type": "uint256"
       }
     ],

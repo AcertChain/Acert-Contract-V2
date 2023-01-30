@@ -42,9 +42,9 @@ interface IMetaverse is IMetaverseMetadata {
         uint256 indexed accountId,
         address indexed authAddress,
         bool isTrustAdmin,
-        bool isBWO_,
-        address indexed sender_,
-        uint256 nonce_
+        bool isBWO,
+        address indexed sender,
+        uint256 nonce
     );
     event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed sender, uint256 nonce);
     event FreezeAccount(uint256 indexed accountId, bool isBWO, address indexed sender, uint256 nonce);
