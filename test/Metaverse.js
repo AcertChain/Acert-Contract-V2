@@ -203,7 +203,77 @@ contract('Metaverse', function (accounts) {
             },
           );
         });
+        it('BWO', async function () {
+          // 这个是用户的私钥
+          const accountW = Wallet.generate();
+          // 这个是用户的地址
+          const account = accountW.getChecksumAddressString();
+          // Metaverse合约 的操作者
+          const [operator] = accounts;
+          await this.MetaverseCore.addOperator(operator);
+
+          // 1.获取用户的nonce，从Metaverse合约中获取
+          const nonce = await this.Metaverse.getNonce(account);
+          // 2.生成签名数据结构体
+          const data = {
+            types: {
+              EIP712Domain,
+              createAccountBWO: [
+                {
+                  name: '_address',
+                  type: 'address',
+                },
+                {
+                  name: '_isTrustAdmin',
+                  type: 'bool',
+                },
+                {
+                  name: 'sender',
+                  type: 'address',
+                },
+                {
+                  name: 'nonce',
+                  type: 'uint256',
+                },
+                {
+                  name: 'deadline',
+                  type: 'uint256',
+                },
+              ],
+            },
+            domain: {
+              name: 'metaverse',
+              version: version,
+              chainId: this.chainId,
+              verifyingContract: this.MetaverseCore.address,
+            },
+            primaryType: 'createAccountBWO',
+            message: {
+              _address: account, // 这个是用户的地址
+              _isTrustAdmin: true, // 是否信任管理员admin
+              sender: account, // 这个是用户的地址
+              nonce, // 这个是用户的nonce
+              deadline, // 这个是deadline
+            },
+          };
+
+          // 3.生成签名,用户的私钥签名上面数据
+          const signature = ethSigUtil.signTypedMessage(accountW.getPrivateKey(), {
+            data,
+          });
+
+          // 4.调用Metaverse合约的createAccountBWO方法
+          await this.Metaverse.createAccountBWO(account, true, account, deadline, signature, {
+            from: operator
+          });
+
+          const accountId = await this.Metaverse.getAccountIdByAddress(account);
+
+          expect(await this.Metaverse.accountIsTrustAdmin(accountId)).to.be.equal(true);
+
+        })
       });
+
     });
     describe('getIdByAddress', function () {
       context('get account id by address', function () {
@@ -503,3 +573,5 @@ function signFreezeAccountData(
 
   return signature;
 }
+
+
