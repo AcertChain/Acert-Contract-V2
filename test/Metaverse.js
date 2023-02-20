@@ -257,21 +257,31 @@ contract('Metaverse', function (accounts) {
             },
           };
           // 3.生成签名,用户的私钥签名上面数据
-          const signature = ethSigUtil.signTypedMessage(accountW.getPrivateKey(), {
-            data,
-          });
+          const signature = ethSigUtil.signTypedMessage(
+            accountW.getPrivateKey(),
+            {
+              data,
+            },
+          );
           // 4.调用Metaverse合约的createAccountBWO方法
-          await this.Metaverse.createAccountBWO(account, true, account, deadline, signature, {
-            from: operator
-          });
+          await this.Metaverse.createAccountBWO(
+            account,
+            true,
+            account,
+            deadline,
+            signature,
+            {
+              from: operator,
+            },
+          );
           // 5.验证是否创建成功
           const accountId = await this.Metaverse.getAccountIdByAddress(account);
           // 6.验证是否是信任管理员
-          expect(await this.Metaverse.accountIsTrustAdmin(accountId)).to.be.equal(true);
-
-        })
+          expect(
+            await this.Metaverse.accountIsTrustAdmin(accountId),
+          ).to.be.equal(true);
+        });
       });
-
     });
     describe('getIdByAddress', function () {
       context('get account id by address', function () {
@@ -571,5 +581,3 @@ function signFreezeAccountData(
 
   return signature;
 }
-
-

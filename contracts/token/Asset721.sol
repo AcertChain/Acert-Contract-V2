@@ -4,8 +4,37 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IAsset721.sol";
 import "../interfaces/IAcertContract.sol";
+import "../interfaces/Mineable.sol";
 
-contract Asset721 is IAsset721, ShellContract, IAcertContract {
+contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
+    function mint(uint256 to, uint256 tokenId) public onlyMiner {
+        _mint(to, tokenId);
+    }
+
+    function burn(uint256 tokenId) public {
+        _burn(tokenId);
+    }
+
+    function safeMint(
+        uint256 to,
+        uint256 tokenId,
+        bytes memory _data
+    ) public onlyMiner {
+        _safeMint(to, tokenId, _data);
+    }
+
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
+    }
+
+    function mintBatch(uint256[] calldata tos, uint256[][] calldata tokenIds) public onlyOwner {
+        for (uint256 i = 0; i < tos.length; i++) {
+            for (uint256 j = 0; j < tokenIds[i].length; j++) {
+                _mint(tos[i], tokenIds[i][j]);
+            }
+        }
+    }
+
     function core() internal view returns (IAsset721Core) {
         return IAsset721Core(coreContract);
     }

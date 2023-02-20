@@ -6,6 +6,15 @@ import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
 
 contract Metaverse is ShellContract, IMetaverse, IAcertContract {
+    function createAccountBatch(address[] calldata addrs, bool[] calldata isTrustAdmins) public onlyOwner {
+        require(addrs.length == isTrustAdmins.length, "Metaverse: length is not match");
+        require(addrs.length > 0, "Metaverse: length is zero");
+
+        for (uint256 i = 0; i < addrs.length; i++) {
+            core().createAccount_(addrs[i], addrs[i], isTrustAdmins[i]);
+        }
+    }
+
     function core() internal view returns (IMetaverseCore) {
         return IMetaverseCore(coreContract);
     }

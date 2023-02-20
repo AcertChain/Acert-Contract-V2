@@ -19,7 +19,7 @@ const World = artifacts.require('World');
 const WorldCore = artifacts.require('WorldCore');
 const WorldStorage = artifacts.require('WorldStorage');
 
-const Asset20 = artifacts.require('MogaToken_V3');
+const Asset20 = artifacts.require('Asset20');
 const Asset20Core = artifacts.require('Asset20Core');
 const Asset20Storage = artifacts.require('Asset20Storage');
 

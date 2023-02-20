@@ -19,7 +19,7 @@ const World = artifacts.require('World');
 const WorldCore = artifacts.require('WorldCore');
 const WorldStorage = artifacts.require('WorldStorage');
 
-const Asset721 = artifacts.require('MogaNFT_V3');
+const Asset721 = artifacts.require('Asset721');
 const Asset721Core = artifacts.require('Asset721Core');
 const Asset721Storage = artifacts.require('Asset721Storage');
 

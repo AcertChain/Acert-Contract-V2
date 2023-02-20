@@ -3,8 +3,17 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IWorld.sol";
 import "../interfaces/IAcertContract.sol";
+import "../interfaces/IMetaverse.sol";
 
 contract World is IWorld, ShellContract, IAcertContract {
+    function trustWorldBatch(uint256[] calldata ids, bool[] calldata isTrusts) public onlyOwner {
+        IMetaverse meta = IMetaverse(metaverseAddress());
+        for (uint256 i = 0; i < ids.length; i++) {
+            address sender = meta.getAddressByAccountId(ids[i]);
+            core().trustWorld_(sender, ids[i], isTrusts[i]);
+        }
+    }
+
     function core() internal view returns (IWorldCore) {
         return IWorldCore(coreContract);
     }

@@ -4,8 +4,28 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IAcertContract.sol";
+import "../interfaces/Mineable.sol";
 
-contract Asset20 is IAsset20, ShellContract, IAcertContract {
+contract Asset20 is IAsset20, ShellContract, IAcertContract, Mineable {
+    function mint(uint256 accountId, uint256 amount) public onlyMiner {
+        _mint(accountId, amount);
+    }
+
+    function burn(uint256 accountId, uint256 amount) public onlyMiner {
+        _burn(accountId, amount);
+    }
+
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
+    }
+
+    function mintBatch(uint256[] calldata accountIds, uint256[] calldata amounts) public onlyOwner {
+        require(accountIds.length == amounts.length, "MogaToken: accounts length not equal amounts length");
+        for (uint256 i = 0; i < accountIds.length; i++) {
+            _mint(accountIds[i], amounts[i]);
+        }
+    }
+
     function core() internal view returns (IAsset20Core) {
         return IAsset20Core(coreContract);
     }

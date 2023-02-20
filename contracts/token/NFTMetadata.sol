@@ -106,7 +106,7 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
         return true;
     }
 
-    function getKeys(uint256 tokenId) public view override  returns (string[] memory) {
+    function getKeys(uint256 tokenId) public view override returns (string[] memory) {
         return metadataKeys[tokenId];
     }
 

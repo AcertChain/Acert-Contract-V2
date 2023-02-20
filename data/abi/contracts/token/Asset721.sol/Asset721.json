@@ -236,6 +236,25 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_miner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "_vaild",
+        "type": "bool"
+      }
+    ],
+    "name": "UpdateMiner",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -322,6 +341,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "burn",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -541,6 +573,19 @@
   },
   {
     "inputs": [],
+    "name": "getChainId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getNFTMetadataContract",
     "outputs": [
       {
@@ -662,6 +707,61 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "miners",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "to",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "mint",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "tos",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[][]",
+        "name": "tokenIds",
+        "type": "uint256[][]"
+      }
+    ],
+    "name": "mintBatch",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "name",
     "outputs": [
@@ -741,6 +841,29 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "to",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_data",
+        "type": "bytes"
+      }
+    ],
+    "name": "safeMint",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1084,6 +1207,24 @@
       }
     ],
     "name": "updateCore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_miner",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_vaild",
+        "type": "bool"
+      }
+    ],
+    "name": "updateMiner",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
