@@ -53,10 +53,6 @@ function shouldBehaveLikeAsset721Proxy(
             type: 'address',
           },
           {
-            name: 'sender',
-            type: 'address',
-          },
-          {
             name: 'nonce',
             type: 'uint256',
           },
@@ -70,7 +66,6 @@ function shouldBehaveLikeAsset721Proxy(
       const value = {
         id: ownerId.toString(),
         addr: authAccount,
-        sender: owner,
         nonce: '0',
         deadline: deadline.toString(),
       };

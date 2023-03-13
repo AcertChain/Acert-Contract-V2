@@ -63,10 +63,6 @@ function shouldBehaveLikeAsset20ProxyBWO(
             type: 'address',
           },
           {
-            name: 'sender',
-            type: 'address',
-          },
-          {
             name: 'nonce',
             type: 'uint256',
           },
@@ -80,7 +76,6 @@ function shouldBehaveLikeAsset20ProxyBWO(
       const value = {
         id: initialHolderId.toString(),
         addr: authAccount,
-        sender: initialHolder,
         nonce: '0',
         deadline: deadline.toString(),
       };

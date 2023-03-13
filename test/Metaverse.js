@@ -471,10 +471,6 @@ contract('Metaverse', function (accounts) {
               type: 'address',
             },
             {
-              name: 'sender',
-              type: 'address',
-            },
-            {
               name: 'nonce',
               type: 'uint256',
             },
@@ -488,7 +484,6 @@ contract('Metaverse', function (accounts) {
         const value = {
           id: ownerId.toString(),
           addr: authAccount,
-          sender: owner,
           nonce: '0',
           deadline: deadline.toString(),
         };
@@ -508,6 +503,81 @@ contract('Metaverse', function (accounts) {
           signature,
           {
             from: owner,
+          },
+        );
+
+        expect(
+          await this.Metaverse.getAccountIdByAddress(authAccount),
+        ).to.be.bignumber.equal(ownerId);
+
+        await this.Metaverse.removeAuthAddress(ownerId, owner, {
+          from: authAccount,
+        });
+
+        expect(await this.Metaverse.getAddressByAccountId(ownerId)).to.be.equal(
+          authAccount,
+        );
+      });
+
+      it('add by admin and remove', async function () {
+        const [admin,owner, authAccount] = accounts;
+
+        await this.MetaverseCore.setAdmin(admin);
+
+        await this.Metaverse.createAccount(owner, false);
+
+        const ownerId = await this.Metaverse.getAccountIdByAddress(owner);
+
+        this.domain = {
+          name: 'metaverse',
+          version: '1.0.0',
+          chainId: this.chainId.toString(),
+          verifyingContract: this.MetaverseCore.address,
+        };
+
+        this.signAuthTypes = {
+          AddAuth: [
+            {
+              name: 'id',
+              type: 'uint256',
+            },
+            {
+              name: 'addr',
+              type: 'address',
+            },
+            {
+              name: 'nonce',
+              type: 'uint256',
+            },
+            {
+              name: 'deadline',
+              type: 'uint256',
+            },
+          ],
+        };
+
+        const value = {
+          id: ownerId.toString(),
+          addr: authAccount,
+          nonce: '0',
+          deadline: deadline.toString(),
+        };
+
+        this.authAccountSinger = await ethers.getSigner(authAccount);
+
+        const signature = await this.authAccountSinger._signTypedData(
+          this.domain,
+          this.signAuthTypes,
+          value,
+        );
+
+        await this.MetaverseCore.addAccountAuthAddress(
+          ownerId,
+          authAccount,
+          deadline,
+          signature,
+          {
+            from: admin,
           },
         );
 

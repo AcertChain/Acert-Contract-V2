@@ -150,7 +150,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     ) public onlyAdmin {
         require(accountIsExist(_id), "Metaverse: Account does not exist");
         checkAuthAddressSignature(_id, _address, deadline, signature);
-        _addAuthAddress(_id, _address, false, _msgSender);
+        _addAuthAddress(_id, _address, false, msg.sender);
     }
 
     /**
