@@ -67,8 +67,6 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         address _address,
         bool _isTrustAdmin
     ) public override onlyShell returns (uint256 id) {
-        checkAddressIsNotZero(_address);
-        checkAddressIsNotUsed(_address);
         return _createAccount(_address, _isTrustAdmin, false, _msgSender);
     }
 
@@ -84,8 +82,6 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bytes memory signature
     ) public override onlyShell returns (uint256 id) {
         require(checkBWO(_msgSender), "Metaverse: address is not BWO");
-        checkAddressIsNotZero(_address);
-        checkAddressIsNotUsed(_address);
         createAccoutBWOParamsVerfiy(_address, _isTrustAdmin, sender, deadline, signature);
         return _createAccount(_address, _isTrustAdmin, true, sender);
     }
@@ -132,9 +128,29 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         metaStorage.IncrementTotalAccount();
         id = metaStorage.totalAccount() + _startId;
         metaStorage.setAccount(MetaverseStorage.Account(true, _isTrustAdmin, false, id));
+
+        checkAddressIsNotZero(_address);
+        checkAddressIsNotUsed(_address);
         metaStorage.addAuthAddress(id, _address);
         shell().emitCreateAccount(id, _address, _isTrustAdmin, _isBWO, _sender, getNonce(_sender));
-        metaStorage.IncrementNonce(_sender);
+        metaStorage.IncrementNonce(_address);
+        if (_sender != _address) {
+            metaStorage.IncrementNonce(_sender);
+        }
+    }
+
+    /**
+     * onlyAdmin
+     */
+    function addAccountAuthAddress(
+        uint256 _id,
+        address _address,
+        uint256 deadline,
+        bytes memory signature
+    ) public onlyAdmin {
+        require(accountIsExist(_id), "Metaverse: Account does not exist");
+        checkAuthAddressSignature(_id, _address, deadline, signature);
+        _addAuthAddress(_id, _address, false, _msgSender);
     }
 
     /**
@@ -147,10 +163,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         bytes memory signature
     ) public override onlyShell {
-        checkAddressIsNotZero(_address);
-        checkAddressIsNotUsed(_address);
         checkSender(_id, _msgSender);
-        checkAuthAddressSignature(_id, _address, _msgSender, deadline, signature);
+        checkAuthAddressSignature(_id, _address, deadline, signature);
         _addAuthAddress(_id, _address, false, _msgSender);
     }
 
@@ -169,7 +183,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         require(checkBWO(_msgSender), "Metaverse: address is not BWO");
 
         addAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
-        checkAuthAddressSignature(_id, _address, sender, deadline, authSignature);
+        checkAuthAddressSignature(_id, _address, deadline, authSignature);
         _addAuthAddress(_id, _address, true, sender);
     }
 
@@ -208,7 +222,6 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     function checkAuthAddressSignature(
         uint256 _id,
         address _address,
-        address sender,
         uint256 deadline,
         bytes memory signature
     ) public view returns (bool) {
@@ -219,10 +232,9 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        keccak256("AddAuth(uint256 id,address addr,address sender,uint256 nonce,uint256 deadline)"),
+                        keccak256("AddAuth(uint256 id,address addr,uint256 nonce,uint256 deadline)"),
                         _id,
                         _address,
-                        sender,
                         nonce,
                         deadline
                     )
@@ -239,6 +251,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bool _isBWO,
         address _sender
     ) private {
+        checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
         metaStorage.addAuthAddress(_id, _address);
 
