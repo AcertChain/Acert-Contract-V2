@@ -13,6 +13,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     string public metverseName;
     string public metverseVersion;
     uint256 public _startId;
+    bool public quickUFA;
+
     MetaverseStorage public metaStorage;
 
     modifier onlyAdmin() {
@@ -30,6 +32,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         metverseVersion = version_;
         _startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
+        quickUFA = true;
     }
 
     function shell() public view returns (Metaverse) {
@@ -140,7 +143,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * onlyAdmin
+     * @dev Only Admin can call this function to add a authAddress to account. (with auth)
      */
     function addAccountAuthAddress(
         uint256 _id,
@@ -477,9 +480,17 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
+     * @dev Only Admin can set quickUFA.
+     */
+    function setQuickUFA(bool _quick) public onlyAdmin {
+        quickUFA = _quick;
+    }
+
+    /**
      * @dev Only Admin can unfreeze account.
      */
     function unfreezeAccount(uint256 _id, address newAddress) public onlyAdmin {
+        require(quickUFA, "Metaverse: quick-unfreezeAccount is disabled");
         checkAddressIsNotZero(newAddress);
         checkAddressIsNotUsed(newAddress);
         MetaverseStorage.Account memory account = metaStorage.getAccount(_id);
@@ -492,6 +503,27 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         shell().emitUnFreezeAccount(_id, newAddress);
     }
 
+    /**
+     * @dev Only Admin can unfreeze account. (with auth)
+     */
+    function unfreezeAccount(
+        uint256 _id,
+        address newAddress,
+        uint256 deadline,
+        bytes memory signature
+    ) public onlyAdmin {
+        checkAddressIsNotZero(newAddress);
+        checkAddressIsNotUsed(newAddress);
+        checkAuthAddressSignature(_id, newAddress, deadline, signature);
+        MetaverseStorage.Account memory account = metaStorage.getAccount(_id);
+        require(account.isFreeze, "Metaverse: The accounts were not frozen");
+        account.isFreeze = false;
+        metaStorage.setAccount(account);
+
+        metaStorage.removeAllAuthAddress(_id);
+        metaStorage.addAuthAddress(_id, newAddress);
+        shell().emitUnFreezeAccount(_id, newAddress);
+    }
     /**
      * @dev See {IMetaverse-getAccountIdByAddress}.
      */
