@@ -138,7 +138,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override returns (uint256 id) {
         return core().createAccountBWO_(_msgSender(), _address, _isTrustAdmin, sender, deadline, signature);
     }
@@ -150,7 +150,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
         uint256 _id,
         address _address,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().addAuthAddress_(_msgSender(), _id, _address, deadline, signature);
     }
@@ -163,7 +163,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature,
+        bytes calldata signature,
         bytes memory authSignature
     ) public override {
         return core().addAuthAddressBWO_(_msgSender(), _id, _address, sender, deadline, signature, authSignature);
@@ -184,7 +184,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().removeAuthAddressBWO_(_msgSender(), _id, _address, sender, deadline, signature);
     }
@@ -204,7 +204,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().trustAdminBWO_(_msgSender(), _id, _isTrustAdmin, sender, deadline, signature);
     }
@@ -223,7 +223,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
         uint256 _id,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().freezeAccountBWO_(_msgSender(), _id, sender, deadline, signature);
     }

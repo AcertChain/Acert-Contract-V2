@@ -71,14 +71,14 @@ interface IMetaverse is IMetaverseMetadata {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external returns (uint256 id);
 
     function addAuthAddress(
         uint256 _id,
         address _address,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function addAuthAddressBWO(
@@ -86,7 +86,7 @@ interface IMetaverse is IMetaverseMetadata {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature,
+        bytes calldata signature,
         bytes memory authSignature
     ) external;
 
@@ -97,7 +97,7 @@ interface IMetaverse is IMetaverseMetadata {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function trustAdmin(uint256 _id, bool _isTrustAdmin) external;
@@ -107,7 +107,7 @@ interface IMetaverse is IMetaverseMetadata {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function freezeAccount(uint256 _id) external;
@@ -116,7 +116,7 @@ interface IMetaverse is IMetaverseMetadata {
         uint256 _id,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 }
 
@@ -133,7 +133,7 @@ interface IMetaverseCore is IMetaverseMetadata {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external returns (uint256 id);
 
     function addAuthAddress_(
@@ -141,7 +141,7 @@ interface IMetaverseCore is IMetaverseMetadata {
         uint256 _id,
         address _address,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function addAuthAddressBWO_(
@@ -150,7 +150,7 @@ interface IMetaverseCore is IMetaverseMetadata {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature,
+        bytes calldata signature,
         bytes memory authSignature
     ) external;
 
@@ -166,7 +166,7 @@ interface IMetaverseCore is IMetaverseMetadata {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function trustAdmin_(
@@ -181,7 +181,7 @@ interface IMetaverseCore is IMetaverseMetadata {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function freezeAccount_(address _msgSender, uint256 _id) external;
@@ -191,6 +191,6 @@ interface IMetaverseCore is IMetaverseMetadata {
         uint256 _id,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 }

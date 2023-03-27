@@ -16,8 +16,15 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     IMetaverse public metaverse;
     Asset20Storage public storageContract;
 
-    string private assetName;
-    string private assetSymbol;
+    /**
+     * @dev See {IERC20-symbol}.
+     */
+    string public override name;
+    string public version;
+    /**
+     * @dev See {IERC20-symbol}.
+     */
+    string public override symbol;
 
     constructor(
         string memory name_,
@@ -26,8 +33,9 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         address _world,
         address _storage
     ) EIP712(name_, version_) {
-        assetName = name_;
-        assetSymbol = symbol_;
+        name = name_;
+        version = version_;
+        symbol = symbol_;
         world = IWorld(_world);
         storageContract = Asset20Storage(_storage);
         metaverse = IMetaverse(IAcertContract(_world).metaverseAddress());
@@ -47,20 +55,6 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
      */
     function metaverseAddress() external view override returns (address) {
         return address(metaverse);
-    }
-
-    /**
-     * @dev See {IERC20-symbol}.
-     */
-    function name() public view override returns (string memory) {
-        return assetName;
-    }
-
-    /**
-     * @dev See {IERC20-symbol}.
-     */
-    function symbol() public view override returns (string memory) {
-        return assetSymbol;
     }
 
     /**
@@ -216,7 +210,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell returns (bool) {
         _checkBWO(_msgSender);
         transferFromBWOParamsVerify(fromAccount, toAccount, amount, sender, deadline, signature);
@@ -242,7 +236,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         uint256 nonce = getNonce(sender);
         _recoverSig(
@@ -332,7 +326,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell returns (bool) {
         _checkBWO(_msgSender);
         approveBWOParamsVerify(ownerId, spender, amount, sender, deadline, signature);
@@ -346,7 +340,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         _checkSender(ownerId, sender);
         uint256 nonce = getNonce(sender);
@@ -495,7 +489,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         address signer,
         bytes32 digest,
-        bytes memory signature
+        bytes calldata signature
     ) internal view {
         require(deadline == 0 || block.timestamp < deadline, "Asset20: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "Asset20: recoverSig failed");

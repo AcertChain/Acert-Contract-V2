@@ -230,7 +230,7 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().approveBWO_(_msgSender(), spender, tokenId, sender, deadline, signature);
     }
@@ -263,7 +263,7 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
         bool approved,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().setApprovalForAllBWO_(_msgSender(), accountId, operator, approved, sender, deadline, signature);
     }
@@ -300,7 +300,7 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().transferFromBWO_(_msgSender(), fromAccount, toAccount, tokenId, sender, deadline, signature);
     }
@@ -350,7 +350,7 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
         bytes memory data,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().safeTransferFromBWO_(_msgSender(), from, to, tokenId, data, sender, deadline, signature);
     }

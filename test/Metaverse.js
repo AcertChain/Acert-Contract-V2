@@ -435,7 +435,7 @@ contract('Metaverse', function (accounts) {
           true,
         );
 
-        await this.MetaverseCore.unfreezeAccount(accountId, newAccount, {
+        await this.MetaverseCore.methods['unfreezeAccount(uint256,address)'](accountId, newAccount, {
           from: admin,
         });
 
@@ -520,7 +520,7 @@ contract('Metaverse', function (accounts) {
       });
 
       it('add by admin and remove', async function () {
-        const [admin,owner, authAccount] = accounts;
+        const [admin, owner, authAccount] = accounts;
 
         await this.MetaverseCore.setAdmin(admin);
 
@@ -534,7 +534,7 @@ contract('Metaverse', function (accounts) {
           chainId: this.chainId.toString(),
           verifyingContract: this.MetaverseCore.address,
         };
-
+        // eip712 的类型,使用auth地址私钥签名
         this.signAuthTypes = {
           AddAuth: [
             {
@@ -557,10 +557,10 @@ contract('Metaverse', function (accounts) {
         };
 
         const value = {
-          id: ownerId.toString(),
-          addr: authAccount,
-          nonce: '0',
-          deadline: deadline.toString(),
+          id: ownerId.toString(), // 用户id
+          addr: authAccount, // 新的auth地址
+          nonce: '0', // auth nonce
+          deadline: deadline.toString(), // 过期时间
         };
 
         this.authAccountSinger = await ethers.getSigner(authAccount);
@@ -571,13 +571,14 @@ contract('Metaverse', function (accounts) {
           value,
         );
 
+        // MetaverseCore 的合约方法
         await this.MetaverseCore.addAccountAuthAddress(
-          ownerId,
-          authAccount,
-          deadline,
-          signature,
+          ownerId, // 用户id
+          authAccount, // 新的auth地址
+          deadline, // 过期时间
+          signature, // 签名
           {
-            from: admin,
+            from: admin, // 交易发送方管理员地址
           },
         );
 

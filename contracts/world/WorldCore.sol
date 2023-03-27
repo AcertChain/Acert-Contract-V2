@@ -10,8 +10,15 @@ import "./WorldStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
-    string public worldName;
-    string public worldVersion;
+    //world
+    /**
+     * @dev See {IWorld-name}.
+     */
+    string public override name;
+    /**
+     * @dev See {IWorld-version}.
+     */
+    string public override version;
     WorldStorage worldStorage;
     IMetaverse metaverse;
 
@@ -22,8 +29,8 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         address _worldStorage
     ) EIP712(_name, _version) {
         metaverse = IMetaverse(_metaverse);
-        worldName = _name;
-        worldVersion = _version;
+        name = _name;
+        version = _version;
         worldStorage = WorldStorage(_worldStorage);
     }
 
@@ -36,21 +43,6 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
      */
     function metaverseAddress() public view override returns (address) {
         return address(metaverse);
-    }
-
-    //world
-    /**
-     * @dev See {IWorld-name}.
-     */
-    function name() public view override returns (string memory) {
-        return worldName;
-    }
-
-    /**
-     * @dev See {IWorld-version}.
-     */
-    function version() public view override returns (string memory) {
-        return worldVersion;
     }
 
     /**
@@ -99,7 +91,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         bool _isTrustContract,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         require(checkBWO(_msgSender), "World: address is not BWO");
         checkAddressIsNotZero(_contract);
@@ -113,7 +105,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         bool _isTrustContract,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         metaverse.checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
@@ -168,7 +160,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         bool _isTrustWorld,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         require(checkBWO(_msgSender), "World: address is not BWO");
         trustWorldBWOParamsVerify(_id, _isTrustWorld, sender, deadline, signature);
@@ -180,7 +172,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         bool _isTrustWorld,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         metaverse.checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
@@ -302,7 +294,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         address signer,
         bytes32 digest,
-        bytes memory signature
+        bytes calldata signature
     ) internal view {
         require(deadline == 0 || block.timestamp < deadline, "World: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "World: recoverSig failed");

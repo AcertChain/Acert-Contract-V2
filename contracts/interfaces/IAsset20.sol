@@ -42,7 +42,7 @@ interface IAsset20 is IERC20Event, IAsset20Metadata, IERC20 {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external returns (bool);
 
     function approve(
@@ -57,7 +57,7 @@ interface IAsset20 is IERC20Event, IAsset20Metadata, IERC20 {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external returns (bool);
 }
 
@@ -89,7 +89,7 @@ interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external returns (bool);
 
     function approve_(
@@ -112,7 +112,7 @@ interface IAsset20Core is IAsset20Metadata, IERC20Metadata {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external returns (bool);
 
     function mint_(

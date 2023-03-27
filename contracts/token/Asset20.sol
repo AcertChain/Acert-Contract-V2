@@ -191,7 +191,7 @@ contract Asset20 is IAsset20, ShellContract, IAcertContract, Mineable {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override returns (bool) {
         return core().transferFromBWO_(_msgSender(), fromAccount, toAccount, amount, sender, deadline, signature);
     }
@@ -224,7 +224,7 @@ contract Asset20 is IAsset20, ShellContract, IAcertContract, Mineable {
         uint256 amount,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override returns (bool) {
         return core().approveBWO_(_msgSender(), ownerId, spender, amount, sender, deadline, signature);
     }

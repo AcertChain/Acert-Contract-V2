@@ -18,8 +18,9 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     //    using Address for address;
     using Strings for uint256;
 
-    string private assetName;
-    string private assetSymbol;
+    string public override name;
+    string public version;
+    string public override symbol;
     string private _tokenURI;
 
     IWorld public world;
@@ -37,8 +38,9 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         address world_,
         address storage_
     ) EIP712(name_, version_) {
-        assetName = name_;
-        assetSymbol = symbol_;
+        name = name_;
+        version = version_;
+        symbol = symbol_;
         _tokenURI = tokenURI_;
         world = IWorld(world_);
         storageContract = Asset721Storage(storage_);
@@ -59,21 +61,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     function updateWorld(address _world) public onlyOwner {
         require(address(metaverse) == IAcertContract(_world).metaverseAddress(), "Asset721: metaverse not match");
         world = IWorld(_world);
-    }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual override returns (string memory) {
-        return assetName;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return assetSymbol;
     }
 
     /**
@@ -209,7 +196,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         _checkBWO(_msgSender);
         approveBWOParamsVerify(spender, tokenId, sender, deadline, signature);
@@ -221,7 +208,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         uint256 ownerId = ownerAccountOf(tokenId);
         require(
@@ -307,7 +294,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         bool approved,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         _checkBWO(_msgSender);
         setApprovalForAllBWOParamsVerify(accountId, operator, approved, sender, deadline, signature);
@@ -320,7 +307,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         bool approved,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         _checkSender(accountId, sender);
         uint256 nonce = getNonce(sender);
@@ -427,7 +414,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         _checkBWO(_msgSender);
         transferFromBWOParamsVerify(fromAccount, toAccount, tokenId, sender, deadline, signature);
@@ -452,7 +439,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         require(_isApprovedOrOwner(sender, tokenId), "Asset721: transfer caller is not owner nor approved");
         uint256 nonce = getNonce(sender);
@@ -557,7 +544,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         bytes memory data,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         _checkBWO(_msgSender);
         safeTransferFromBWOParamsVerify(from, to, tokenId, data, sender, deadline, signature);
@@ -576,7 +563,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         bytes memory data,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         require(_isApprovedOrOwner(sender, tokenId), "Asset721: transfer caller is not owner nor approved");
 
@@ -827,7 +814,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         address signer,
         bytes32 digest,
-        bytes memory signature
+        bytes calldata signature
     ) internal view {
         require(deadline == 0 || block.timestamp < deadline, "Asset721: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "Asset721: recoverSig failed");

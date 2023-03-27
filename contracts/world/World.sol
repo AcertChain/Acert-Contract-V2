@@ -144,7 +144,7 @@ contract World is IWorld, ShellContract, IAcertContract {
         bool _isTrustContract,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().trustContractBWO_(_msgSender(), _id, _contract, _isTrustContract, sender, deadline, signature);
     }
@@ -158,7 +158,7 @@ contract World is IWorld, ShellContract, IAcertContract {
         bool _isTrustWorld,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override {
         return core().trustWorldBWO_(_msgSender(), _id, _isTrustWorld, sender, deadline, signature);
     }

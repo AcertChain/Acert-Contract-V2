@@ -10,9 +10,15 @@ import "./MetaverseStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
-    string public metverseName;
-    string public metverseVersion;
-    uint256 public _startId;
+    /**
+     * @dev See {IMetaverse-name}.
+     */
+    string public override name;
+    /**
+     * @dev See {IMetaverse-version}.
+     */
+    string public override version;
+    uint256 public immutable _startId;
     bool public quickUFA;
 
     MetaverseStorage public metaStorage;
@@ -28,8 +34,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 startId_,
         address metaStorage_
     ) EIP712(name_, version_) {
-        metverseName = name_;
-        metverseVersion = version_;
+        name = name_;
+        version = version_;
         _startId = startId_;
         metaStorage = MetaverseStorage(metaStorage_);
         quickUFA = true;
@@ -44,21 +50,6 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
      */
     function metaverseAddress() public view override returns (address) {
         return IAcertContract(shellContract).metaverseAddress();
-    }
-
-    //metaverse
-    /**
-     * @dev See {IMetaverse-name}.
-     */
-    function name() public view override returns (string memory) {
-        return metverseName;
-    }
-
-    /**
-     * @dev See {IMetaverse-version}.
-     */
-    function version() public view override returns (string memory) {
-        return metverseVersion;
     }
 
     // account
@@ -82,7 +73,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell returns (uint256 id) {
         require(checkBWO(_msgSender), "Metaverse: address is not BWO");
         createAccoutBWOParamsVerfiy(_address, _isTrustAdmin, sender, deadline, signature);
@@ -94,7 +85,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         uint256 nonce = getNonce(sender);
         _recoverSig(
@@ -149,7 +140,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 _id,
         address _address,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public onlyAdmin {
         require(accountIsExist(_id), "Metaverse: Account does not exist");
         checkAuthAddressSignature(_id, _address, deadline, signature);
@@ -164,7 +155,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 _id,
         address _address,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         checkSender(_id, _msgSender);
         checkAuthAddressSignature(_id, _address, deadline, signature);
@@ -180,8 +171,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature,
-        bytes memory authSignature
+        bytes calldata signature,
+        bytes calldata authSignature
     ) public override onlyShell {
         require(checkBWO(_msgSender), "Metaverse: address is not BWO");
 
@@ -195,7 +186,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
@@ -226,7 +217,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 _id,
         address _address,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         uint256 nonce = getNonce(_address);
         _recoverSig(
@@ -285,7 +276,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         require(checkBWO(_msgSender), "Metaverse: address is not BWO");
         checkAddressIsNotZero(_address);
@@ -298,7 +289,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         address _address,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
@@ -357,7 +348,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         require(checkBWO(_msgSender), "Metaverse: address is not BWO");
         trustAdminBWOParamsVerify(_id, _isTrustAdmin, sender, deadline, signature);
@@ -369,7 +360,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bool _isTrustAdmin,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
@@ -430,7 +421,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 _id,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public override onlyShell {
         require(checkBWO(_msgSender), "Metaverse: address is not BWO");
 
@@ -442,7 +433,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 _id,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public view returns (bool) {
         checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
@@ -510,7 +501,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 _id,
         address newAddress,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) public onlyAdmin {
         checkAddressIsNotZero(newAddress);
         checkAddressIsNotUsed(newAddress);
@@ -524,6 +515,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         metaStorage.addAuthAddress(_id, newAddress);
         shell().emitUnFreezeAccount(_id, newAddress);
     }
+
     /**
      * @dev See {IMetaverse-getAccountIdByAddress}.
      */
@@ -649,7 +641,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         address signer,
         bytes32 digest,
-        bytes memory signature
+        bytes calldata signature
     ) internal view {
         require(deadline == 0 || block.timestamp < deadline, "Metaverse: BWO call expired");
         require(signer == ECDSA.recover(digest, signature), "Metaverse: recoverSig failed");

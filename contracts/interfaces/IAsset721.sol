@@ -59,7 +59,7 @@ interface IAsset721 is IERC721Event, IAsset721Metadata, IERC721 {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function safeTransferFrom(
@@ -76,7 +76,7 @@ interface IAsset721 is IERC721Event, IAsset721Metadata, IERC721 {
         bytes memory data,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function approveBWO(
@@ -84,7 +84,7 @@ interface IAsset721 is IERC721Event, IAsset721Metadata, IERC721 {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function setApprovalForAll(
@@ -99,7 +99,7 @@ interface IAsset721 is IERC721Event, IAsset721Metadata, IERC721 {
         bool approved,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 }
 
@@ -125,7 +125,7 @@ interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function safeTransferFrom_(
@@ -159,7 +159,7 @@ interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
         bytes memory data,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function approve_(
@@ -174,7 +174,7 @@ interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
         uint256 tokenId,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function setApprovalForAll_(
@@ -197,7 +197,7 @@ interface IAsset721Core is IAsset721Metadata, IERC721Metadata {
         bool approved,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function safeMint_(

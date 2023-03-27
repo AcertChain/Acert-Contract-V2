@@ -20,8 +20,8 @@ contract Acert is Ownable {
 
     function remark(
         address _address,
-        string memory _remark,
-        string memory _class
+        string calldata _remark,
+        string calldata _class
     ) public onlyOwner {
         remarks[_address] = _remark;
         emit RemarkAddress(_address, _remark, _class);

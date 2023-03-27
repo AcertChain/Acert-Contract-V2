@@ -61,7 +61,7 @@ interface IWorld is IWorldMetadata {
         bool _isTrustContract,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function trustWorld(uint256 _id, bool _isTrustWorld) external;
@@ -71,7 +71,7 @@ interface IWorld is IWorldMetadata {
         bool _isTrustWorld,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 }
 
@@ -90,7 +90,7 @@ interface IWorldCore is IWorldMetadata {
         bool _isTrustContract,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 
     function trustWorld_(
@@ -105,6 +105,6 @@ interface IWorldCore is IWorldMetadata {
         bool _isTrustWorld,
         address sender,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external;
 }
