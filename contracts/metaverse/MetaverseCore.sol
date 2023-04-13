@@ -513,6 +513,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
 
         metaStorage.removeAllAuthAddress(_id);
         metaStorage.addAuthAddress(_id, newAddress);
+        metaStorage.IncrementNonce(newAddress);
         shell().emitUnFreezeAccount(_id, newAddress);
     }
 
