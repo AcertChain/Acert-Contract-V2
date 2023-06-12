@@ -684,7 +684,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
 
         uint256 ownerId = _getAccountIdByAddress(owner);
         _beforeTokenTransfer(ownerId, 0, tokenId);
-        _setBalanceById(ownerId, 1);
+        _setBalanceById(ownerId, _balancesById(ownerId) -1);
         storageContract.deleteOwnerById(tokenId);
 
         shell().emitTransfer(_getAddressByAccountId(ownerId), address(0), tokenId);
