@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IAsset20.sol";
 import "../interfaces/IWorld.sol";
-import "../interfaces/IMetaverse.sol";
+import "../interfaces/IVChain.sol";
 import "../interfaces/IAcertContract.sol";
 import "./Asset20.sol";
 import "./Asset20Storage.sol";
@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     IWorld public world;
-    IMetaverse public metaverse;
+    IVChain public vchain;
     Asset20Storage public storageContract;
 
     /**
@@ -38,7 +38,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         symbol = symbol_;
         world = IWorld(_world);
         storageContract = Asset20Storage(_storage);
-        metaverse = IMetaverse(IAcertContract(_world).metaverseAddress());
+        vchain = IVChain(IAcertContract(_world).vchainAddress());
     }
 
     function shell() public view returns (Asset20) {
@@ -46,15 +46,15 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function updateWorld(address _address) public onlyOwner {
-        require(address(metaverse) == IAcertContract(_address).metaverseAddress(), "Asset20: metaverse not match");
+        require(address(vchain) == IAcertContract(_address).vchainAddress(), "Asset20: vchain not match");
         world = IWorld(_address);
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() external view override returns (address) {
-        return address(metaverse);
+    function vchainAddress() external view override returns (address) {
+        return address(vchain);
     }
 
     /**
@@ -444,21 +444,21 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function _getAccountIdByAddress(address _address) internal view returns (uint256) {
-        return metaverse.getAccountIdByAddress(_address);
+        return vchain.getAccountIdByAddress(_address);
     }
 
     function _getOrCreateAccountId(address _address) internal returns (uint256) {
         if (_address == address(0)) {
             return 0;
-        } else if (metaverse.getAccountIdByAddress(_address) == 0) {
-            return metaverse.createAccount(_address, false);
+        } else if (vchain.getAccountIdByAddress(_address) == 0) {
+            return vchain.createAccount(_address, false);
         } else {
-            return metaverse.getAccountIdByAddress(_address);
+            return vchain.getAccountIdByAddress(_address);
         }
     }
 
     function _getAddressByAccountId(uint256 _id) internal view returns (address) {
-        return metaverse.getAddressByAccountId(_id);
+        return vchain.getAddressByAccountId(_id);
     }
 
     function _assetIsEnabled() internal view returns (bool) {
@@ -466,15 +466,15 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function _accountIsFreeze(uint256 _id) internal view returns (bool) {
-        return metaverse.accountIsFreeze(_id);
+        return vchain.accountIsFreeze(_id);
     }
 
     function _checkSender(uint256 ownerId, address sender) internal view {
-        metaverse.checkSender(ownerId, sender);
+        vchain.checkSender(ownerId, sender);
     }
 
     function _accountIsExist(uint256 _id) internal view returns (bool) {
-        return metaverse.accountIsExist(_id);
+        return vchain.accountIsExist(_id);
     }
 
     function _checkBWO(address _sender) internal view {

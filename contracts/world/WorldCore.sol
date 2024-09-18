@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IAsset.sol";
 import "../interfaces/IWorld.sol";
-import "../interfaces/IMetaverse.sol";
+import "../interfaces/IVChain.sol";
 import "../interfaces/IAcertContract.sol";
 import "./World.sol";
 import "./WorldStorage.sol";
@@ -20,15 +20,15 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
      */
     string public override version;
     WorldStorage worldStorage;
-    IMetaverse metaverse;
+    IVChain vchain;
 
     constructor(
         string memory _name,
         string memory _version,
-        address _metaverse,
+        address _vchain,
         address _worldStorage
     ) EIP712(_name, _version) {
-        metaverse = IMetaverse(_metaverse);
+        vchain = IVChain(_vchain);
         name = _name;
         version = _version;
         worldStorage = WorldStorage(_worldStorage);
@@ -39,10 +39,10 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() public view override returns (address) {
-        return address(metaverse);
+    function vchainAddress() public view override returns (address) {
+        return address(vchain);
     }
 
     /**
@@ -80,7 +80,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         bool _isTrustContract
     ) public override onlyShell {
         checkAddressIsNotZero(_contract);
-        metaverse.checkSender(_id, _msgSender);
+        vchain.checkSender(_id, _msgSender);
         _trustContract(_id, _contract, _isTrustContract, false, _msgSender);
     }
 
@@ -107,7 +107,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         bytes calldata signature
     ) public view returns (bool) {
-        metaverse.checkSender(_id, sender);
+        vchain.checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,
@@ -150,7 +150,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         uint256 _id,
         bool _isTrustWorld
     ) public override onlyShell {
-        metaverse.checkSender(_id, _msgSender);
+        vchain.checkSender(_id, _msgSender);
         _trustWorld(_id, _isTrustWorld, false, _msgSender);
     }
 
@@ -174,7 +174,7 @@ contract WorldCore is IWorldCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         bytes calldata signature
     ) public view returns (bool) {
-        metaverse.checkSender(_id, sender);
+        vchain.checkSender(_id, sender);
         uint256 nonce = getNonce(sender);
         _recoverSig(
             deadline,

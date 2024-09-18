@@ -53,10 +53,10 @@ contract NFTMetadata is INFTMetadata, IAcertContract, Ownable {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() public view override returns (address) {
-        return address(IAcertContract(assetStorageContract).metaverseAddress());
+    function vchainAddress() public view override returns (address) {
+        return address(IAcertContract(assetStorageContract).vchainAddress());
     }
 
     function setMetadata(

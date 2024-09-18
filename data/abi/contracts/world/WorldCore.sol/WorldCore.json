@@ -13,7 +13,7 @@
       },
       {
         "internalType": "address",
-        "name": "_metaverse",
+        "name": "_vchain",
         "type": "address"
       },
       {
@@ -286,19 +286,6 @@
         "internalType": "bool",
         "name": "_isTrustWorld",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "metaverseAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -641,6 +628,19 @@
     "name": "updateShell",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "vchainAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

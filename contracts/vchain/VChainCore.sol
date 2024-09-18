@@ -2,29 +2,29 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IWorld.sol";
-import "../interfaces/IMetaverse.sol";
+import "../interfaces/IVChain.sol";
 import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
-import "./Metaverse.sol";
-import "./MetaverseStorage.sol";
+import "./VChain.sol";
+import "./VChainStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
+contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
     /**
-     * @dev See {IMetaverse-name}.
+     * @dev See {IVChain-name}.
      */
     string public override name;
     /**
-     * @dev See {IMetaverse-version}.
+     * @dev See {IVChain-version}.
      */
     string public override version;
     uint256 public immutable _startId;
     bool public quickUFA;
 
-    MetaverseStorage public metaStorage;
+    VChainStorage public metaStorage;
 
     modifier onlyAdmin() {
-        require(metaStorage.admin() == _msgSender(), "Metaverse: caller is not the admin");
+        require(metaStorage.admin() == _msgSender(), "VChain: caller is not the admin");
         _;
     }
 
@@ -37,24 +37,24 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         name = name_;
         version = version_;
         _startId = startId_;
-        metaStorage = MetaverseStorage(metaStorage_);
+        metaStorage = VChainStorage(metaStorage_);
         quickUFA = true;
     }
 
-    function shell() public view returns (Metaverse) {
-        return Metaverse(shellContract);
+    function shell() public view returns (VChain) {
+        return VChain(shellContract);
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() public view override returns (address) {
-        return IAcertContract(shellContract).metaverseAddress();
+    function vchainAddress() public view override returns (address) {
+        return IAcertContract(shellContract).vchainAddress();
     }
 
     // account
     /**
-     * @dev See {IMetaverseCore-createAccount_}.
+     * @dev See {IVChainCore-createAccount_}.
      */
     function createAccount_(
         address _msgSender,
@@ -65,7 +65,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IMetaverseCore-createAccountBWO_}.
+     * @dev See {IVChainCore-createAccountBWO_}.
      */
     function createAccountBWO_(
         address _msgSender,
@@ -75,7 +75,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         bytes calldata signature
     ) public override onlyShell returns (uint256 id) {
-        require(checkBWO(_msgSender), "Metaverse: address is not BWO");
+        require(checkBWO(_msgSender), "VChain: address is not BWO");
         createAccoutBWOParamsVerfiy(_address, _isTrustAdmin, sender, deadline, signature);
         return _createAccount(_address, _isTrustAdmin, true, sender);
     }
@@ -117,11 +117,11 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         address _sender
     ) private returns (uint256 id) {
         if (_isTrustAdmin) {
-            require(_address == _sender, "Metaverse: Only AuthAddress can set trustAdmin to true");
+            require(_address == _sender, "VChain: Only AuthAddress can set trustAdmin to true");
         }
         metaStorage.IncrementTotalAccount();
         id = metaStorage.totalAccount() + _startId;
-        metaStorage.setAccount(MetaverseStorage.Account(true, _isTrustAdmin, false, id));
+        metaStorage.setAccount(VChainStorage.Account(true, _isTrustAdmin, false, id));
 
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
@@ -142,13 +142,13 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         bytes calldata signature
     ) public onlyAdmin {
-        require(accountIsExist(_id), "Metaverse: Account does not exist");
+        require(accountIsExist(_id), "VChain: Account does not exist");
         checkAuthAddressSignature(_id, _address, deadline, signature);
         _addAuthAddress(_id, _address, false, msg.sender);
     }
 
     /**
-     * @dev See {IMetaverseCore-addAuthAddress_}.
+     * @dev See {IVChainCore-addAuthAddress_}.
      */
     function addAuthAddress_(
         address _msgSender,
@@ -163,7 +163,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IMetaverseCore-addAuthAddressBWO_}.
+     * @dev See {IVChainCore-addAuthAddressBWO_}.
      */
     function addAuthAddressBWO_(
         address _msgSender,
@@ -174,7 +174,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bytes calldata signature,
         bytes calldata authSignature
     ) public override onlyShell {
-        require(checkBWO(_msgSender), "Metaverse: address is not BWO");
+        require(checkBWO(_msgSender), "VChain: address is not BWO");
 
         addAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
         checkAuthAddressSignature(_id, _address, deadline, authSignature);
@@ -255,7 +255,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IMetaverseCore-removeAuthAddress_}.
+     * @dev See {IVChainCore-removeAuthAddress_}.
      */
     function removeAuthAddress_(
         address _msgSender,
@@ -268,7 +268,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IMetaverseCore-removeAuthAddressBWO_}.
+     * @dev See {IVChainCore-removeAuthAddressBWO_}.
      */
     function removeAuthAddressBWO_(
         address _msgSender,
@@ -278,7 +278,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         bytes calldata signature
     ) public override onlyShell {
-        require(checkBWO(_msgSender), "Metaverse: address is not BWO");
+        require(checkBWO(_msgSender), "VChain: address is not BWO");
         checkAddressIsNotZero(_address);
         removeAuthAddressBWOParamsVerfiy(_id, _address, sender, deadline, signature);
         _removeAuthAddress(_id, _address, true, sender);
@@ -321,14 +321,14 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bool _isBWO,
         address _sender
     ) private {
-        require(_address != _sender, "Metaverse: AuthAddress can not remove itself");
+        require(_address != _sender, "VChain: AuthAddress can not remove itself");
         metaStorage.removeAuthAddress(_id, _address);
         shell().emitRemoveAuthAddress(_id, _address, _isBWO, _sender, getNonce(_sender));
         metaStorage.IncrementNonce(_sender);
     }
 
     /**
-     * @dev See {IMetaverseCore-trustAdmin_}.
+     * @dev See {IVChainCore-trustAdmin_}.
      */
     function trustAdmin_(
         address _msgSender,
@@ -340,7 +340,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IMetaverseCore-trustAdminBWO_}.
+     * @dev See {IVChainCore-trustAdminBWO_}.
      */
     function trustAdminBWO_(
         address _msgSender,
@@ -350,7 +350,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         bytes calldata signature
     ) public override onlyShell {
-        require(checkBWO(_msgSender), "Metaverse: address is not BWO");
+        require(checkBWO(_msgSender), "VChain: address is not BWO");
         trustAdminBWOParamsVerify(_id, _isTrustAdmin, sender, deadline, signature);
         _trustAdmin(_id, _isTrustAdmin, true, sender);
     }
@@ -392,8 +392,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bool _isBWO,
         address _sender
     ) private {
-        MetaverseStorage.Account memory account = metaStorage.getAccount(_id);
-        require(account.isExist == true, "Metaverse: account is not exist");
+        VChainStorage.Account memory account = metaStorage.getAccount(_id);
+        require(account.isExist == true, "VChain: account is not exist");
         account.isTrustAdmin = _isTrustAdmin;
         metaStorage.setAccount(account);
         shell().emitTrustAdmin(_id, _isTrustAdmin, _isBWO, _sender, getNonce(_sender));
@@ -401,12 +401,12 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IMetaverseCore-freezeAccount_}.
+     * @dev See {IVChainCore-freezeAccount_}.
      */
     function freezeAccount_(address _msgSender, uint256 _id) public override onlyShell {
-        MetaverseStorage.Account memory account = metaStorage.getAccount(_id);
+        VChainStorage.Account memory account = metaStorage.getAccount(_id);
         if (_msgSender == metaStorage.admin() && getAccountIdByAddress(_msgSender) != _id) {
-            require((account.isTrustAdmin), "Metaverse: admin does not have permission to freeze the account");
+            require((account.isTrustAdmin), "VChain: admin does not have permission to freeze the account");
         } else {
             checkSender(_id, _msgSender);
         }
@@ -414,7 +414,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IMetaverseCore-freezeAccountBWO_}.
+     * @dev See {IVChainCore-freezeAccountBWO_}.
      */
     function freezeAccountBWO_(
         address _msgSender,
@@ -423,7 +423,7 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         uint256 deadline,
         bytes calldata signature
     ) public override onlyShell {
-        require(checkBWO(_msgSender), "Metaverse: address is not BWO");
+        require(checkBWO(_msgSender), "VChain: address is not BWO");
 
         freezeAccountBWOParamsVerify(_id, sender, deadline, signature);
         _freezeAccount(_id, true, sender);
@@ -461,8 +461,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bool _isBWO,
         address _sender
     ) private {
-        MetaverseStorage.Account memory account = metaStorage.getAccount(_id);
-        require(account.isFreeze == false, "Metaverse: The account has been frozen");
+        VChainStorage.Account memory account = metaStorage.getAccount(_id);
+        require(account.isFreeze == false, "VChain: The account has been frozen");
         account.isFreeze = true;
         account.isTrustAdmin = true;
         metaStorage.setAccount(account);
@@ -481,11 +481,11 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
      * @dev Only Admin can unfreeze account.
      */
     function unfreezeAccount(uint256 _id, address newAddress) public onlyAdmin {
-        require(quickUFA, "Metaverse: quick-unfreezeAccount is disabled");
+        require(quickUFA, "VChain: quick-unfreezeAccount is disabled");
         checkAddressIsNotZero(newAddress);
         checkAddressIsNotUsed(newAddress);
-        MetaverseStorage.Account memory account = metaStorage.getAccount(_id);
-        require(account.isFreeze, "Metaverse: The accounts were not frozen");
+        VChainStorage.Account memory account = metaStorage.getAccount(_id);
+        require(account.isFreeze, "VChain: The accounts were not frozen");
         account.isFreeze = false;
         metaStorage.setAccount(account);
 
@@ -506,8 +506,8 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         checkAddressIsNotZero(newAddress);
         checkAddressIsNotUsed(newAddress);
         checkAuthAddressSignature(_id, newAddress, deadline, signature);
-        MetaverseStorage.Account memory account = metaStorage.getAccount(_id);
-        require(account.isFreeze, "Metaverse: The accounts were not frozen");
+        VChainStorage.Account memory account = metaStorage.getAccount(_id);
+        require(account.isFreeze, "VChain: The accounts were not frozen");
         account.isFreeze = false;
         metaStorage.setAccount(account);
 
@@ -518,58 +518,58 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IMetaverse-getAccountIdByAddress}.
+     * @dev See {IVChain-getAccountIdByAddress}.
      */
     function getAccountIdByAddress(address _address) public view override returns (uint256 _id) {
         return metaStorage.authToId(_address);
     }
 
     /**
-     * @dev See {IMetaverse-getAddressByAccountId}.
+     * @dev See {IVChain-getAddressByAccountId}.
      */
     function getAddressByAccountId(uint256 _id) public view override returns (address _address) {
         return metaStorage.getAccountAddress(_id);
     }
 
     /**
-     * @dev See {IMetaverse-getAccountAuthAddress}.
+     * @dev See {IVChain-getAccountAuthAddress}.
      */
     function getAccountAuthAddress(uint256 _id) public view override returns (address[] memory) {
         return metaStorage.getAuthAddresses(_id);
     }
 
     /**
-     * @dev See {IMetaverse-accountIsExist}.
+     * @dev See {IVChain-accountIsExist}.
      */
     function accountIsExist(uint256 _id) public view override returns (bool _isExist) {
         return metaStorage.getAccount(_id).isExist;
     }
 
     /**
-     * @dev See {IMetaverse-accountIsTrustAdmin}.
+     * @dev See {IVChain-accountIsTrustAdmin}.
      */
     function accountIsTrustAdmin(uint256 _id) public view override returns (bool _isFreeze) {
         return metaStorage.getAccount(_id).isTrustAdmin;
     }
 
     /**
-     * @dev See {IMetaverse-accountIsFreeze}.
+     * @dev See {IVChain-accountIsFreeze}.
      */
     function accountIsFreeze(uint256 _id) public view override returns (bool _isFreeze) {
         return metaStorage.getAccount(_id).isFreeze;
     }
 
     /**
-     * @dev See {IMetaverse-checkSender}.
+     * @dev See {IVChain-checkSender}.
      */
     function checkSender(uint256 _id, address _sender) public view override returns (bool) {
-        require(accountIsExist(_id), "Metaverse: Account does not exist");
-        require(metaStorage.authAddressContains(_id, _sender), "Metaverse: Sender is not authorized");
+        require(accountIsExist(_id), "VChain: Account does not exist");
+        require(metaStorage.authAddressContains(_id, _sender), "VChain: Sender is not authorized");
         return true;
     }
 
     /**
-     * @dev See {IMetaverse-getTotalAccount}.
+     * @dev See {IVChain-getTotalAccount}.
      */
     function getTotalAccount() public view override returns (uint256) {
         return metaStorage.totalAccount();
@@ -577,14 +577,14 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
 
     // world
     /**
-     * @dev See {IMetaverse-getWorlds}.
+     * @dev See {IVChain-getWorlds}.
      */
     function getWorlds() public view override returns (address[] memory) {
         return metaStorage.getWorlds();
     }
 
     /**
-     * @dev See {IMetaverse-getNonce}.
+     * @dev See {IVChain-getNonce}.
      */
     function getNonce(address _address) public view override returns (uint256) {
         return metaStorage.nonces(_address);
@@ -593,10 +593,10 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
     // Owner functions
     function registerWorld(address _world) public onlyOwner {
         checkAddressIsNotZero(_world);
-        require(metaStorage.worldContains(_world) == false, "Metaverse: world is exist");
+        require(metaStorage.worldContains(_world) == false, "VChain: world is exist");
         require(
-            IAcertContract(_world).metaverseAddress() == IAcertContract(shellContract).metaverseAddress(),
-            "Metaverse: metaverse is not match"
+            IAcertContract(_world).vchainAddress() == IAcertContract(shellContract).vchainAddress(),
+            "VChain: VChain is not match"
         );
         metaStorage.addWorld(_world);
         shell().emitRegisterWorld(_world);
@@ -644,16 +644,16 @@ contract MetaverseCore is IMetaverseCore, CoreContract, IAcertContract, EIP712 {
         bytes32 digest,
         bytes calldata signature
     ) internal view {
-        require(deadline == 0 || block.timestamp < deadline, "Metaverse: BWO call expired");
-        require(signer == ECDSA.recover(digest, signature), "Metaverse: recoverSig failed");
+        require(deadline == 0 || block.timestamp < deadline, "VChain: BWO call expired");
+        require(signer == ECDSA.recover(digest, signature), "VChain: recoverSig failed");
     }
 
     function checkAddressIsNotUsed(address _address) internal view {
-        require(getAccountIdByAddress(_address) == 0, "Metaverse: new address has been used");
+        require(getAccountIdByAddress(_address) == 0, "VChain: new address has been used");
     }
 
     function checkAddressIsNotZero(address _address) internal pure {
-        require(_address != address(0), "Metaverse: address is zero");
+        require(_address != address(0), "VChain: address is zero");
     }
 
     function getChainId() public view returns (uint256) {

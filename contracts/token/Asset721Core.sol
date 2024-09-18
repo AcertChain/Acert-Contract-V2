@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "../interfaces/IAsset721.sol";
 import "../interfaces/IWorld.sol";
-import "../interfaces/IMetaverse.sol";
+import "../interfaces/IVChain.sol";
 import "../interfaces/IAcertContract.sol";
 import "./Asset721.sol";
 import "./Asset721Storage.sol";
@@ -24,7 +24,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     string private _tokenURI;
 
     IWorld public world;
-    IMetaverse public metaverse;
+    IVChain public vchain;
     Asset721Storage public storageContract;
 
     /**
@@ -44,7 +44,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         _tokenURI = tokenURI_;
         world = IWorld(world_);
         storageContract = Asset721Storage(storage_);
-        metaverse = IMetaverse(IAcertContract(world_).metaverseAddress());
+        vchain = IVChain(IAcertContract(world_).vchainAddress());
     }
 
     function shell() public view returns (Asset721) {
@@ -52,14 +52,14 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() external view override returns (address) {
-        return address(metaverse);
+    function vchainAddress() external view override returns (address) {
+        return address(vchain);
     }
 
     function updateWorld(address _world) public onlyOwner {
-        require(address(metaverse) == IAcertContract(_world).metaverseAddress(), "Asset721: metaverse not match");
+        require(address(vchain) == IAcertContract(_world).vchainAddress(), "Asset721: vchain not match");
         world = IWorld(_world);
     }
 
@@ -769,21 +769,21 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function _getAccountIdByAddress(address _address) internal view returns (uint256) {
-        return metaverse.getAccountIdByAddress(_address);
+        return vchain.getAccountIdByAddress(_address);
     }
 
     function _getOrCreateAccountId(address _address) internal returns (uint256) {
         if (_address == address(0)) {
             return 0;
-        } else if (metaverse.getAccountIdByAddress(_address) == 0) {
-            return metaverse.createAccount(_address, false);
+        } else if (vchain.getAccountIdByAddress(_address) == 0) {
+            return vchain.createAccount(_address, false);
         } else {
-            return metaverse.getAccountIdByAddress(_address);
+            return vchain.getAccountIdByAddress(_address);
         }
     }
 
     function _getAddressByAccountId(uint256 _id) internal view returns (address) {
-        return metaverse.getAddressByAccountId(_id);
+        return vchain.getAddressByAccountId(_id);
     }
 
     function _assetIsEnabled() internal view returns (bool) {
@@ -791,15 +791,15 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function _accountIsFreeze(uint256 _id) internal view returns (bool) {
-        return metaverse.accountIsFreeze(_id);
+        return vchain.accountIsFreeze(_id);
     }
 
     function _checkSender(uint256 ownerId, address sender) internal view {
-        metaverse.checkSender(ownerId, sender);
+        vchain.checkSender(ownerId, sender);
     }
 
     function _accountIsExist(uint256 _id) internal view returns (bool) {
-        return metaverse.accountIsExist(_id);
+        return vchain.accountIsExist(_id);
     }
 
     function _checkBWO(address _sender) internal view {

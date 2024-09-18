@@ -31,10 +31,10 @@ contract WorldStorage is IAcertContract, Ownable {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() public view override returns (address) {
-        return IAcertContract(world).metaverseAddress();
+    function vchainAddress() public view override returns (address) {
+        return IAcertContract(world).vchainAddress();
     }
 
     function updateWorld(address _address) public onlyOwner {

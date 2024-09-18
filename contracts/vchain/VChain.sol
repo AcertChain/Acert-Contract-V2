@@ -1,22 +1,22 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "../interfaces/IMetaverse.sol";
+import "../interfaces/IVChain.sol";
 import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
 
-contract Metaverse is ShellContract, IMetaverse, IAcertContract {
+contract VChain is ShellContract, IVChain, IAcertContract {
     function createAccountBatch(address[] calldata addrs, bool[] calldata isTrustAdmins) public onlyOwner {
-        require(addrs.length == isTrustAdmins.length, "Metaverse: length is not match");
-        require(addrs.length > 0, "Metaverse: length is zero");
+        require(addrs.length == isTrustAdmins.length, "VChain: length is not match");
+        require(addrs.length > 0, "VChain: length is zero");
 
         for (uint256 i = 0; i < addrs.length; i++) {
             core().createAccount_(addrs[i], addrs[i], isTrustAdmins[i]);
         }
     }
 
-    function core() internal view returns (IMetaverseCore) {
-        return IMetaverseCore(coreContract);
+    function core() internal view returns (IVChainCore) {
+        return IVChainCore(coreContract);
     }
 
     //emit event
@@ -99,23 +99,23 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() public view override returns (address) {
+    function vchainAddress() public view override returns (address) {
         return address(this);
     }
 
-    //IMetaverse
+    //IVChain
 
     /**
-     * @dev See {IMetaverse-name}.
+     * @dev See {IVChain-name}.
      */
     function name() public view override returns (string memory) {
         return core().name();
     }
 
     /**
-     * @dev See {IMetaverse-version}.
+     * @dev See {IVChain-version}.
      */
     function version() public view override returns (string memory) {
         return core().version();
@@ -124,14 +124,14 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     // account
 
     /**
-     * @dev See {IMetaverse-createAccount}.
+     * @dev See {IVChain-createAccount}.
      */
     function createAccount(address _address, bool _isTrustAdmin) public override returns (uint256 id) {
         return core().createAccount_(_msgSender(), _address, _isTrustAdmin);
     }
 
     /**
-     * @dev See {IMetaverse-createAccountBWO}.
+     * @dev See {IVChain-createAccountBWO}.
      */
     function createAccountBWO(
         address _address,
@@ -144,7 +144,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     }
 
     /**
-     * @dev See {IMetaverse-addAuthAddress}.
+     * @dev See {IVChain-addAuthAddress}.
      */
     function addAuthAddress(
         uint256 _id,
@@ -156,7 +156,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     }
 
     /**
-     * @dev See {IMetaverse-addAuthAddressBWO}.
+     * @dev See {IVChain-addAuthAddressBWO}.
      */
     function addAuthAddressBWO(
         uint256 _id,
@@ -170,14 +170,14 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     }
 
     /**
-     * @dev See {IMetaverse-removeAuthAddress}.
+     * @dev See {IVChain-removeAuthAddress}.
      */
     function removeAuthAddress(uint256 _id, address _address) public override {
         return core().removeAuthAddress_(_msgSender(), _id, _address);
     }
 
     /**
-     * @dev See {IMetaverse-removeAuthAddressBWO}.
+     * @dev See {IVChain-removeAuthAddressBWO}.
      */
     function removeAuthAddressBWO(
         uint256 _id,
@@ -190,14 +190,14 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     }
 
     /**
-     * @dev See {IMetaverse-trustAdmin}.
+     * @dev See {IVChain-trustAdmin}.
      */
     function trustAdmin(uint256 _id, bool _isTrustAdmin) public override {
         return core().trustAdmin_(_msgSender(), _id, _isTrustAdmin);
     }
 
     /**
-     * @dev See {IMetaverse-trustAdminBWO}.
+     * @dev See {IVChain-trustAdminBWO}.
      */
     function trustAdminBWO(
         uint256 _id,
@@ -210,14 +210,14 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     }
 
     /**
-     * @dev See {IMetaverse-freezeAccount}.
+     * @dev See {IVChain-freezeAccount}.
      */
     function freezeAccount(uint256 _id) public override {
         return core().freezeAccount_(_msgSender(), _id);
     }
 
     /**
-     * @dev See {IMetaverse-freezeAccountBWO}.
+     * @dev See {IVChain-freezeAccountBWO}.
      */
     function freezeAccountBWO(
         uint256 _id,
@@ -229,63 +229,63 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
     }
 
     /**
-     * @dev See {IMetaverse-getAccountIdByAddress}.
+     * @dev See {IVChain-getAccountIdByAddress}.
      */
     function getAccountIdByAddress(address _address) public view override returns (uint256 _id) {
         return core().getAccountIdByAddress(_address);
     }
 
     /**
-     * @dev See {IMetaverse-getAddressByAccountId}.
+     * @dev See {IVChain-getAddressByAccountId}.
      */
     function getAddressByAccountId(uint256 _id) public view override returns (address _address) {
         return core().getAddressByAccountId(_id);
     }
 
     /**
-     * @dev See {IMetaverse-getAccountAuthAddress}.
+     * @dev See {IVChain-getAccountAuthAddress}.
      */
     function getAccountAuthAddress(uint256 _id) public view override returns (address[] memory) {
         return core().getAccountAuthAddress(_id);
     }
 
     /**
-     * @dev See {IMetaverse-accountIsExist}.
+     * @dev See {IVChain-accountIsExist}.
      */
     function accountIsExist(uint256 _id) public view override returns (bool _isExist) {
         return core().accountIsExist(_id);
     }
 
     /**
-     * @dev See {IMetaverse-accountIsTrustAdmin}.
+     * @dev See {IVChain-accountIsTrustAdmin}.
      */
     function accountIsTrustAdmin(uint256 _id) public view override returns (bool _isFreeze) {
         return core().accountIsTrustAdmin(_id);
     }
 
     /**
-     * @dev See {IMetaverse-accountIsFreeze}.
+     * @dev See {IVChain-accountIsFreeze}.
      */
     function accountIsFreeze(uint256 _id) public view override returns (bool _isFreeze) {
         return core().accountIsFreeze(_id);
     }
 
     /**
-     * @dev See {IMetaverse-checkSender}.
+     * @dev See {IVChain-checkSender}.
      */
     function checkSender(uint256 _id, address _sender) public view override returns (bool) {
         return core().checkSender(_id, _sender);
     }
 
     /**
-     * @dev See {IMetaverse-getTotalAccount}.
+     * @dev See {IVChain-getTotalAccount}.
      */
     function getTotalAccount() public view override returns (uint256) {
         return core().getTotalAccount();
     }
 
     /**
-     * @dev See {IMetaverse-getNonce}.
+     * @dev See {IVChain-getNonce}.
      */
     function getNonce(address _address) public view override returns (uint256) {
         return core().getNonce(_address);
@@ -293,7 +293,7 @@ contract Metaverse is ShellContract, IMetaverse, IAcertContract {
 
     // world
     /**
-     * @dev See {IMetaverse-getWorlds}.
+     * @dev See {IVChain-getWorlds}.
      */
     function getWorlds() public view override returns (address[] memory) {
         return core().getWorlds();

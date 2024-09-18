@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IAcertContract.sol";
 
-contract MetaverseStorage is IAcertContract, Ownable {
+contract VChainStorage is IAcertContract, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private worlds;
 
@@ -31,40 +31,40 @@ contract MetaverseStorage is IAcertContract, Ownable {
     // Mapping from address to operator
     mapping(address => bool) public isOperator;
 
-    address public metaverse;
+    address public vchain;
     address public admin;
     uint256 public totalAccount;
 
-    modifier onlyMetaverse() {
-        require(metaverse == msg.sender, "MetaverseStorage: caller is not the metaverse");
+    modifier onlyVChain() {
+        require(vchain == msg.sender, "VChainStorage: caller is not the vchain");
         _;
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() public view override returns (address) {
-        return address(IAcertContract(metaverse).metaverseAddress());
+    function vchainAddress() public view override returns (address) {
+        return address(IAcertContract(vchain).vchainAddress());
     }
 
-    function updateMetaverse(address _address) public onlyOwner {
-        require(_address != address(0), "MetaverseStorage: address is zero");
-        metaverse = _address;
+    function updateVChain(address _address) public onlyOwner {
+        require(_address != address(0), "VChainStorage: address is zero");
+        vchain = _address;
     }
 
-    function setAdmin(address _admin) public onlyMetaverse {
+    function setAdmin(address _admin) public onlyVChain {
         admin = _admin;
     }
 
-    function setOperator(address _operator, bool _isOperator) public onlyMetaverse {
+    function setOperator(address _operator, bool _isOperator) public onlyVChain {
         isOperator[_operator] = _isOperator;
     }
 
-    function IncrementTotalAccount() public onlyMetaverse {
+    function IncrementTotalAccount() public onlyVChain {
         totalAccount++;
     }
 
-    function IncrementNonce(address _sender) public onlyMetaverse {
+    function IncrementNonce(address _sender) public onlyVChain {
         nonces[_sender]++;
     }
 
@@ -72,7 +72,7 @@ contract MetaverseStorage is IAcertContract, Ownable {
         return worlds.contains(_address);
     }
 
-    function addWorld(address _address) public onlyMetaverse {
+    function addWorld(address _address) public onlyVChain {
         if (!worlds.contains(_address)) {
             worlds.add(_address);
             isEnabledWorld[_address] = true;
@@ -87,17 +87,17 @@ contract MetaverseStorage is IAcertContract, Ownable {
         return worlds.length();
     }
 
-    function enableWorld(address _address) public onlyMetaverse {
-        require(worlds.contains(_address), "Metaverse: world is not exist");
+    function enableWorld(address _address) public onlyVChain {
+        require(worlds.contains(_address), "VChain: world is not exist");
         isEnabledWorld[_address] = true;
     }
 
-    function disableWorld(address _address) public onlyMetaverse {
-        require(worlds.contains(_address), "Metaverse: world is not exist");
+    function disableWorld(address _address) public onlyVChain {
+        require(worlds.contains(_address), "VChain: world is not exist");
         isEnabledWorld[_address] = false;
     }
 
-    function setAccount(Account calldata account) public onlyMetaverse {
+    function setAccount(Account calldata account) public onlyVChain {
         accounts[account.id] = account;
     }
 
@@ -117,17 +117,17 @@ contract MetaverseStorage is IAcertContract, Ownable {
         return (authAddress[id].length() != 0) ? authAddress[id].at(0) : address(0);
     }
 
-    function addAuthAddress(uint256 id, address _address) public onlyMetaverse {
+    function addAuthAddress(uint256 id, address _address) public onlyVChain {
         authAddress[id].add(_address);
         authToId[_address] = id;
     }
 
-    function removeAuthAddress(uint256 id, address _address) public onlyMetaverse {
+    function removeAuthAddress(uint256 id, address _address) public onlyVChain {
         authAddress[id].remove(_address);
         delete authToId[_address];
     }
 
-    function removeAllAuthAddress(uint256 id) public onlyMetaverse {
+    function removeAllAuthAddress(uint256 id) public onlyVChain {
         EnumerableSet.AddressSet storage addrs = authAddress[id];
         for (uint256 i = 0; i < addrs.length(); i++) {
             address _address = addrs.at(i);

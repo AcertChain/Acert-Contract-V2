@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IWorld.sol";
 import "../interfaces/IAcertContract.sol";
-import "../interfaces/IMetaverse.sol";
+import "../interfaces/IVChain.sol";
 
 contract World is IWorld, ShellContract, IAcertContract {
     function trustWorldBatch(uint256[] calldata ids, bool[] calldata isTrusts) public onlyOwner {
-        IMetaverse meta = IMetaverse(metaverseAddress());
+        IVChain meta = IVChain(vchainAddress());
         for (uint256 i = 0; i < ids.length; i++) {
             address sender = meta.getAddressByAccountId(ids[i]);
             core().trustWorld_(sender, ids[i], isTrusts[i]);
@@ -69,10 +69,10 @@ contract World is IWorld, ShellContract, IAcertContract {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() public view override returns (address) {
-        return IAcertContract(coreContract).metaverseAddress();
+    function vchainAddress() public view override returns (address) {
+        return IAcertContract(coreContract).vchainAddress();
     }
 
     //IWorld

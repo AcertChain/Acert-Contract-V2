@@ -97,10 +97,10 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() external view override returns (address) {
-        return IAcertContract(coreContract).metaverseAddress();
+    function vchainAddress() external view override returns (address) {
+        return IAcertContract(coreContract).vchainAddress();
     }
 
     /**

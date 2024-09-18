@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./ShellCore.sol";
 
 interface IWorldMetadata {
-    //metaverse
+    //vchain
     function name() external view returns (string memory);
 
     function version() external view returns (string memory);

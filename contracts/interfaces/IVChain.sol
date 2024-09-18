@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 import "./ShellCore.sol";
 
-interface IMetaverseMetadata {
-    //metaverse
+interface IVChainMetadata {
+    //vchain
     function name() external view returns (string memory);
 
     function version() external view returns (string memory);
@@ -31,7 +31,7 @@ interface IMetaverseMetadata {
     function getWorlds() external view returns (address[] memory);
 }
 
-interface IMetaverse is IMetaverseMetadata {
+interface IVChain is IVChainMetadata {
     event SetAdmin(address indexed admin);
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
@@ -120,7 +120,7 @@ interface IMetaverse is IMetaverseMetadata {
     ) external;
 }
 
-interface IMetaverseCore is IMetaverseMetadata {
+interface IVChainCore is IVChainMetadata {
     function createAccount_(
         address _msgSender,
         address _address,
