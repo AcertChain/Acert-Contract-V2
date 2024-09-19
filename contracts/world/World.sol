@@ -6,14 +6,6 @@ import "../interfaces/IAcertContract.sol";
 import "../interfaces/IVChain.sol";
 
 contract World is IWorld, ShellContract, IAcertContract {
-    function trustWorldBatch(uint256[] calldata ids, bool[] calldata isTrusts) public onlyOwner {
-        IVChain meta = IVChain(vchainAddress());
-        for (uint256 i = 0; i < ids.length; i++) {
-            address sender = meta.getAddressByAccountId(ids[i]);
-            core().trustWorld_(sender, ids[i], isTrusts[i]);
-        }
-    }
-
     function core() internal view returns (IWorldCore) {
         return IWorldCore(coreContract);
     }
@@ -47,27 +39,6 @@ contract World is IWorld, ShellContract, IAcertContract {
         emit RemoveSafeContract(_contract);
     }
 
-    function emitTrustWorld(
-        uint256 _accountId,
-        bool _isTrustWorld,
-        bool isBWO,
-        address sender,
-        uint256 nonce
-    ) public onlyCore {
-        emit TrustWorld(_accountId, _isTrustWorld, isBWO, sender, nonce);
-    }
-
-    function emitTrustContract(
-        uint256 _accountId,
-        address _safeContract,
-        bool _isTrustContract,
-        bool isBWO,
-        address sender,
-        uint256 nonce
-    ) public onlyCore {
-        emit TrustContract(_accountId, _safeContract, _isTrustContract, isBWO, sender, nonce);
-    }
-
     /**
      * @dev See {IAcertContract-vchainAddress}.
      */
@@ -92,18 +63,6 @@ contract World is IWorld, ShellContract, IAcertContract {
     }
 
     // account
-    function isTrustWorld(uint256 _id) public view override returns (bool _isTrustWorld) {
-        return core().isTrustWorld(_id);
-    }
-
-    function isTrustContract(address _contract, uint256 _id) public view override returns (bool _isTrustContract) {
-        return core().isTrustContract(_contract, _id);
-    }
-
-    function isTrust(address _contract, uint256 _id) public view override returns (bool _isTrust) {
-        return core().isTrust(_contract, _id);
-    }
-
     function getNonce(address _address) public view override returns (uint256) {
         return core().getNonce(_address);
     }
@@ -128,38 +87,5 @@ contract World is IWorld, ShellContract, IAcertContract {
 
     function checkBWO(address _address) public view override returns (bool) {
         return core().checkBWO(_address);
-    }
-
-    function trustContract(
-        uint256 _id,
-        address _contract,
-        bool _isTrustContract
-    ) public override {
-        return core().trustContract_(_msgSender(), _id, _contract, _isTrustContract);
-    }
-
-    function trustContractBWO(
-        uint256 _id,
-        address _contract,
-        bool _isTrustContract,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) public override {
-        return core().trustContractBWO_(_msgSender(), _id, _contract, _isTrustContract, sender, deadline, signature);
-    }
-
-    function trustWorld(uint256 _id, bool _isTrustWorld) public override {
-        return core().trustWorld_(_msgSender(), _id, _isTrustWorld);
-    }
-
-    function trustWorldBWO(
-        uint256 _id,
-        bool _isTrustWorld,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) public override {
-        return core().trustWorldBWO_(_msgSender(), _id, _isTrustWorld, sender, deadline, signature);
     }
 }

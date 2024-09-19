@@ -360,7 +360,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
 
     function isApprovedForAll(uint256 ownerId, address operator) public view virtual override returns (bool) {
         _checkIdIsNotZero(ownerId, "Asset721: id zero is not a valid owner");
-        if (_isTrust(operator, ownerId)) {
+        if (_isSafeContract(operator)) {
             return true;
         }
         return storageContract.operatorApprovalsById(ownerId, operator);
@@ -799,8 +799,8 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         require(world.checkBWO(_sender), "Asset721: sender is not BWO");
     }
 
-    function _isTrust(address _address, uint256 _id) internal view returns (bool) {
-        return world.isTrust(_address, _id);
+    function _isSafeContract(address _address) internal view returns (bool) {
+        return world.isSafeContract(_address);
     }
 
     function _recoverSig(

@@ -113,7 +113,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
      * @dev See {IAsset20-allowance}.
      */
     function allowance(uint256 ownerId, address spender) public view virtual override returns (uint256) {
-        if (_isTrust(spender, ownerId)) {
+        if (_isSafeContract(spender)) {
             return type(uint256).max;
         }
         return storageContract.allowancesById(ownerId, spender);
@@ -475,8 +475,8 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         require(world.checkBWO(_sender), "Asset20: BWO is not allowed");
     }
 
-    function _isTrust(address _address, uint256 _id) internal view returns (bool) {
-        return world.isTrust(_address, _id);
+    function _isSafeContract(address _address) internal view returns (bool) {
+        return world.isSafeContract(_address);
     }
 
     function _recoverSig(

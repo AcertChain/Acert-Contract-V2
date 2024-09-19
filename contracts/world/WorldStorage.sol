@@ -10,14 +10,10 @@ contract WorldStorage is IAcertContract, Ownable {
     EnumerableSet.AddressSet private assets;
     EnumerableSet.AddressSet private safeContracts;
 
-    // Mapping from address to trust contract
+    // Mapping from address to safe contract
     mapping(address => bool) public isSafeContract;
-    // Mapping from account Id to contract
-    mapping(uint256 => mapping(address => bool)) public isTrustContractByAccountId;
     // Mapping from address to Asset
     mapping(address => bool) public isEnabledAsset;
-    // Mapping from is trust world
-    mapping(uint256 => bool) public isTrustWorld;
     // nonce
     mapping(address => uint256) public nonces;
 
@@ -92,17 +88,5 @@ contract WorldStorage is IAcertContract, Ownable {
 
     function getSafeContracts() public view returns (address[] memory) {
         return safeContracts.values();
-    }
-
-    function setTrustContractByAccountId(
-        uint256 _accountId,
-        address _address,
-        bool _isTrust
-    ) public onlyWorld {
-        isTrustContractByAccountId[_accountId][_address] = _isTrust;
-    }
-
-    function setTrustWorld(uint256 _accountId, bool _isTrust) public onlyWorld {
-        isTrustWorld[_accountId] = _isTrust;
     }
 }
