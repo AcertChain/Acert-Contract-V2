@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 //import "./IAsset.sol";
 import "./ShellCore.sol";
 
-interface IWorldMetadata {
+interface IWorldCore {
     //vchain
     function name() external view returns (string memory);
 
@@ -25,7 +25,7 @@ interface IWorldMetadata {
     function checkBWO(address _address) external view returns (bool);
 }
 
-interface IWorld is IWorldMetadata {
+interface IWorld is IWorldCore {
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
     event RegisterAsset(address indexed asset);
@@ -33,7 +33,4 @@ interface IWorld is IWorldMetadata {
     event DisableAsset(address indexed asset);
     event AddSafeContract(address indexed safeContract);
     event RemoveSafeContract(address indexed safeContract);
-}
-
-interface IWorldCore is IWorldMetadata {
 }
