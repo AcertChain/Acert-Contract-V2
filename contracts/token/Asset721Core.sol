@@ -119,61 +119,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IAsset721-itemsOf}.
-     */
-    function itemsOf(
-        uint256 owner,
-        uint256 startAt,
-        uint256 endAt
-    ) public view virtual override returns (uint256[] memory) {
-        require(startAt <= endAt, "Asset721: startAt must be less than or equal to endAt");
-        require(endAt < balanceOf(owner), "Asset721: endAt must be less than the balance of the owner");
-        uint256[] memory items = new uint256[](endAt - startAt + 1);
-        for (uint256 i = 0; i <= endAt - startAt; i++) {
-            items[i] = _ownedTokens(owner, startAt + i);
-        }
-        return items;
-    }
-
-    /**
-     * @dev See {IAsset721-getNFTMetadataContract}.
-     */
-    function getNFTMetadataContract() public view virtual override returns (address) {
-        return storageContract.nftMetadata();
-    }
-
-    function _beforeTokenTransfer(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId
-    ) internal {
-        if (from != 0 && from != to) {
-            _removeTokenFromOwnerEnumeration(from, tokenId);
-        }
-        if (to != 0 && to != from) {
-            _addTokenToOwnerEnumeration(to, tokenId);
-        }
-    }
-
-    function _addTokenToOwnerEnumeration(uint256 to, uint256 tokenId) private {
-        uint256 length = balanceOf(to);
-        _setOwnedTokenAndIndex(to, length, tokenId);
-    }
-
-    function _removeTokenFromOwnerEnumeration(uint256 from, uint256 tokenId) private {
-        uint256 lastTokenIndex = balanceOf(from) - 1;
-        uint256 tokenIndex = storageContract.ownedTokensIndex(tokenId);
-
-        if (tokenIndex != lastTokenIndex) {
-            uint256 lastTokenId = _ownedTokens(from, lastTokenIndex);
-            _setOwnedTokenAndIndex(from, tokenIndex, lastTokenId);
-        }
-
-        storageContract.deleteOwnedToken(from, lastTokenIndex);
-        storageContract.deleteOwnedTokenIndex(tokenId);
-    }
-
-    /**
      * @dev See {IERC721-approve}.
      * @dev See {IAsset721-approve}.
      */
@@ -481,8 +426,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         require(_accountIsExist(toAccount), "Asset721: to account is not exist");
         _checkIdIsNotZero(toAccount, "Asset721: transfer to the zero id");
 
-        _beforeTokenTransfer(fromAccount, toAccount, tokenId);
-
         // Clear approvals from the previous owner
         _setTokenApprovalById(tokenId, address(0));
 
@@ -647,7 +590,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     ) public override onlyShell {
         _checkIdIsNotZero(to, "Asset721: mint to the zero id");
         require(!_exists(tokenId), "Asset721: token already minted");
-        _beforeTokenTransfer(0, to, tokenId);
 
         storageContract.setOwnerById(tokenId, to);
         _setBalanceById(to, _balancesById(to) + 1);
@@ -680,7 +622,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         _setTokenApprovalById(tokenId, address(0));
 
         uint256 ownerId = _getAccountIdByAddress(owner);
-        _beforeTokenTransfer(ownerId, 0, tokenId);
         _setBalanceById(ownerId, _balancesById(ownerId) -1);
         storageContract.deleteOwnerById(tokenId);
 
@@ -738,19 +679,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
 
     function _setBalanceById(uint256 _id, uint256 _balance) internal {
         storageContract.setBalanceById(_id, _balance);
-    }
-
-    function _ownedTokens(uint256 id, uint256 index) internal view returns (uint256) {
-        return storageContract.ownedTokens(id, index);
-    }
-
-    function _setOwnedTokenAndIndex(
-        uint256 to,
-        uint256 length,
-        uint256 tokenId
-    ) internal {
-        storageContract.setOwnedToken(to, length, tokenId);
-        storageContract.setOwnedTokenIndex(tokenId, length);
     }
 
     function _incrementNonce(address account) internal {

@@ -11,14 +11,6 @@ interface IAsset721Metadata is IAsset {
     function ownerAccountOf(uint256 tokenId) external view returns (uint256 account);
 
     function isApprovedForAll(uint256 owner, address operator) external view returns (bool);
-
-    function itemsOf(
-        uint256 owner,
-        uint256 startAt,
-        uint256 endAt
-    ) external view returns (uint256[] memory tokenIds);
-
-    function getNFTMetadataContract() external view returns (address);
 }
 
 interface IAsset721 is IERC721Event, IAsset721Metadata, IERC721 {

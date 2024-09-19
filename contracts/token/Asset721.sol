@@ -195,24 +195,6 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
         return core().isApprovedForAll(ownerId, operator);
     }
 
-    /**
-     * @dev See {IAsset721-itemsOf}.
-     */
-    function itemsOf(
-        uint256 owner,
-        uint256 startAt,
-        uint256 endAt
-    ) public view override returns (uint256[] memory) {
-        return core().itemsOf(owner, startAt, endAt);
-    }
-
-    /**
-     * @dev See {IAsset721-getNFTMetadataContract}.
-     */
-    function getNFTMetadataContract() public view override returns (address) {
-        return core().getNFTMetadataContract();
-    }
-
     // approve
     /**
      * @dev See {IERC721-approve}.

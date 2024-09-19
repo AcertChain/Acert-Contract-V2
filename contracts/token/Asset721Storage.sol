@@ -20,14 +20,7 @@ contract Asset721Storage is IAcertContract, Ownable {
     // Mapping from owner to operator approvals
     mapping(uint256 => mapping(address => bool)) public operatorApprovalsById;
 
-    // Mapping from owner to list of owned token IDs
-    mapping(uint256 => mapping(uint256 => uint256)) public ownedTokens;
-
-    // Mapping from token ID to index of the owner tokens list
-    mapping(uint256 => uint256) public ownedTokensIndex;
-
     address public asset;
-    address public nftMetadata;
 
     modifier onlyAsset() {
         require(asset == msg.sender);
@@ -39,10 +32,6 @@ contract Asset721Storage is IAcertContract, Ownable {
      */
     function vchainAddress() public view override returns (address) {
         return address(IAcertContract(asset).vchainAddress());
-    }
-
-    function updateNFTMetadataContract(address _contract) public onlyOwner {
-        nftMetadata = _contract;
     }
 
     function updateAsset(address _address) public onlyOwner {
@@ -76,25 +65,5 @@ contract Asset721Storage is IAcertContract, Ownable {
         bool _approval
     ) public onlyAsset {
         operatorApprovalsById[_id][_operator] = _approval;
-    }
-
-    function setOwnedToken(
-        uint256 _id,
-        uint256 _index,
-        uint256 _tokenId
-    ) public onlyAsset {
-        ownedTokens[_id][_index] = _tokenId;
-    }
-
-    function setOwnedTokenIndex(uint256 _id, uint256 _index) public onlyAsset {
-        ownedTokensIndex[_id] = _index;
-    }
-
-    function deleteOwnedToken(uint256 _id, uint256 _index) public onlyAsset {
-        delete ownedTokens[_id][_index];
-    }
-
-    function deleteOwnedTokenIndex(uint256 _id) public onlyAsset {
-        delete ownedTokensIndex[_id];
     }
 }
