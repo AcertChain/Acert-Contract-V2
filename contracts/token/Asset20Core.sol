@@ -272,7 +272,6 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         address _toAddr
     ) internal virtual {
         require(_assetIsEnabled(), "Asset20: asset is not enabled");
-        require(!_accountIsFreeze(fromAccount), "Asset20: transfer from is frozen");
         if (toAccount == 0) {
             return burn_(_sender, fromAccount, amount);
         }
@@ -376,7 +375,6 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         address sender
     ) internal virtual onlyShell {
         require(_assetIsEnabled(), "Asset20: asset is not enabled");
-        require(!_accountIsFreeze(ownerId), "Asset20: approve owner is frozen");
         _checkAddrIsNotZero(owner, "Asset20: approve from the zero address");
         _checkAddrIsNotZero(spender, "Asset20: approve to the zero address");
 
@@ -451,7 +449,7 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
         if (_address == address(0)) {
             return 0;
         } else if (vchain.getAccountIdByAddress(_address) == 0) {
-            return vchain.createAccount(_address, false);
+            return vchain.createAccount(_address);
         } else {
             return vchain.getAccountIdByAddress(_address);
         }
@@ -463,10 +461,6 @@ contract Asset20Core is IAsset20Core, CoreContract, IAcertContract, EIP712 {
 
     function _assetIsEnabled() internal view returns (bool) {
         return world.isEnabledAsset(shellContract);
-    }
-
-    function _accountIsFreeze(uint256 _id) internal view returns (bool) {
-        return vchain.accountIsFreeze(_id);
     }
 
     function _checkSender(uint256 ownerId, address sender) internal view {

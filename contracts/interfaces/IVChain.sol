@@ -17,10 +17,6 @@ interface IVChainMetadata {
 
     function accountIsExist(uint256 _id) external view returns (bool _isExist);
 
-    function accountIsTrustAdmin(uint256 _id) external view returns (bool _isFreeze);
-
-    function accountIsFreeze(uint256 _id) external view returns (bool _isFreeze);
-
     function checkSender(uint256 _id, address _sender) external view returns (bool);
 
     function getTotalAccount() external view returns (uint256);
@@ -41,14 +37,10 @@ interface IVChain is IVChainMetadata {
     event CreateAccount(
         uint256 indexed accountId,
         address indexed authAddress,
-        bool isTrustAdmin,
         bool isBWO,
         address indexed sender,
         uint256 nonce
     );
-    event TrustAdmin(uint256 indexed accountId, bool isTrustAdmin, bool isBWO, address indexed sender, uint256 nonce);
-    event FreezeAccount(uint256 indexed accountId, bool isBWO, address indexed sender, uint256 nonce);
-    event UnFreezeAccount(uint256 indexed accountId, address indexed newAuthAddress);
     event AddAuthAddress(
         uint256 indexed accountId,
         address indexed authAddress,
@@ -64,11 +56,10 @@ interface IVChain is IVChainMetadata {
         uint256 nonce
     );
 
-    function createAccount(address _address, bool _isTrustAdmin) external returns (uint256 id);
+    function createAccount(address _address) external returns (uint256 id);
 
     function createAccountBWO(
         address _address,
-        bool _isTrustAdmin,
         address sender,
         uint256 deadline,
         bytes calldata signature
@@ -99,38 +90,17 @@ interface IVChain is IVChainMetadata {
         uint256 deadline,
         bytes calldata signature
     ) external;
-
-    function trustAdmin(uint256 _id, bool _isTrustAdmin) external;
-
-    function trustAdminBWO(
-        uint256 _id,
-        bool _isTrustAdmin,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) external;
-
-    function freezeAccount(uint256 _id) external;
-
-    function freezeAccountBWO(
-        uint256 _id,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) external;
 }
 
 interface IVChainCore is IVChainMetadata {
     function createAccount_(
         address _msgSender,
-        address _address,
-        bool _isTrustAdmin
+        address _address
     ) external returns (uint256 id);
 
     function createAccountBWO_(
         address _msgSender,
         address _address,
-        bool _isTrustAdmin,
         address sender,
         uint256 deadline,
         bytes calldata signature
@@ -164,31 +134,6 @@ interface IVChainCore is IVChainMetadata {
         address _msgSender,
         uint256 _id,
         address _address,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) external;
-
-    function trustAdmin_(
-        address _msgSender,
-        uint256 _id,
-        bool _isTrustAdmin
-    ) external;
-
-    function trustAdminBWO_(
-        address _msgSender,
-        uint256 _id,
-        bool _isTrustAdmin,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) external;
-
-    function freezeAccount_(address _msgSender, uint256 _id) external;
-
-    function freezeAccountBWO_(
-        address _msgSender,
-        uint256 _id,
         address sender,
         uint256 deadline,
         bytes calldata signature

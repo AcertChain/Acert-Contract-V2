@@ -246,7 +246,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     ) internal virtual {
         uint256 ownerId = ownerAccountOf(tokenId);
         require(_assetIsEnabled(), "Asset721: asset is not enabled");
-        require(!_accountIsFreeze(ownerId), "Asset721: approve owner is frozen");
         require(_getOrCreateAccountId(spender) != ownerId, "Asset721: approval to current account");
 
         _setTokenApprovalById(tokenId, spender);
@@ -343,7 +342,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     ) internal virtual {
         _checkIdIsNotZero(accountId, "Asset721: id zero is not a valid owner");
         require(_assetIsEnabled(), "Asset721: asset is not enabled");
-        require(!_accountIsFreeze(accountId), "Asset721: approve owner is frozen");
         _checkAddrIsNotZero(operator, "Asset721: approve to the zero address");
         require(_getAccountIdByAddress(operator) != accountId, "Asset721: approval to current account");
 
@@ -477,7 +475,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     ) internal virtual {
         require(ownerAccountOf(tokenId) == fromAccount, "Asset721: transfer from incorrect owner");
         require(_assetIsEnabled(), "Asset721: asset is not enabled");
-        require(!_accountIsFreeze(fromAccount), "Asset721: transfer from frozen account");
         if (toAccount == 0) {
             return _burn(tokenId, sender);
         }
@@ -776,7 +773,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         if (_address == address(0)) {
             return 0;
         } else if (vchain.getAccountIdByAddress(_address) == 0) {
-            return vchain.createAccount(_address, false);
+            return vchain.createAccount(_address);
         } else {
             return vchain.getAccountIdByAddress(_address);
         }
@@ -788,10 +785,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
 
     function _assetIsEnabled() internal view returns (bool) {
         return world.isEnabledAsset(shellContract);
-    }
-
-    function _accountIsFreeze(uint256 _id) internal view returns (bool) {
-        return vchain.accountIsFreeze(_id);
     }
 
     function _checkSender(uint256 ownerId, address sender) internal view {

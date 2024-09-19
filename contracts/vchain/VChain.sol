@@ -6,12 +6,11 @@ import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
 
 contract VChain is ShellContract, IVChain, IAcertContract {
-    function createAccountBatch(address[] calldata addrs, bool[] calldata isTrustAdmins) public onlyOwner {
-        require(addrs.length == isTrustAdmins.length, "VChain: length is not match");
+    function createAccountBatch(address[] calldata addrs) public onlyOwner {
         require(addrs.length > 0, "VChain: length is zero");
 
         for (uint256 i = 0; i < addrs.length; i++) {
-            core().createAccount_(addrs[i], addrs[i], isTrustAdmins[i]);
+            core().createAccount_(addrs[i], addrs[i]);
         }
     }
 
@@ -43,35 +42,11 @@ contract VChain is ShellContract, IVChain, IAcertContract {
     function emitCreateAccount(
         uint256 accountId_,
         address authAddress_,
-        bool isTrustAdmin_,
         bool isBWO,
         address sender_,
         uint256 nonce_
     ) public onlyCore {
-        emit CreateAccount(accountId_, authAddress_, isTrustAdmin_, isBWO, sender_, nonce_);
-    }
-
-    function emitTrustAdmin(
-        uint256 accountId_,
-        bool isTrustAdmin_,
-        bool isBWO,
-        address sender_,
-        uint256 nonce_
-    ) public onlyCore {
-        emit TrustAdmin(accountId_, isTrustAdmin_, isBWO, sender_, nonce_);
-    }
-
-    function emitFreezeAccount(
-        uint256 accountId_,
-        bool isBWO_,
-        address sender_,
-        uint256 nonce_
-    ) public onlyCore {
-        emit FreezeAccount(accountId_, isBWO_, sender_, nonce_);
-    }
-
-    function emitUnFreezeAccount(uint256 accountId_, address newAuthAddress_) public onlyCore {
-        emit UnFreezeAccount(accountId_, newAuthAddress_);
+        emit CreateAccount(accountId_, authAddress_, isBWO, sender_, nonce_);
     }
 
     function emitAddAuthAddress(
@@ -126,8 +101,8 @@ contract VChain is ShellContract, IVChain, IAcertContract {
     /**
      * @dev See {IVChain-createAccount}.
      */
-    function createAccount(address _address, bool _isTrustAdmin) public override returns (uint256 id) {
-        return core().createAccount_(_msgSender(), _address, _isTrustAdmin);
+    function createAccount(address _address) public override returns (uint256 id) {
+        return core().createAccount_(_msgSender(), _address);
     }
 
     /**
@@ -135,12 +110,11 @@ contract VChain is ShellContract, IVChain, IAcertContract {
      */
     function createAccountBWO(
         address _address,
-        bool _isTrustAdmin,
         address sender,
         uint256 deadline,
         bytes calldata signature
     ) public override returns (uint256 id) {
-        return core().createAccountBWO_(_msgSender(), _address, _isTrustAdmin, sender, deadline, signature);
+        return core().createAccountBWO_(_msgSender(), _address, sender, deadline, signature);
     }
 
     /**
@@ -190,45 +164,6 @@ contract VChain is ShellContract, IVChain, IAcertContract {
     }
 
     /**
-     * @dev See {IVChain-trustAdmin}.
-     */
-    function trustAdmin(uint256 _id, bool _isTrustAdmin) public override {
-        return core().trustAdmin_(_msgSender(), _id, _isTrustAdmin);
-    }
-
-    /**
-     * @dev See {IVChain-trustAdminBWO}.
-     */
-    function trustAdminBWO(
-        uint256 _id,
-        bool _isTrustAdmin,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) public override {
-        return core().trustAdminBWO_(_msgSender(), _id, _isTrustAdmin, sender, deadline, signature);
-    }
-
-    /**
-     * @dev See {IVChain-freezeAccount}.
-     */
-    function freezeAccount(uint256 _id) public override {
-        return core().freezeAccount_(_msgSender(), _id);
-    }
-
-    /**
-     * @dev See {IVChain-freezeAccountBWO}.
-     */
-    function freezeAccountBWO(
-        uint256 _id,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) public override {
-        return core().freezeAccountBWO_(_msgSender(), _id, sender, deadline, signature);
-    }
-
-    /**
      * @dev See {IVChain-getAccountIdByAddress}.
      */
     function getAccountIdByAddress(address _address) public view override returns (uint256 _id) {
@@ -254,20 +189,6 @@ contract VChain is ShellContract, IVChain, IAcertContract {
      */
     function accountIsExist(uint256 _id) public view override returns (bool _isExist) {
         return core().accountIsExist(_id);
-    }
-
-    /**
-     * @dev See {IVChain-accountIsTrustAdmin}.
-     */
-    function accountIsTrustAdmin(uint256 _id) public view override returns (bool _isFreeze) {
-        return core().accountIsTrustAdmin(_id);
-    }
-
-    /**
-     * @dev See {IVChain-accountIsFreeze}.
-     */
-    function accountIsFreeze(uint256 _id) public view override returns (bool _isFreeze) {
-        return core().accountIsFreeze(_id);
     }
 
     /**

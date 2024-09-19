@@ -58,10 +58,9 @@ contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
      */
     function createAccount_(
         address _msgSender,
-        address _address,
-        bool _isTrustAdmin
+        address _address
     ) public override onlyShell returns (uint256 id) {
-        return _createAccount(_address, _isTrustAdmin, false, _msgSender);
+        return _createAccount(_address, false, _msgSender);
     }
 
     /**
@@ -70,19 +69,17 @@ contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
     function createAccountBWO_(
         address _msgSender,
         address _address,
-        bool _isTrustAdmin,
         address sender,
         uint256 deadline,
         bytes calldata signature
     ) public override onlyShell returns (uint256 id) {
         require(checkBWO(_msgSender), "VChain: address is not BWO");
-        createAccoutBWOParamsVerfiy(_address, _isTrustAdmin, sender, deadline, signature);
-        return _createAccount(_address, _isTrustAdmin, true, sender);
+        createAccoutBWOParamsVerfiy(_address, sender, deadline, signature);
+        return _createAccount(_address, true, sender);
     }
 
     function createAccoutBWOParamsVerfiy(
         address _address,
-        bool _isTrustAdmin,
         address sender,
         uint256 deadline,
         bytes calldata signature
@@ -95,10 +92,9 @@ contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "createAccountBWO(address _address,bool _isTrustAdmin,address sender,uint256 nonce,uint256 deadline)"
+                            "createAccountBWO(address _address,address sender,uint256 nonce,uint256 deadline)"
                         ),
                         _address,
-                        _isTrustAdmin,
                         sender,
                         nonce,
                         deadline
@@ -112,21 +108,17 @@ contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
 
     function _createAccount(
         address _address,
-        bool _isTrustAdmin,
         bool _isBWO,
         address _sender
     ) private returns (uint256 id) {
-        if (_isTrustAdmin) {
-            require(_address == _sender, "VChain: Only AuthAddress can set trustAdmin to true");
-        }
         metaStorage.IncrementTotalAccount();
         id = metaStorage.totalAccount() + _startId;
-        metaStorage.setAccount(VChainStorage.Account(true, _isTrustAdmin, false, id));
+        metaStorage.setAccount(id);
 
         checkAddressIsNotZero(_address);
         checkAddressIsNotUsed(_address);
         metaStorage.addAuthAddress(id, _address);
-        shell().emitCreateAccount(id, _address, _isTrustAdmin, _isBWO, _sender, getNonce(_sender));
+        shell().emitCreateAccount(id, _address, _isBWO, _sender, getNonce(_sender));
         metaStorage.IncrementNonce(_address);
         if (_sender != _address) {
             metaStorage.IncrementNonce(_sender);
@@ -328,196 +320,6 @@ contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IVChainCore-trustAdmin_}.
-     */
-    function trustAdmin_(
-        address _msgSender,
-        uint256 _id,
-        bool _isTrustAdmin
-    ) public override onlyShell {
-        checkSender(_id, _msgSender);
-        _trustAdmin(_id, _isTrustAdmin, false, _msgSender);
-    }
-
-    /**
-     * @dev See {IVChainCore-trustAdminBWO_}.
-     */
-    function trustAdminBWO_(
-        address _msgSender,
-        uint256 _id,
-        bool _isTrustAdmin,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) public override onlyShell {
-        require(checkBWO(_msgSender), "VChain: address is not BWO");
-        trustAdminBWOParamsVerify(_id, _isTrustAdmin, sender, deadline, signature);
-        _trustAdmin(_id, _isTrustAdmin, true, sender);
-    }
-
-    function trustAdminBWOParamsVerify(
-        uint256 _id,
-        bool _isTrustAdmin,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) public view returns (bool) {
-        checkSender(_id, sender);
-        uint256 nonce = getNonce(sender);
-        _recoverSig(
-            deadline,
-            sender,
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256(
-                            "trustAdminBWO(uint256 id,bool isTrustAdmin,address sender,uint256 nonce,uint256 deadline)"
-                        ),
-                        _id,
-                        _isTrustAdmin,
-                        sender,
-                        nonce,
-                        deadline
-                    )
-                )
-            ),
-            signature
-        );
-        return true;
-    }
-
-    function _trustAdmin(
-        uint256 _id,
-        bool _isTrustAdmin,
-        bool _isBWO,
-        address _sender
-    ) private {
-        VChainStorage.Account memory account = metaStorage.getAccount(_id);
-        require(account.isExist == true, "VChain: account is not exist");
-        account.isTrustAdmin = _isTrustAdmin;
-        metaStorage.setAccount(account);
-        shell().emitTrustAdmin(_id, _isTrustAdmin, _isBWO, _sender, getNonce(_sender));
-        metaStorage.IncrementNonce(_sender);
-    }
-
-    /**
-     * @dev See {IVChainCore-freezeAccount_}.
-     */
-    function freezeAccount_(address _msgSender, uint256 _id) public override onlyShell {
-        VChainStorage.Account memory account = metaStorage.getAccount(_id);
-        if (_msgSender == metaStorage.admin() && getAccountIdByAddress(_msgSender) != _id) {
-            require((account.isTrustAdmin), "VChain: admin does not have permission to freeze the account");
-        } else {
-            checkSender(_id, _msgSender);
-        }
-        _freezeAccount(_id, false, _msgSender);
-    }
-
-    /**
-     * @dev See {IVChainCore-freezeAccountBWO_}.
-     */
-    function freezeAccountBWO_(
-        address _msgSender,
-        uint256 _id,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) public override onlyShell {
-        require(checkBWO(_msgSender), "VChain: address is not BWO");
-
-        freezeAccountBWOParamsVerify(_id, sender, deadline, signature);
-        _freezeAccount(_id, true, sender);
-    }
-
-    function freezeAccountBWOParamsVerify(
-        uint256 _id,
-        address sender,
-        uint256 deadline,
-        bytes calldata signature
-    ) public view returns (bool) {
-        checkSender(_id, sender);
-        uint256 nonce = getNonce(sender);
-        _recoverSig(
-            deadline,
-            sender,
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256("freezeAccountBWO(uint256 id,address sender,uint256 nonce,uint256 deadline)"),
-                        _id,
-                        sender,
-                        nonce,
-                        deadline
-                    )
-                )
-            ),
-            signature
-        );
-        return true;
-    }
-
-    function _freezeAccount(
-        uint256 _id,
-        bool _isBWO,
-        address _sender
-    ) private {
-        VChainStorage.Account memory account = metaStorage.getAccount(_id);
-        require(account.isFreeze == false, "VChain: The account has been frozen");
-        account.isFreeze = true;
-        account.isTrustAdmin = true;
-        metaStorage.setAccount(account);
-        shell().emitFreezeAccount(_id, _isBWO, _sender, getNonce(_sender));
-        metaStorage.IncrementNonce(_sender);
-    }
-
-    /**
-     * @dev Only Admin can set quickUFA.
-     */
-    function setQuickUFA(bool _quick) public onlyAdmin {
-        quickUFA = _quick;
-    }
-
-    /**
-     * @dev Only Admin can unfreeze account.
-     */
-    function unfreezeAccount(uint256 _id, address newAddress) public onlyAdmin {
-        require(quickUFA, "VChain: quick-unfreezeAccount is disabled");
-        checkAddressIsNotZero(newAddress);
-        checkAddressIsNotUsed(newAddress);
-        VChainStorage.Account memory account = metaStorage.getAccount(_id);
-        require(account.isFreeze, "VChain: The accounts were not frozen");
-        account.isFreeze = false;
-        metaStorage.setAccount(account);
-
-        metaStorage.removeAllAuthAddress(_id);
-        metaStorage.addAuthAddress(_id, newAddress);
-        shell().emitUnFreezeAccount(_id, newAddress);
-    }
-
-    /**
-     * @dev Only Admin can unfreeze account. (with auth)
-     */
-    function unfreezeAccount(
-        uint256 _id,
-        address newAddress,
-        uint256 deadline,
-        bytes calldata signature
-    ) public onlyAdmin {
-        checkAddressIsNotZero(newAddress);
-        checkAddressIsNotUsed(newAddress);
-        checkAuthAddressSignature(_id, newAddress, deadline, signature);
-        VChainStorage.Account memory account = metaStorage.getAccount(_id);
-        require(account.isFreeze, "VChain: The accounts were not frozen");
-        account.isFreeze = false;
-        metaStorage.setAccount(account);
-
-        metaStorage.removeAllAuthAddress(_id);
-        metaStorage.addAuthAddress(_id, newAddress);
-        metaStorage.IncrementNonce(newAddress);
-        shell().emitUnFreezeAccount(_id, newAddress);
-    }
-
-    /**
      * @dev See {IVChain-getAccountIdByAddress}.
      */
     function getAccountIdByAddress(address _address) public view override returns (uint256 _id) {
@@ -542,21 +344,7 @@ contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
      * @dev See {IVChain-accountIsExist}.
      */
     function accountIsExist(uint256 _id) public view override returns (bool _isExist) {
-        return metaStorage.getAccount(_id).isExist;
-    }
-
-    /**
-     * @dev See {IVChain-accountIsTrustAdmin}.
-     */
-    function accountIsTrustAdmin(uint256 _id) public view override returns (bool _isFreeze) {
-        return metaStorage.getAccount(_id).isTrustAdmin;
-    }
-
-    /**
-     * @dev See {IVChain-accountIsFreeze}.
-     */
-    function accountIsFreeze(uint256 _id) public view override returns (bool _isFreeze) {
-        return metaStorage.getAccount(_id).isFreeze;
+        return metaStorage.accountIsExist(_id);
     }
 
     /**

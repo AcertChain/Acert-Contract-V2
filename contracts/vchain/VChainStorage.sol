@@ -12,15 +12,13 @@ contract VChainStorage is IAcertContract, Ownable {
 
     struct Account {
         bool isExist;
-        bool isTrustAdmin;
-        bool isFreeze;
         uint256 id;
     }
 
     // Mapping from address to Asset
     mapping(address => bool) public isEnabledWorld;
-    // Mapping from account ID to Account
-    mapping(uint256 => Account) public accounts;
+    // Mapping from account
+    mapping(uint256 => bool) public accounts;
     // nonce
     mapping(address => uint256) public nonces;
 
@@ -97,11 +95,11 @@ contract VChainStorage is IAcertContract, Ownable {
         isEnabledWorld[_address] = false;
     }
 
-    function setAccount(Account calldata account) public onlyVChain {
-        accounts[account.id] = account;
+    function setAccount(uint256 id) public onlyVChain {
+        accounts[id] = true;
     }
 
-    function getAccount(uint256 id) public view returns (Account memory) {
+    function accountIsExist(uint256 id) public view returns (bool _isExist) {
         return accounts[id];
     }
 
