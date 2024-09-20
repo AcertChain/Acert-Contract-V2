@@ -97,10 +97,10 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() external view override returns (address) {
-        return IAcertContract(coreContract).metaverseAddress();
+    function vchainAddress() external view override returns (address) {
+        return IAcertContract(coreContract).vchainAddress();
     }
 
     /**
@@ -161,13 +161,6 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
     }
 
     /**
-     * @dev See {IAsset-worldAddress}.
-     */
-    function worldAddress() external view override returns (address) {
-        return core().worldAddress();
-    }
-
-    /**
      * @dev See {IAsset-getNonce}.
      */
     function getNonce(address account) public view override returns (uint256) {
@@ -193,24 +186,6 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
      */
     function isApprovedForAll(uint256 ownerId, address operator) public view override returns (bool) {
         return core().isApprovedForAll(ownerId, operator);
-    }
-
-    /**
-     * @dev See {IAsset721-itemsOf}.
-     */
-    function itemsOf(
-        uint256 owner,
-        uint256 startAt,
-        uint256 endAt
-    ) public view override returns (uint256[] memory) {
-        return core().itemsOf(owner, startAt, endAt);
-    }
-
-    /**
-     * @dev See {IAsset721-getNFTMetadataContract}.
-     */
-    function getNFTMetadataContract() public view override returns (address) {
-        return core().getNFTMetadataContract();
     }
 
     // approve

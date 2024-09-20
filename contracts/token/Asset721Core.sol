@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "../interfaces/IAsset721.sol";
-import "../interfaces/IWorld.sol";
-import "../interfaces/IMetaverse.sol";
+import "../interfaces/IVChain.sol";
 import "../interfaces/IAcertContract.sol";
 import "./Asset721.sol";
 import "./Asset721Storage.sol";
@@ -23,8 +22,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     string public override symbol;
     string private _tokenURI;
 
-    IWorld public world;
-    IMetaverse public metaverse;
+    IVChain public vchain;
     Asset721Storage public storageContract;
 
     /**
@@ -35,16 +33,15 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         string memory symbol_,
         string memory version_,
         string memory tokenURI_,
-        address world_,
+        address vchain_,
         address storage_
     ) EIP712(name_, version_) {
         name = name_;
         version = version_;
         symbol = symbol_;
         _tokenURI = tokenURI_;
-        world = IWorld(world_);
         storageContract = Asset721Storage(storage_);
-        metaverse = IMetaverse(IAcertContract(world_).metaverseAddress());
+        vchain = IVChain(vchain_);
     }
 
     function shell() public view returns (Asset721) {
@@ -52,15 +49,10 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() external view override returns (address) {
-        return address(metaverse);
-    }
-
-    function updateWorld(address _world) public onlyOwner {
-        require(address(metaverse) == IAcertContract(_world).metaverseAddress(), "Asset721: metaverse not match");
-        world = IWorld(_world);
+    function vchainAddress() external view override returns (address) {
+        return address(vchain);
     }
 
     /**
@@ -68,10 +60,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
      */
     function protocol() external pure virtual override returns (IAsset.ProtocolEnum) {
         return IAsset.ProtocolEnum.ASSET721;
-    }
-
-    function worldAddress() external view virtual override returns (address) {
-        return address(world);
     }
 
     function getNonce(address account) public view virtual override returns (uint256) {
@@ -116,61 +104,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     function ownerAccountOf(uint256 tokenId) public view virtual override returns (uint256 ownerId) {
         ownerId = _ownersById(tokenId);
         _checkIdIsNotZero(ownerId, "Asset721: owner query for nonexistent token");
-    }
-
-    /**
-     * @dev See {IAsset721-itemsOf}.
-     */
-    function itemsOf(
-        uint256 owner,
-        uint256 startAt,
-        uint256 endAt
-    ) public view virtual override returns (uint256[] memory) {
-        require(startAt <= endAt, "Asset721: startAt must be less than or equal to endAt");
-        require(endAt < balanceOf(owner), "Asset721: endAt must be less than the balance of the owner");
-        uint256[] memory items = new uint256[](endAt - startAt + 1);
-        for (uint256 i = 0; i <= endAt - startAt; i++) {
-            items[i] = _ownedTokens(owner, startAt + i);
-        }
-        return items;
-    }
-
-    /**
-     * @dev See {IAsset721-getNFTMetadataContract}.
-     */
-    function getNFTMetadataContract() public view virtual override returns (address) {
-        return storageContract.nftMetadata();
-    }
-
-    function _beforeTokenTransfer(
-        uint256 from,
-        uint256 to,
-        uint256 tokenId
-    ) internal {
-        if (from != 0 && from != to) {
-            _removeTokenFromOwnerEnumeration(from, tokenId);
-        }
-        if (to != 0 && to != from) {
-            _addTokenToOwnerEnumeration(to, tokenId);
-        }
-    }
-
-    function _addTokenToOwnerEnumeration(uint256 to, uint256 tokenId) private {
-        uint256 length = balanceOf(to);
-        _setOwnedTokenAndIndex(to, length, tokenId);
-    }
-
-    function _removeTokenFromOwnerEnumeration(uint256 from, uint256 tokenId) private {
-        uint256 lastTokenIndex = balanceOf(from) - 1;
-        uint256 tokenIndex = storageContract.ownedTokensIndex(tokenId);
-
-        if (tokenIndex != lastTokenIndex) {
-            uint256 lastTokenId = _ownedTokens(from, lastTokenIndex);
-            _setOwnedTokenAndIndex(from, tokenIndex, lastTokenId);
-        }
-
-        storageContract.deleteOwnedToken(from, lastTokenIndex);
-        storageContract.deleteOwnedTokenIndex(tokenId);
     }
 
     /**
@@ -246,7 +179,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     ) internal virtual {
         uint256 ownerId = ownerAccountOf(tokenId);
         require(_assetIsEnabled(), "Asset721: asset is not enabled");
-        require(!_accountIsFreeze(ownerId), "Asset721: approve owner is frozen");
         require(_getOrCreateAccountId(spender) != ownerId, "Asset721: approval to current account");
 
         _setTokenApprovalById(tokenId, spender);
@@ -343,7 +275,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     ) internal virtual {
         _checkIdIsNotZero(accountId, "Asset721: id zero is not a valid owner");
         require(_assetIsEnabled(), "Asset721: asset is not enabled");
-        require(!_accountIsFreeze(accountId), "Asset721: approve owner is frozen");
         _checkAddrIsNotZero(operator, "Asset721: approve to the zero address");
         require(_getAccountIdByAddress(operator) != accountId, "Asset721: approval to current account");
 
@@ -362,7 +293,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
 
     function isApprovedForAll(uint256 ownerId, address operator) public view virtual override returns (bool) {
         _checkIdIsNotZero(ownerId, "Asset721: id zero is not a valid owner");
-        if (_isTrust(operator, ownerId)) {
+        if (_isSafeContract(operator)) {
             return true;
         }
         return storageContract.operatorApprovalsById(ownerId, operator);
@@ -477,14 +408,11 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     ) internal virtual {
         require(ownerAccountOf(tokenId) == fromAccount, "Asset721: transfer from incorrect owner");
         require(_assetIsEnabled(), "Asset721: asset is not enabled");
-        require(!_accountIsFreeze(fromAccount), "Asset721: transfer from frozen account");
         if (toAccount == 0) {
             return _burn(tokenId, sender);
         }
         require(_accountIsExist(toAccount), "Asset721: to account is not exist");
         _checkIdIsNotZero(toAccount, "Asset721: transfer to the zero id");
-
-        _beforeTokenTransfer(fromAccount, toAccount, tokenId);
 
         // Clear approvals from the previous owner
         _setTokenApprovalById(tokenId, address(0));
@@ -650,7 +578,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     ) public override onlyShell {
         _checkIdIsNotZero(to, "Asset721: mint to the zero id");
         require(!_exists(tokenId), "Asset721: token already minted");
-        _beforeTokenTransfer(0, to, tokenId);
 
         storageContract.setOwnerById(tokenId, to);
         _setBalanceById(to, _balancesById(to) + 1);
@@ -683,7 +610,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         _setTokenApprovalById(tokenId, address(0));
 
         uint256 ownerId = _getAccountIdByAddress(owner);
-        _beforeTokenTransfer(ownerId, 0, tokenId);
         _setBalanceById(ownerId, _balancesById(ownerId) -1);
         storageContract.deleteOwnerById(tokenId);
 
@@ -743,19 +669,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         storageContract.setBalanceById(_id, _balance);
     }
 
-    function _ownedTokens(uint256 id, uint256 index) internal view returns (uint256) {
-        return storageContract.ownedTokens(id, index);
-    }
-
-    function _setOwnedTokenAndIndex(
-        uint256 to,
-        uint256 length,
-        uint256 tokenId
-    ) internal {
-        storageContract.setOwnedToken(to, length, tokenId);
-        storageContract.setOwnedTokenIndex(tokenId, length);
-    }
-
     function _incrementNonce(address account) internal {
         storageContract.incrementNonce(account);
     }
@@ -769,45 +682,41 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function _getAccountIdByAddress(address _address) internal view returns (uint256) {
-        return metaverse.getAccountIdByAddress(_address);
+        return vchain.getAccountIdByAddress(_address);
     }
 
     function _getOrCreateAccountId(address _address) internal returns (uint256) {
         if (_address == address(0)) {
             return 0;
-        } else if (metaverse.getAccountIdByAddress(_address) == 0) {
-            return metaverse.createAccount(_address, false);
+        } else if (vchain.getAccountIdByAddress(_address) == 0) {
+            return vchain.createAccount(_address);
         } else {
-            return metaverse.getAccountIdByAddress(_address);
+            return vchain.getAccountIdByAddress(_address);
         }
     }
 
     function _getAddressByAccountId(uint256 _id) internal view returns (address) {
-        return metaverse.getAddressByAccountId(_id);
+        return vchain.getAddressByAccountId(_id);
     }
 
     function _assetIsEnabled() internal view returns (bool) {
-        return world.isEnabledAsset(shellContract);
-    }
-
-    function _accountIsFreeze(uint256 _id) internal view returns (bool) {
-        return metaverse.accountIsFreeze(_id);
+        return vchain.isEnabledAsset(shellContract);
     }
 
     function _checkSender(uint256 ownerId, address sender) internal view {
-        metaverse.checkSender(ownerId, sender);
+        vchain.checkSender(ownerId, sender);
     }
 
     function _accountIsExist(uint256 _id) internal view returns (bool) {
-        return metaverse.accountIsExist(_id);
+        return vchain.accountIsExist(_id);
     }
 
     function _checkBWO(address _sender) internal view {
-        require(world.checkBWO(_sender), "Asset721: sender is not BWO");
+        require(vchain.checkBWO(_sender), "Asset721: sender is not BWO");
     }
 
-    function _isTrust(address _address, uint256 _id) internal view returns (bool) {
-        return world.isTrust(_address, _id);
+    function _isSafeContract(address _address) internal view returns (bool) {
+        return vchain.isSafeContract(_address);
     }
 
     function _recoverSig(

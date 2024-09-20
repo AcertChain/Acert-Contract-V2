@@ -568,19 +568,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "metaverseAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -879,7 +866,7 @@
   },
   {
     "inputs": [],
-    "name": "worldAddress",
+    "name": "vchainAddress",
     "outputs": [
       {
         "internalType": "address",

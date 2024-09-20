@@ -69,10 +69,10 @@ contract Asset20 is IAsset20, ShellContract, IAcertContract, Mineable {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() external view override returns (address) {
-        return IAcertContract(coreContract).metaverseAddress();
+    function vchainAddress() external view override returns (address) {
+        return IAcertContract(coreContract).vchainAddress();
     }
 
     /**
@@ -122,13 +122,6 @@ contract Asset20 is IAsset20, ShellContract, IAcertContract, Mineable {
      */
     function protocol() public view override returns (IAsset.ProtocolEnum) {
         return core().protocol();
-    }
-
-    /**
-     * @dev See {IAsset-worldAddress}.
-     */
-    function worldAddress() public view override returns (address) {
-        return core().worldAddress();
     }
 
     /**

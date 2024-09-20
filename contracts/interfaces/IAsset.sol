@@ -9,7 +9,5 @@ interface IAsset {
 
     function protocol() external view returns (ProtocolEnum);
 
-    function worldAddress() external view returns (address);
-
     function getNonce(address account) external view returns (uint256);
 }

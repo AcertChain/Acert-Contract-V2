@@ -2,20 +2,20 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "./interfaces/IMetaverse.sol";
+import "./interfaces/IVChain.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Acert is Ownable {
-    event SetMetaverse(address indexed metaverse, string name, bool enabled);
+    event SetVChain(address indexed vchain, string name, bool enabled);
     event RemarkAddress(address indexed addr, string remark, string class);
 
-    mapping(address => bool) public metaverseEnabled;
+    mapping(address => bool) public vchainEnabled;
     mapping(address => string) public remarks;
 
-    function setMetaverse(address _address, bool _enabled) public onlyOwner {
-        metaverseEnabled[_address] = _enabled;
-        string memory name = IMetaverse(_address).name();
-        emit SetMetaverse(_address, name, _enabled);
+    function setVChain(address _address, bool _enabled) public onlyOwner {
+        vchainEnabled[_address] = _enabled;
+        string memory name = IVChain(_address).name();
+        emit SetVChain(_address, name, _enabled);
     }
 
     function remark(

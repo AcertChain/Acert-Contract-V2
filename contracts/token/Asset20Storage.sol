@@ -19,10 +19,10 @@ contract Asset20Storage is IAcertContract, Ownable {
     }
 
     /**
-     * @dev See {IAcertContract-metaverseAddress}.
+     * @dev See {IAcertContract-vchainAddress}.
      */
-    function metaverseAddress() public view override returns (address) {
-        return address(IAcertContract(asset).metaverseAddress());
+    function vchainAddress() public view override returns (address) {
+        return address(IAcertContract(asset).vchainAddress());
     }
 
     function updateAsset(address _address) public onlyOwner {
