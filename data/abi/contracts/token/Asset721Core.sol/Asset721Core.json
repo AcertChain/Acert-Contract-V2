@@ -23,7 +23,7 @@
       },
       {
         "internalType": "address",
-        "name": "world_",
+        "name": "vchain_",
         "type": "address"
       },
       {
@@ -1027,19 +1027,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_world",
-        "type": "address"
-      }
-    ],
-    "name": "updateWorld",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "vchain",
     "outputs": [
@@ -1073,32 +1060,6 @@
         "internalType": "string",
         "name": "",
         "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "world",
-    "outputs": [
-      {
-        "internalType": "contract IWorld",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "worldAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",

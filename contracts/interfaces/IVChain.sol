@@ -23,17 +23,31 @@ interface IVChainMetadata {
 
     function getNonce(address _address) external view returns (uint256 _id);
 
-    // world
-    function getWorlds() external view returns (address[] memory);
+    // asset
+    function getAssets() external view returns (address[] memory);
+
+    function isEnabledAsset(address _address) external view returns (bool);
+
+    // safeContract
+    function getSafeContracts() external view returns (address[] memory);
+
+    function isSafeContract(address _address) external view returns (bool);
+
+    function checkBWO(address _address) external view returns (bool);
 }
 
 interface IVChain is IVChainMetadata {
     event SetAdmin(address indexed admin);
+
     event AddOperator(address indexed operator);
     event RemoveOperator(address indexed operator);
-    event RegisterWorld(address indexed world);
-    event EnableWorld(address indexed world);
-    event DisableWorld(address indexed world);
+
+    event RegisterAsset(address indexed asset);
+    event EnableAsset(address indexed asset);
+    event DisableAsset(address indexed asset);
+    event AddSafeContract(address indexed safeContract);
+    event RemoveSafeContract(address indexed safeContract);
+
     event CreateAccount(
         uint256 indexed accountId,
         address indexed authAddress,

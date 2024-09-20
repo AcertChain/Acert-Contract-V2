@@ -125,13 +125,6 @@ contract Asset20 is IAsset20, ShellContract, IAcertContract, Mineable {
     }
 
     /**
-     * @dev See {IAsset-worldAddress}.
-     */
-    function worldAddress() public view override returns (address) {
-        return core().worldAddress();
-    }
-
-    /**
      * @dev See {IAsset-getNonce}.
      */
     function getNonce(address account) public view virtual override returns (uint256) {

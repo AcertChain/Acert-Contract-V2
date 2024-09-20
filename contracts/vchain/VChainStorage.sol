@@ -8,15 +8,14 @@ import "../interfaces/IAcertContract.sol";
 
 contract VChainStorage is IAcertContract, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
-    EnumerableSet.AddressSet private worlds;
+    EnumerableSet.AddressSet private assets;
+    EnumerableSet.AddressSet private safeContracts;
 
-    struct Account {
-        bool isExist;
-        uint256 id;
-    }
-
+    // Mapping from address to safe contract
+    mapping(address => bool) public isSafeContract;
     // Mapping from address to Asset
-    mapping(address => bool) public isEnabledWorld;
+    mapping(address => bool) public isEnabledAsset;
+
     // Mapping from account
     mapping(uint256 => bool) public accounts;
     // nonce
@@ -66,33 +65,49 @@ contract VChainStorage is IAcertContract, Ownable {
         nonces[_sender]++;
     }
 
-    function worldContains(address _address) public view returns (bool) {
-        return worlds.contains(_address);
+
+    function assetContains(address _address) public view returns (bool) {
+        return assets.contains(_address);
     }
 
-    function addWorld(address _address) public onlyVChain {
-        if (!worlds.contains(_address)) {
-            worlds.add(_address);
-            isEnabledWorld[_address] = true;
-        }
+    function addAsset(address _address) public onlyVChain {
+        require(!assets.contains(_address), "VChain: asset is already exist");
+        assets.add(_address);
+        isEnabledAsset[_address] = true;
     }
 
-    function getWorlds() public view returns (address[] memory) {
-        return worlds.values();
+    function getAssets() public view returns (address[] memory) {
+        return assets.values();
     }
 
-    function worldCount() public view returns (uint256) {
-        return worlds.length();
+    function assetCount() public view returns (uint256) {
+        return assets.length();
     }
 
-    function enableWorld(address _address) public onlyVChain {
-        require(worlds.contains(_address), "VChain: world is not exist");
-        isEnabledWorld[_address] = true;
+    function enableAsset(address _address) public onlyVChain {
+        require(assets.contains(_address), "VChain: asset is not exist");
+        isEnabledAsset[_address] = true;
     }
 
-    function disableWorld(address _address) public onlyVChain {
-        require(worlds.contains(_address), "VChain: world is not exist");
-        isEnabledWorld[_address] = false;
+    function disableAsset(address _address) public onlyVChain {
+        require(assets.contains(_address), "VChain: asset is not exist");
+        isEnabledAsset[_address] = false;
+    }
+
+    function addSafeContract(address _address) public onlyVChain {
+        require(!safeContracts.contains(_address), "VChain: safeContract is already exist");
+        safeContracts.add(_address);
+        isSafeContract[_address] = true;
+    }
+
+    function removeSafeContract(address _address) public onlyVChain {
+        require(safeContracts.contains(_address), "VChain: safeContract is not exist");
+        safeContracts.remove(_address);
+        isSafeContract[_address] = false;
+    }
+
+    function getSafeContracts() public view returns (address[] memory) {
+        return safeContracts.values();
     }
 
     function setAccount(uint256 id) public onlyVChain {

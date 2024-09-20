@@ -161,13 +161,6 @@ contract Asset721 is IAsset721, ShellContract, IAcertContract, Mineable {
     }
 
     /**
-     * @dev See {IAsset-worldAddress}.
-     */
-    function worldAddress() external view override returns (address) {
-        return core().worldAddress();
-    }
-
-    /**
      * @dev See {IAsset-getNonce}.
      */
     function getNonce(address account) public view override returns (uint256) {

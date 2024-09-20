@@ -27,16 +27,24 @@ contract VChain is ShellContract, IVChain, IAcertContract {
         emit RemoveOperator(operator_);
     }
 
-    function emitRegisterWorld(address world_) public onlyCore {
-        emit RegisterWorld(world_);
+    function emitRegisterAsset(address _asset) public onlyCore {
+        emit RegisterAsset(_asset);
     }
 
-    function emitEnableWorld(address world_) public onlyCore {
-        emit EnableWorld(world_);
+    function emitEnableAsset(address _asset) public onlyCore {
+        emit EnableAsset(_asset);
     }
 
-    function emitDisableWorld(address world_) public onlyCore {
-        emit DisableWorld(world_);
+    function emitDisableAsset(address _asset) public onlyCore {
+        emit DisableAsset(_asset);
+    }
+
+    function emitAddSafeContract(address _contract) public onlyCore {
+        emit AddSafeContract(_contract);
+    }
+
+    function emitRemoveSafeContract(address _contract) public onlyCore {
+        emit RemoveSafeContract(_contract);
     }
 
     function emitCreateAccount(
@@ -212,11 +220,25 @@ contract VChain is ShellContract, IVChain, IAcertContract {
         return core().getNonce(_address);
     }
 
-    // world
-    /**
-     * @dev See {IVChain-getWorlds}.
-     */
-    function getWorlds() public view override returns (address[] memory) {
-        return core().getWorlds();
+    // asset
+    function getAssets() public view override returns (address[] memory) {
+        return core().getAssets();
+    }
+
+    function isEnabledAsset(address _address) public view override returns (bool) {
+        return core().isEnabledAsset(_address);
+    }
+
+    // safeContract
+    function getSafeContracts() public view override returns (address[] memory) {
+        return core().getSafeContracts();
+    }
+
+    function isSafeContract(address _address) public view override returns (bool) {
+        return core().isSafeContract(_address);
+    }
+
+    function checkBWO(address _address) public view override returns (bool) {
+        return core().checkBWO(_address);
     }
 }

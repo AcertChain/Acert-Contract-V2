@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "../interfaces/IAsset721.sol";
-import "../interfaces/IWorld.sol";
 import "../interfaces/IVChain.sol";
 import "../interfaces/IAcertContract.sol";
 import "./Asset721.sol";
@@ -23,7 +22,6 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     string public override symbol;
     string private _tokenURI;
 
-    IWorld public world;
     IVChain public vchain;
     Asset721Storage public storageContract;
 
@@ -35,16 +33,15 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         string memory symbol_,
         string memory version_,
         string memory tokenURI_,
-        address world_,
+        address vchain_,
         address storage_
     ) EIP712(name_, version_) {
         name = name_;
         version = version_;
         symbol = symbol_;
         _tokenURI = tokenURI_;
-        world = IWorld(world_);
         storageContract = Asset721Storage(storage_);
-        vchain = IVChain(IAcertContract(world_).vchainAddress());
+        vchain = IVChain(vchain_);
     }
 
     function shell() public view returns (Asset721) {
@@ -58,20 +55,11 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
         return address(vchain);
     }
 
-    function updateWorld(address _world) public onlyOwner {
-        require(address(vchain) == IAcertContract(_world).vchainAddress(), "Asset721: vchain not match");
-        world = IWorld(_world);
-    }
-
     /**
      * @dev See {IAsset-protocol}.
      */
     function protocol() external pure virtual override returns (IAsset.ProtocolEnum) {
         return IAsset.ProtocolEnum.ASSET721;
-    }
-
-    function worldAddress() external view virtual override returns (address) {
-        return address(world);
     }
 
     function getNonce(address account) public view virtual override returns (uint256) {
@@ -712,7 +700,7 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function _assetIsEnabled() internal view returns (bool) {
-        return world.isEnabledAsset(shellContract);
+        return vchain.isEnabledAsset(shellContract);
     }
 
     function _checkSender(uint256 ownerId, address sender) internal view {
@@ -724,11 +712,11 @@ contract Asset721Core is IAsset721Core, CoreContract, IAcertContract, EIP712 {
     }
 
     function _checkBWO(address _sender) internal view {
-        require(world.checkBWO(_sender), "Asset721: sender is not BWO");
+        require(vchain.checkBWO(_sender), "Asset721: sender is not BWO");
     }
 
     function _isSafeContract(address _address) internal view returns (bool) {
-        return world.isSafeContract(_address);
+        return vchain.isSafeContract(_address);
     }
 
     function _recoverSig(

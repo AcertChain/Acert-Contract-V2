@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "../interfaces/IWorld.sol";
+import "../interfaces/IAsset.sol";
 import "../interfaces/IVChain.sol";
 import "../interfaces/ShellCore.sol";
 import "../interfaces/IAcertContract.sol";
@@ -363,14 +363,6 @@ contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
         return metaStorage.totalAccount();
     }
 
-    // world
-    /**
-     * @dev See {IVChain-getWorlds}.
-     */
-    function getWorlds() public view override returns (address[] memory) {
-        return metaStorage.getWorlds();
-    }
-
     /**
      * @dev See {IVChain-getNonce}.
      */
@@ -378,26 +370,41 @@ contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
         return metaStorage.nonces(_address);
     }
 
-    // Owner functions
-    function registerWorld(address _world) public onlyOwner {
-        checkAddressIsNotZero(_world);
-        require(metaStorage.worldContains(_world) == false, "VChain: world is exist");
-        require(
-            IAcertContract(_world).vchainAddress() == IAcertContract(shellContract).vchainAddress(),
-            "VChain: VChain is not match"
-        );
-        metaStorage.addWorld(_world);
-        shell().emitRegisterWorld(_world);
+    //asset
+    /**
+     * @dev See {IVChain-getAssets}.
+     */
+    function getAssets() public view override returns (address[] memory) {
+        return metaStorage.getAssets();
     }
 
-    function enableWorld(address _world) public onlyOwner {
-        metaStorage.enableWorld(_world);
-        shell().emitEnableWorld(_world);
+    /**
+     * @dev See {IVChain-isEnabledAsset}.
+     */
+    function isEnabledAsset(address _address) public view override returns (bool) {
+        return metaStorage.isEnabledAsset(_address);
     }
 
-    function disableWorld(address _world) public onlyOwner {
-        metaStorage.disableWorld(_world);
-        shell().emitDisableWorld(_world);
+    //safeContract
+    /**
+     * @dev See {IVChain-getSafeContracts}.
+     */
+    function getSafeContracts() public view override returns (address[] memory) {
+        return metaStorage.getSafeContracts();
+    }
+
+    /**
+     * @dev See {IVChain-isSafeContract}.
+     */
+    function isSafeContract(address _address) public view override returns (bool) {
+        return metaStorage.isSafeContract(_address);
+    }
+
+    /**
+     * @dev See {IVChain-checkBWO}.
+     */
+    function checkBWO(address _address) public view override returns (bool) {
+        return (metaStorage.isOperator(_address) || owner() == _address);
     }
 
     function setAdmin(address _address) public onlyOwner {
@@ -421,10 +428,39 @@ contract VChainCore is IVChainCore, CoreContract, IAcertContract, EIP712 {
         shell().emitRemoveOperator(_operator);
     }
 
-    // utils
-    function checkBWO(address _address) public view returns (bool) {
-        return (metaStorage.isOperator(_address) || owner() == _address);
+    function registerAsset(address _address) public onlyOwner {
+        checkAddressIsNotZero(_address);
+        require(metaStorage.assetContains(_address) == false, "VChain: asset is exist");
+        require(IAcertContract(_address).vchainAddress() == address(shellContract), "VChain: vchain address is not match");
+        metaStorage.addAsset(_address);
+        shell().emitRegisterAsset(_address);
     }
+
+    function disableAsset(address _address) public onlyOwner {
+        metaStorage.disableAsset(_address);
+        shell().emitDisableAsset(_address);
+    }
+
+    function enableAsset(address _address) public onlyOwner {
+        metaStorage.enableAsset(_address);
+        shell().emitEnableAsset(_address);
+    }
+
+    function addSafeContract(address _address) public onlyOwner {
+        checkAddressIsNotZero(_address);
+        metaStorage.addSafeContract(_address);
+        shell().emitAddSafeContract(_address);
+    }
+
+    function removeSafeContract(address _address) public onlyOwner {
+        metaStorage.removeSafeContract(_address);
+        shell().emitRemoveSafeContract(_address);
+    }
+
+    // utils
+    // function checkBWO(address _address) public view returns (bool) {
+    //     return (metaStorage.isOperator(_address) || owner() == _address);
+    // }
 
     function _recoverSig(
         uint256 deadline,
